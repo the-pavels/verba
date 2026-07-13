@@ -13,6 +13,7 @@
 		100000000000000000000018 /* PopupContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000019 /* PopupContentView.swift */; };
 		10000000000000000000001A /* PopupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001B /* PopupController.swift */; };
 		10000000000000000000001C /* PopupPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001D /* PopupPanel.swift */; };
+		10000000000000000000001E /* PopupPositioner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001F /* PopupPositioner.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +24,7 @@
 		100000000000000000000019 /* PopupContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupContentView.swift; sourceTree = "<group>"; };
 		10000000000000000000001B /* PopupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupController.swift; sourceTree = "<group>"; };
 		10000000000000000000001D /* PopupPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPanel.swift; sourceTree = "<group>"; };
+		10000000000000000000001F /* PopupPositioner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPositioner.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +54,7 @@
 				100000000000000000000019 /* PopupContentView.swift */,
 				10000000000000000000001B /* PopupController.swift */,
 				10000000000000000000001D /* PopupPanel.swift */,
+				10000000000000000000001F /* PopupPositioner.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 			);
 			path = Verba;
@@ -172,6 +175,7 @@
 				100000000000000000000018 /* PopupContentView.swift in Sources */,
 				10000000000000000000001A /* PopupController.swift in Sources */,
 				10000000000000000000001C /* PopupPanel.swift in Sources */,
+				10000000000000000000001E /* PopupPositioner.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
 			);

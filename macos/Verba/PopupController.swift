@@ -24,7 +24,13 @@ final class PopupController {
 
         hostingController.rootView = PopupContentView(presentation: presentation)
         panel.setContentSize(Self.contentSize)
-        panel.center()
+        panel.setFrameOrigin(
+            PopupPositioner.origin(
+                popupSize: Self.contentSize,
+                pointer: NSEvent.mouseLocation,
+                screens: NSScreen.screens
+            )
+        )
         panel.orderFrontRegardless()
     }
 
