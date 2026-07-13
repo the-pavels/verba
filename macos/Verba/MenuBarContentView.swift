@@ -4,6 +4,7 @@ import SwiftUI
 struct MenuBarContentView: View {
     let initialPresentation: PresentationViewModel
     let rustCoreVersion: String
+    let showPopupPreview: () -> Void
 
     var body: some View {
         Button("Translate Selected Text", action: unavailableCommand)
@@ -20,6 +21,10 @@ struct MenuBarContentView: View {
         Button("About Verba") {
             NSApplication.shared.orderFrontStandardAboutPanel()
         }
+
+#if DEBUG
+        Button("Show Loading Popup", action: showPopupPreview)
+#endif
 
         Divider()
 

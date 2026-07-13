@@ -10,6 +10,9 @@
 		100000000000000000000001 /* VerbaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000002 /* VerbaApp.swift */; };
 		100000000000000000000012 /* verba_ffi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000013 /* verba_ffi.swift */; };
 		100000000000000000000016 /* MenuBarContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000017 /* MenuBarContentView.swift */; };
+		100000000000000000000018 /* PopupContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000019 /* PopupContentView.swift */; };
+		10000000000000000000001A /* PopupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001B /* PopupController.swift */; };
+		10000000000000000000001C /* PopupPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001D /* PopupPanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,6 +20,9 @@
 		100000000000000000000003 /* Verba.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Verba.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		100000000000000000000013 /* verba_ffi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = verba_ffi.swift; sourceTree = "<group>"; };
 		100000000000000000000017 /* MenuBarContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContentView.swift; sourceTree = "<group>"; };
+		100000000000000000000019 /* PopupContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupContentView.swift; sourceTree = "<group>"; };
+		10000000000000000000001B /* PopupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupController.swift; sourceTree = "<group>"; };
+		10000000000000000000001D /* PopupPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,6 +49,9 @@
 			isa = PBXGroup;
 			children = (
 				100000000000000000000017 /* MenuBarContentView.swift */,
+				100000000000000000000019 /* PopupContentView.swift */,
+				10000000000000000000001B /* PopupController.swift */,
+				10000000000000000000001D /* PopupPanel.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 			);
 			path = Verba;
@@ -160,6 +169,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
+				100000000000000000000018 /* PopupContentView.swift in Sources */,
+				10000000000000000000001A /* PopupController.swift in Sources */,
+				10000000000000000000001C /* PopupPanel.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
 			);

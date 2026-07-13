@@ -1,0 +1,44 @@
+import AppKit
+import SwiftUI
+
+@MainActor
+final class PopupController {
+    private static let contentSize = NSSize(width: 380, height: 112)
+
+    private let hostingController: NSHostingController<PopupContentView>
+    private let panel: PopupPanel
+
+    init() {
+        hostingController = NSHostingController(
+            rootView: PopupContentView(presentation: .idle)
+        )
+        panel = PopupPanel(contentSize: Self.contentSize)
+        panel.contentViewController = hostingController
+    }
+
+    func present(_ presentation: PresentationViewModel) {
+        guard !presentation.isIdle else {
+            dismiss()
+            return
+        }
+
+        hostingController.rootView = PopupContentView(presentation: presentation)
+        panel.setContentSize(Self.contentSize)
+        panel.center()
+        panel.orderFrontRegardless()
+    }
+
+    func dismiss() {
+        panel.orderOut(nil)
+    }
+}
+
+private extension PresentationViewModel {
+    var isIdle: Bool {
+        if case .idle = self {
+            true
+        } else {
+            false
+        }
+    }
+}
