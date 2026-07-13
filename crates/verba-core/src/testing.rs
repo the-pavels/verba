@@ -11,10 +11,12 @@ use std::{
 
 use crate::{
     capture::{CaptureFailure, CapturedText, TextCapture},
+    coordinator::CancellationToken,
     presentation::TextAction,
     shortcut::{
         ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutRegistryError,
     },
+    translation::{TranslationFailure, TranslationRequest, Translator, TranslatorResponse},
 };
 
 pub type CaptureResult = Result<CapturedText, CaptureFailure>;
@@ -65,6 +67,70 @@ impl TextCapture for FakeTextCapture {
             results
                 .front()
                 .expect("capture fake results were checked as non-empty")
+                .clone()
+        }
+    }
+}
+
+pub type TranslatorResult = Result<TranslatorResponse, TranslationFailure>;
+
+pub struct FakeTranslator {
+    results: Mutex<VecDeque<TranslatorResult>>,
+    requests: Mutex<Vec<TranslationRequest>>,
+}
+
+impl FakeTranslator {
+    #[must_use]
+    pub fn new(result: TranslatorResult) -> Self {
+        Self::with_results([result])
+    }
+
+    #[must_use]
+    pub fn with_results(results: impl IntoIterator<Item = TranslatorResult>) -> Self {
+        let results = results.into_iter().collect::<VecDeque<_>>();
+        assert!(
+            !results.is_empty(),
+            "FakeTranslator requires at least one configured result"
+        );
+
+        Self {
+            results: Mutex::new(results),
+            requests: Mutex::new(Vec::new()),
+        }
+    }
+
+    #[must_use]
+    pub fn requests(&self) -> Vec<TranslationRequest> {
+        self.requests
+            .lock()
+            .expect("translator fake request lock was poisoned")
+            .clone()
+    }
+}
+
+impl Translator for FakeTranslator {
+    fn translate(
+        &self,
+        request: &TranslationRequest,
+        _cancellation: &CancellationToken,
+    ) -> TranslatorResult {
+        self.requests
+            .lock()
+            .expect("translator fake request lock was poisoned")
+            .push(request.clone());
+        let mut results = self
+            .results
+            .lock()
+            .expect("translator fake result lock was poisoned");
+
+        if results.len() > 1 {
+            results
+                .pop_front()
+                .expect("translator fake results were checked as non-empty")
+        } else {
+            results
+                .front()
+                .expect("translator fake results were checked as non-empty")
                 .clone()
         }
     }

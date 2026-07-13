@@ -92,7 +92,7 @@ impl CancellationToken {
         self.cancelled.load(Ordering::Acquire)
     }
 
-    fn cancel(&self) {
+    pub(crate) fn cancel(&self) {
         self.cancelled.store(true, Ordering::Release);
     }
 }
