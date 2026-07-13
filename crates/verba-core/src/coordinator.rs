@@ -115,6 +115,7 @@ impl ShortcutCoordinator {
                 presenter,
                 next_request_id: AtomicU64::new(1),
                 active: Mutex::new(None),
+                capture_order: Mutex::new(()),
                 presentation_order: Mutex::new(()),
             }),
         }
@@ -150,6 +151,7 @@ struct CoordinatorInner {
     presenter: Arc<dyn ResultPresenter>,
     next_request_id: AtomicU64,
     active: Mutex<Option<ActiveRequest>>,
+    capture_order: Mutex<()>,
     presentation_order: Mutex<()>,
 }
 
@@ -203,7 +205,17 @@ impl CoordinatorInner {
     }
 
     fn run(self: Arc<Self>, request: ActiveRequest) {
-        let captured = match self.capture.capture() {
+        let capture_result = {
+            let _capture_guard = self
+                .capture_order
+                .lock()
+                .expect("capture order lock poisoned");
+            if request.cancellation.is_cancelled() {
+                return;
+            }
+            self.capture.capture()
+        };
+        let captured = match capture_result {
             Ok(text) => text,
             Err(failure) => {
                 self.complete(
@@ -476,7 +488,7 @@ mod tests {
     }
 
     #[test]
-    fn a_different_action_cancels_the_old_request_and_discards_its_late_result() {
+    fn a_different_action_waits_for_the_old_capture_and_discards_its_result() {
         let capture = Arc::new(FirstCaptureBlocking::new());
         let processor = Arc::new(QueueProcessor::new([Ok(proofreading())]));
         let presenter = Arc::new(RecordingPresenter::default());
@@ -488,6 +500,12 @@ mod tests {
 
         coordinator.on_shortcut(TextAction::Proofread);
 
+        assert_eq!(capture.call_count.load(Ordering::Relaxed), 1);
+        assert_eq!(presenter.wait_for(2).len(), 2);
+        assert!(old_request.cancellation.is_cancelled());
+
+        capture.release_first();
+
         let updates = presenter.wait_for(3);
         assert_eq!(
             updates
@@ -496,14 +514,12 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![RequestId(1), RequestId(2), RequestId(2)]
         );
-        assert!(old_request.cancellation.is_cancelled());
+        assert_eq!(capture.call_count.load(Ordering::Relaxed), 2);
 
         coordinator
             .inner
             .complete(&old_request, translation_state());
         assert_eq!(presenter.updates().len(), 3);
-
-        capture.release_first();
     }
 
     #[test]
