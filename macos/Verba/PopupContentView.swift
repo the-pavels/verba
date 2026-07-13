@@ -40,7 +40,15 @@ struct PopupContentView: View {
                 explanation: explanation
             )
         case .noIssues:
-            placeholder(title: "No Issues Found")
+            VStack(alignment: .leading, spacing: 7) {
+                Label("No issues found", systemImage: "checkmark.circle.fill")
+                    .font(.headline)
+                    .foregroundStyle(.green)
+
+                Text("The selected text looks good. No corrections are needed.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         case .error:
             placeholder(title: "Unable to Complete Request")
         }
