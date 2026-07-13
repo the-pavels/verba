@@ -13,6 +13,7 @@ use crate::{
     capture::{CaptureFailure, CapturedText, TextCapture},
     coordinator::CancellationToken,
     presentation::TextAction,
+    proofreading::{Proofreader, ProofreaderError, ProofreaderResponse, ProofreadingRequest},
     shortcut::{
         ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutRegistryError,
     },
@@ -132,6 +133,71 @@ impl Translator for FakeTranslator {
             results
                 .front()
                 .expect("translator fake results were checked as non-empty")
+                .clone()
+        }
+    }
+}
+
+pub type ProofreaderResult = Result<ProofreaderResponse, ProofreaderError>;
+
+pub struct FakeProofreader {
+    results: Mutex<VecDeque<ProofreaderResult>>,
+    requests: Mutex<Vec<ProofreadingRequest>>,
+}
+
+impl FakeProofreader {
+    #[must_use]
+    pub fn new(result: ProofreaderResult) -> Self {
+        Self::with_results([result])
+    }
+
+    #[must_use]
+    pub fn with_results(results: impl IntoIterator<Item = ProofreaderResult>) -> Self {
+        let results = results.into_iter().collect::<VecDeque<_>>();
+        assert!(
+            !results.is_empty(),
+            "FakeProofreader requires at least one configured result"
+        );
+
+        Self {
+            results: Mutex::new(results),
+            requests: Mutex::new(Vec::new()),
+        }
+    }
+
+    #[must_use]
+    pub fn requests(&self) -> Vec<ProofreadingRequest> {
+        self.requests
+            .lock()
+            .expect("proofreader fake request lock was poisoned")
+            .clone()
+    }
+}
+
+#[async_trait::async_trait]
+impl Proofreader for FakeProofreader {
+    async fn proofread(
+        &self,
+        request: &ProofreadingRequest,
+        _cancellation: &CancellationToken,
+    ) -> ProofreaderResult {
+        self.requests
+            .lock()
+            .expect("proofreader fake request lock was poisoned")
+            .push(request.clone());
+        let mut results = self
+            .results
+            .lock()
+            .expect("proofreader fake result lock was poisoned");
+
+        if results.len() > 1 {
+            results
+                .pop_front()
+                .expect("proofreader fake results were checked as non-empty")
+        } else {
+            results
+                .front()
+                .expect("proofreader fake results were checked as non-empty")
                 .clone()
         }
     }
