@@ -140,6 +140,11 @@ impl Translator for FakeTranslator {
 
 pub type ProofreaderResult = Result<ProofreaderResponse, ProofreaderError>;
 
+#[must_use]
+pub fn proofreading_request(text: impl Into<String>) -> ProofreadingRequest {
+    ProofreadingRequest::new(text)
+}
+
 pub struct FakeProofreader {
     results: Mutex<VecDeque<ProofreaderResult>>,
     requests: Mutex<Vec<ProofreadingRequest>>,

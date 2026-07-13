@@ -77,6 +77,14 @@ pub struct ProofreadingRequest {
 
 impl ProofreadingRequest {
     #[must_use]
+    pub(crate) fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            policy: ProofreadingPolicy::strict(),
+        }
+    }
+
+    #[must_use]
     pub fn text(&self) -> &str {
         &self.text
     }
@@ -199,10 +207,7 @@ impl ProofreadText {
             return Err(ProofreadingFailure::ConsentRequired);
         }
 
-        let request = ProofreadingRequest {
-            text,
-            policy: ProofreadingPolicy::strict(),
-        };
+        let request = ProofreadingRequest::new(text);
         let response = self
             .proofreader
             .proofread(&request, cancellation)

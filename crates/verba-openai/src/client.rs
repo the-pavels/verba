@@ -79,21 +79,48 @@ pub enum OpenAiClientBuildError {
     Transport,
 }
 
+#[derive(Clone)]
 pub struct ResponsesApiRequest {
     input: Value,
     text: Option<Value>,
+    max_output_tokens: Option<u32>,
 }
 
 impl ResponsesApiRequest {
     #[must_use]
     pub const fn new(input: Value) -> Self {
-        Self { input, text: None }
+        Self {
+            input,
+            text: None,
+            max_output_tokens: None,
+        }
     }
 
     #[must_use]
     pub fn with_text_configuration(mut self, text: Value) -> Self {
         self.text = Some(text);
         self
+    }
+
+    #[must_use]
+    pub const fn with_max_output_tokens(mut self, max_output_tokens: u32) -> Self {
+        self.max_output_tokens = Some(max_output_tokens);
+        self
+    }
+
+    #[must_use]
+    pub const fn input(&self) -> &Value {
+        &self.input
+    }
+
+    #[must_use]
+    pub const fn text_configuration(&self) -> Option<&Value> {
+        self.text.as_ref()
+    }
+
+    #[must_use]
+    pub const fn max_output_tokens(&self) -> Option<u32> {
+        self.max_output_tokens
     }
 }
 
@@ -102,6 +129,11 @@ pub struct ResponsesApiResponse {
 }
 
 impl ResponsesApiResponse {
+    #[must_use]
+    pub const fn new(body: Value) -> Self {
+        Self { body }
+    }
+
     #[must_use]
     pub const fn body(&self) -> &Value {
         &self.body
@@ -157,6 +189,7 @@ impl OpenAiClient {
             model: &self.model,
             input: &request.input,
             text: request.text.as_ref(),
+            max_output_tokens: request.max_output_tokens,
             store: false,
         })
         .map_err(|_| ProofreaderError::Failed)?;
@@ -207,6 +240,8 @@ struct CreateResponseBody<'a> {
     input: &'a Value,
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<&'a Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    max_output_tokens: Option<u32>,
     store: bool,
 }
 
