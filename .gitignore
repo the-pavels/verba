@@ -1,0 +1,53 @@
+# Rust build output
+/target/
+**/*.rs.bk
+*.profraw
+*.profdata
+
+# Local Rust tooling
+.cargo/config.local.toml
+
+# Xcode and Swift build output
+/DerivedData/
+/.build/
+build/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Archives, symbols, and release packages
+*.xcarchive
+*.dSYM
+*.dSYM.zip
+*.app
+*.dmg
+*.pkg
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+*.key
+*.pem
+*.p12
+*.mobileprovision
+
+# macOS and editor metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Local logs and temporary files
+*.log
+/tmp/
+/coverage/
+
+# Source planning artifact (kept locally, never committed)
+/docs
