@@ -7,6 +7,11 @@ enum TranslationPairStatus: Equatable, Sendable {
     case unsupported
 }
 
+enum TranslationPreparation: Equatable, Sendable {
+    case none
+    case required
+}
+
 struct AppleTranslationResult: Equatable, Sendable {
     let sourceLanguageIdentifier: String
     let targetLanguageIdentifier: String
@@ -34,7 +39,8 @@ protocol TranslationSessionProviding {
     func translate(
         _ text: String,
         source: Locale.Language?,
-        target: Locale.Language
+        target: Locale.Language,
+        preparation: TranslationPreparation
     ) async throws -> AppleTranslationResult
 }
 
@@ -60,10 +66,27 @@ struct AppleTranslator {
         do {
             switch try await availability.status(for: text, target: target) {
             case .installed:
-                return try await sessions.translate(text, source: nil, target: target)
+                do {
+                    return try await sessions.translate(
+                        text,
+                        source: nil,
+                        target: target,
+                        preparation: .none
+                    )
+                } catch where translationRequiresPreparation(error) {
+                    return try await sessions.translate(
+                        text,
+                        source: nil,
+                        target: target,
+                        preparation: .required
+                    )
+                }
             case .supported:
-                throw AppleTranslationError.languageAssetsRequired(
-                    targetLanguageIdentifier: target.minimalIdentifier
+                return try await sessions.translate(
+                    text,
+                    source: nil,
+                    target: target,
+                    preparation: .required
                 )
             case .unsupported:
                 throw AppleTranslationError.unsupportedPair(
@@ -93,6 +116,16 @@ private struct SystemTranslationAvailability: TranslationAvailabilityChecking {
             throw AppleTranslationError.failed
         }
     }
+}
+
+private func translationRequiresPreparation(_ error: any Error) -> Bool {
+    if case .languageAssetsRequired = error as? AppleTranslationError {
+        return true
+    }
+    if #available(macOS 26.0, *), TranslationError.notInstalled ~= error {
+        return true
+    }
+    return false
 }
 
 private func mapTranslationError(

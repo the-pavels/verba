@@ -40,21 +40,34 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertEqual(sessions.requests.count, 1)
         XCTAssertNil(sessions.requests[0].source)
         XCTAssertEqual(sessions.requests[0].target.minimalIdentifier, "en")
+        XCTAssertEqual(sessions.requests[0].preparation, .none)
     }
 
-    func testSupportedPairRequiresLanguageAssets() async {
-        let sessions = FakeTranslationSessions(result: .failure(TestFailure()))
+    func testSupportedPairPreparesAndResumesTranslation() async throws {
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "en",
+                    targetLanguageIdentifier: "fr",
+                    translatedText: "Bonjour"
+                )
+            )
+        )
         let translator = AppleTranslator(
             availability: FakeTranslationAvailability(status: .supported),
             sessions: sessions
         )
 
-        await assertTranslationError(
-            .languageAssetsRequired(targetLanguageIdentifier: "fr")
-        ) {
-            try await translator.translate("Hello", targetLanguageIdentifier: "fr")
-        }
-        XCTAssertTrue(sessions.requests.isEmpty)
+        let result = try await translator.translate(
+            "Hello",
+            targetLanguageIdentifier: "fr"
+        )
+
+        XCTAssertEqual(result.translatedText, "Bonjour")
+        XCTAssertEqual(sessions.requests.count, 1)
+        XCTAssertNil(sessions.requests[0].source)
+        XCTAssertEqual(sessions.requests[0].target.minimalIdentifier, "fr")
+        XCTAssertEqual(sessions.requests[0].preparation, .required)
     }
 
     func testUnsupportedPairDoesNotCreateASession() async {
@@ -98,23 +111,35 @@ final class AppleTranslatorTests: XCTestCase {
         }
     }
 
-    func testNotInstalledSessionErrorRequiresLanguageAssets() async {
+    func testNotInstalledSessionErrorRetriesWithPreparation() async throws {
         guard #available(macOS 26.0, *) else {
             return
         }
 
+        let sessions = FakeTranslationSessions(
+            results: [
+                .failure(TranslationError.notInstalled),
+                .success(
+                    AppleTranslationResult(
+                        sourceLanguageIdentifier: "de",
+                        targetLanguageIdentifier: "en",
+                        translatedText: "Hello"
+                    )
+                ),
+            ]
+        )
         let translator = AppleTranslator(
             availability: FakeTranslationAvailability(status: .installed),
-            sessions: FakeTranslationSessions(
-                result: .failure(TranslationError.notInstalled)
-            )
+            sessions: sessions
         )
 
-        await assertTranslationError(
-            .languageAssetsRequired(targetLanguageIdentifier: "en")
-        ) {
-            try await translator.translate("Hallo", targetLanguageIdentifier: "en")
-        }
+        let result = try await translator.translate(
+            "Hallo",
+            targetLanguageIdentifier: "en"
+        )
+
+        XCTAssertEqual(result.translatedText, "Hello")
+        XCTAssertEqual(sessions.requests.map(\.preparation), [.none, .required])
     }
 
     func testSessionBrokerConfiguresAutomaticSourceAndCancelsPendingWork() async {
@@ -123,7 +148,8 @@ final class AppleTranslatorTests: XCTestCase {
             try await sessions.translate(
                 "Hallo",
                 source: nil,
-                target: Locale.Language(identifier: "en")
+                target: Locale.Language(identifier: "en"),
+                preparation: .required
             )
         }
 
@@ -190,21 +216,39 @@ private final class FakeTranslationSessions: TranslationSessionProviding {
         let text: String
         let source: Locale.Language?
         let target: Locale.Language
+        let preparation: TranslationPreparation
     }
 
-    private let result: Result<AppleTranslationResult, any Error>
+    private var results: [Result<AppleTranslationResult, any Error>]
     private(set) var requests: [Request] = []
 
     init(result: Result<AppleTranslationResult, any Error>) {
-        self.result = result
+        results = [result]
+    }
+
+    init(results: [Result<AppleTranslationResult, any Error>]) {
+        precondition(!results.isEmpty)
+        self.results = results
     }
 
     func translate(
         _ text: String,
         source: Locale.Language?,
-        target: Locale.Language
+        target: Locale.Language,
+        preparation: TranslationPreparation
     ) async throws -> AppleTranslationResult {
-        requests.append(Request(text: text, source: source, target: target))
+        requests.append(
+            Request(
+                text: text,
+                source: source,
+                target: target,
+                preparation: preparation
+            )
+        )
+        let result = results[0]
+        if results.count > 1 {
+            results.removeFirst()
+        }
         return try result.get()
     }
 }

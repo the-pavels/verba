@@ -8,12 +8,14 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
     private struct PendingRequest {
         let id: UUID
         let text: String
+        let preparation: TranslationPreparation
         let continuation: CheckedContinuation<AppleTranslationResult, any Error>
     }
 
     private struct RequestSnapshot: Sendable {
         let id: UUID
         let text: String
+        let preparation: TranslationPreparation
     }
 
     private var pendingRequest: PendingRequest?
@@ -21,7 +23,8 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
     func translate(
         _ text: String,
         source: Locale.Language?,
-        target: Locale.Language
+        target: Locale.Language,
+        preparation: TranslationPreparation
     ) async throws -> AppleTranslationResult {
         guard pendingRequest == nil else {
             throw AppleTranslationError.failed
@@ -37,6 +40,7 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
                 pendingRequest = PendingRequest(
                     id: UUID(),
                     text: text,
+                    preparation: preparation,
                     continuation: continuation
                 )
                 configuration = TranslationSession.Configuration(
@@ -57,6 +61,13 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
         }
 
         do {
+            if request.preparation == .required {
+                try await session.prepareTranslation()
+                guard await hasPendingRequest(request.id) else {
+                    return
+                }
+            }
+
             let response = try await session.translate(request.text)
             await complete(
                 request.id,
@@ -74,7 +85,17 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
     }
 
     private func requestSnapshot() -> RequestSnapshot? {
-        pendingRequest.map { RequestSnapshot(id: $0.id, text: $0.text) }
+        pendingRequest.map {
+            RequestSnapshot(
+                id: $0.id,
+                text: $0.text,
+                preparation: $0.preparation
+            )
+        }
+    }
+
+    private func hasPendingRequest(_ requestID: UUID) -> Bool {
+        pendingRequest?.id == requestID
     }
 
     private func cancelPendingRequest() {
