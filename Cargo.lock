@@ -1527,6 +1527,8 @@ dependencies = [
  "objc2",
  "objc2-app-kit",
  "objc2-foundation",
+ "security-framework",
+ "security-framework-sys",
  "verba-core",
 ]
 

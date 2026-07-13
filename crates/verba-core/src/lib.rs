@@ -4,6 +4,7 @@ pub mod capture;
 pub mod coordinator;
 pub mod presentation;
 pub mod proofreading;
+pub mod secrets;
 pub mod shortcut;
 pub mod translation;
 

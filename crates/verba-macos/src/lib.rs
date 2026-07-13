@@ -3,6 +3,8 @@
 #[cfg(target_os = "macos")]
 mod capture;
 #[cfg(target_os = "macos")]
+mod keychain;
+#[cfg(target_os = "macos")]
 mod pasteboard;
 #[cfg(target_os = "macos")]
 mod settings;
@@ -11,6 +13,8 @@ mod shortcut;
 
 #[cfg(target_os = "macos")]
 pub use capture::MacOsTextCapture;
+#[cfg(target_os = "macos")]
+pub use keychain::{MacOsSecretStore, MacOsSecretStoreBuildError};
 #[cfg(target_os = "macos")]
 pub use pasteboard::{
     MacOsPasteboard, PasteboardRestoreOutcome, PasteboardSnapshot, PasteboardSnapshotError,
