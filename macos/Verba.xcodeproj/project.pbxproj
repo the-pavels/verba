@@ -22,6 +22,9 @@
 		10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000002B /* AccessibilityPermissionController.swift */; };
 		10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */; };
 		10000000000000000000003A /* VerbaRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000039 /* VerbaRuntime.swift */; };
+		100000000000000000000041 /* AppleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000044 /* AppleTranslator.swift */; };
+		100000000000000000000042 /* TranslationSessionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000045 /* TranslationSessionProvider.swift */; };
+		100000000000000000000043 /* AppleTranslatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000046 /* AppleTranslatorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +55,9 @@
 		10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionControllerTests.swift; sourceTree = "<group>"; };
 		10000000000000000000002E /* VerbaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VerbaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		100000000000000000000039 /* VerbaRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbaRuntime.swift; sourceTree = "<group>"; };
+		100000000000000000000044 /* AppleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTranslator.swift; sourceTree = "<group>"; };
+		100000000000000000000045 /* TranslationSessionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationSessionProvider.swift; sourceTree = "<group>"; };
+		100000000000000000000046 /* AppleTranslatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTranslatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002B /* AccessibilityPermissionController.swift */,
+				100000000000000000000044 /* AppleTranslator.swift */,
 				100000000000000000000017 /* MenuBarContentView.swift */,
 				100000000000000000000027 /* PasteboardWriter.swift */,
 				100000000000000000000019 /* PopupContentView.swift */,
@@ -96,6 +103,7 @@
 				100000000000000000000025 /* ProofreadingResultView.swift */,
 				100000000000000000000029 /* ResultCopyButton.swift */,
 				100000000000000000000021 /* TranslationResultView.swift */,
+				100000000000000000000045 /* TranslationSessionProvider.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 				100000000000000000000039 /* VerbaRuntime.swift */,
 			);
@@ -123,6 +131,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */,
+				100000000000000000000046 /* AppleTranslatorTests.swift */,
 			);
 			path = VerbaTests;
 			sourceTree = "<group>";
@@ -253,6 +262,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */,
+				100000000000000000000041 /* AppleTranslator.swift in Sources */,
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
 				100000000000000000000026 /* PasteboardWriter.swift in Sources */,
 				100000000000000000000018 /* PopupContentView.swift in Sources */,
@@ -263,6 +273,7 @@
 				100000000000000000000024 /* ProofreadingResultView.swift in Sources */,
 				100000000000000000000028 /* ResultCopyButton.swift in Sources */,
 				100000000000000000000020 /* TranslationResultView.swift in Sources */,
+				100000000000000000000042 /* TranslationSessionProvider.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				10000000000000000000003A /* VerbaRuntime.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
@@ -274,6 +285,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */,
+				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
