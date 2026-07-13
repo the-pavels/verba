@@ -4,9 +4,15 @@ import SwiftUI
 @MainActor
 final class PopupController {
     private static let contentSize = NSSize(width: 380, height: 112)
+    private static let clickEventMask: NSEvent.EventTypeMask = [
+        .leftMouseDown,
+        .rightMouseDown,
+        .otherMouseDown,
+    ]
 
     private let hostingController: NSHostingController<PopupContentView>
     private let panel: PopupPanel
+    private var clickMonitors: [Any] = []
 
     init() {
         hostingController = NSHostingController(
@@ -36,10 +42,48 @@ final class PopupController {
         )
         panel.orderFrontRegardless()
         panel.makeKey()
+        startClickAwayMonitoring()
     }
 
     func dismiss() {
+        stopClickAwayMonitoring()
         panel.orderOut(nil)
+    }
+
+    private func startClickAwayMonitoring() {
+        guard clickMonitors.isEmpty else {
+            return
+        }
+
+        if let localMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: Self.clickEventMask,
+            handler: { [weak self] event in
+                guard let self, self.panel.isVisible, event.window !== self.panel else {
+                    return event
+                }
+
+                self.dismiss()
+                return event
+            }
+        ) {
+            clickMonitors.append(localMonitor)
+        }
+
+        if let globalMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: Self.clickEventMask,
+            handler: { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.dismiss()
+                }
+            }
+        ) {
+            clickMonitors.append(globalMonitor)
+        }
+    }
+
+    private func stopClickAwayMonitoring() {
+        clickMonitors.forEach(NSEvent.removeMonitor)
+        clickMonitors.removeAll()
     }
 }
 
