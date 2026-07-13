@@ -1,11 +1,15 @@
 use std::{
     collections::VecDeque,
+    future::Future,
     sync::{
         Condvar,
         atomic::{AtomicUsize, Ordering},
     },
+    task::{Context, Poll},
     time::Duration,
 };
+
+use futures::task::{ArcWake, waker_ref};
 
 use super::*;
 use crate::{
@@ -187,6 +191,29 @@ fn explicit_cancellation_hides_loading_and_ignores_late_work() {
     assert_eq!(presenter.updates().len(), 2);
 
     capture.release();
+}
+
+#[test]
+fn cancellation_wakes_pending_async_work() {
+    #[derive(Default)]
+    struct WakeCounter(AtomicUsize);
+
+    impl ArcWake for WakeCounter {
+        fn wake_by_ref(counter: &Arc<Self>) {
+            counter.0.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    let cancellation = CancellationToken::default();
+    let counter = Arc::new(WakeCounter::default());
+    let waker = waker_ref(&counter);
+    let mut context = Context::from_waker(&waker);
+    let mut future = Box::pin(cancellation.cancelled());
+
+    assert_eq!(future.as_mut().poll(&mut context), Poll::Pending);
+    cancellation.cancel();
+    assert_eq!(counter.0.load(Ordering::Relaxed), 1);
+    assert_eq!(future.as_mut().poll(&mut context), Poll::Ready(()));
 }
 
 #[test]

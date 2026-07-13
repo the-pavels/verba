@@ -10,7 +10,7 @@ final class PopupController {
         .otherMouseDown,
     ]
 
-    private let hostingController: NSHostingController<PopupContentView>
+    private let hostingController: NSHostingController<TranslationPopupHost>
     private let panel: PopupPanel
     private let pasteboardWriter: PasteboardWriter
     private var clickMonitors: [Any] = []
@@ -18,12 +18,16 @@ final class PopupController {
 
     var onDismiss: (() -> Void)?
 
-    init(pasteboardWriter: PasteboardWriter = PasteboardWriter()) {
+    init(
+        translationSessions: SystemTranslationSessionProvider,
+        pasteboardWriter: PasteboardWriter = PasteboardWriter()
+    ) {
         self.pasteboardWriter = pasteboardWriter
         hostingController = NSHostingController(
-            rootView: PopupContentView(
+            rootView: TranslationPopupHost(
                 presentation: .idle,
-                copyText: pasteboardWriter.copy
+                copyText: pasteboardWriter.copy,
+                translationSessions: translationSessions
             )
         )
         panel = PopupPanel(contentSize: Self.compactContentSize)
@@ -40,9 +44,10 @@ final class PopupController {
         }
 
         let contentSize = presentation.contentSize
-        hostingController.rootView = PopupContentView(
+        hostingController.rootView = TranslationPopupHost(
             presentation: presentation,
-            copyText: pasteboardWriter.copy
+            copyText: pasteboardWriter.copy,
+            translationSessions: hostingController.rootView.translationSessions
         )
         panel.setContentSize(contentSize)
         panel.setFrameOrigin(
@@ -110,6 +115,22 @@ final class PopupController {
     private func stopClickAwayMonitoring() {
         clickMonitors.forEach(NSEvent.removeMonitor)
         clickMonitors.removeAll()
+    }
+}
+
+private struct TranslationPopupHost: View {
+    let presentation: PresentationViewModel
+    let copyText: (String) -> Void
+    @ObservedObject var translationSessions: SystemTranslationSessionProvider
+
+    var body: some View {
+        PopupContentView(
+            presentation: presentation,
+            copyText: copyText
+        )
+        .background {
+            TranslationSessionHost(sessions: translationSessions)
+        }
     }
 }
 

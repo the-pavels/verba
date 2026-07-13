@@ -108,8 +108,9 @@ impl FakeTranslator {
     }
 }
 
+#[async_trait::async_trait]
 impl Translator for FakeTranslator {
-    fn translate(
+    async fn translate(
         &self,
         request: &TranslationRequest,
         _cancellation: &CancellationToken,

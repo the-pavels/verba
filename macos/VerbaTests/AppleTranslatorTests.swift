@@ -168,6 +168,61 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertNil(sessions.configuration)
     }
 
+    func testNativeAdapterConvertsTheTranslationResult() async throws {
+        let adapter = NativeAppleTranslator(
+            translator: AppleTranslator(
+                availability: FakeTranslationAvailability(status: .installed),
+                sessions: FakeTranslationSessions(
+                    result: .success(
+                        AppleTranslationResult(
+                            sourceLanguageIdentifier: "de",
+                            targetLanguageIdentifier: "en",
+                            translatedText: "Hello"
+                        )
+                    )
+                )
+            )
+        )
+
+        let result = try await adapter.translate(
+            request: NativeTranslationRequest(
+                text: "Hallo",
+                targetLanguageIdentifier: "en"
+            )
+        )
+
+        XCTAssertEqual(
+            result,
+            NativeTranslationResponse(
+                sourceLanguageIdentifier: "de",
+                translatedText: "Hello"
+            )
+        )
+    }
+
+    func testNativeAdapterPreservesUnsupportedPairs() async {
+        let adapter = NativeAppleTranslator(
+            translator: AppleTranslator(
+                availability: FakeTranslationAvailability(status: .unsupported),
+                sessions: FakeTranslationSessions(result: .failure(TestFailure()))
+            )
+        )
+
+        do {
+            _ = try await adapter.translate(
+                request: NativeTranslationRequest(
+                    text: "Hello",
+                    targetLanguageIdentifier: "ga"
+                )
+            )
+            XCTFail("Expected the native adapter to reject the language pair")
+        } catch let error as NativeTranslationError {
+            XCTAssertEqual(error, .UnsupportedPair)
+        } catch {
+            XCTFail("Unexpected error: \(type(of: error))")
+        }
+    }
+
     private func assertTranslationError(
         _ expected: AppleTranslationError,
         operation: () async throws -> AppleTranslationResult

@@ -25,6 +25,7 @@
 		100000000000000000000041 /* AppleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000044 /* AppleTranslator.swift */; };
 		100000000000000000000042 /* TranslationSessionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000045 /* TranslationSessionProvider.swift */; };
 		100000000000000000000043 /* AppleTranslatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000046 /* AppleTranslatorTests.swift */; };
+		100000000000000000000047 /* NativeAppleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000048 /* NativeAppleTranslator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,7 @@
 		100000000000000000000044 /* AppleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTranslator.swift; sourceTree = "<group>"; };
 		100000000000000000000045 /* TranslationSessionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationSessionProvider.swift; sourceTree = "<group>"; };
 		100000000000000000000046 /* AppleTranslatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTranslatorTests.swift; sourceTree = "<group>"; };
+		100000000000000000000048 /* NativeAppleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAppleTranslator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 				10000000000000000000002B /* AccessibilityPermissionController.swift */,
 				100000000000000000000044 /* AppleTranslator.swift */,
 				100000000000000000000017 /* MenuBarContentView.swift */,
+				100000000000000000000048 /* NativeAppleTranslator.swift */,
 				100000000000000000000027 /* PasteboardWriter.swift */,
 				100000000000000000000019 /* PopupContentView.swift */,
 				100000000000000000000023 /* PopupPreviewFixtures.swift */,
@@ -264,6 +267,7 @@
 				10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */,
 				100000000000000000000041 /* AppleTranslator.swift in Sources */,
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
+				100000000000000000000047 /* NativeAppleTranslator.swift in Sources */,
 				100000000000000000000026 /* PasteboardWriter.swift in Sources */,
 				100000000000000000000018 /* PopupContentView.swift in Sources */,
 				10000000000000000000001A /* PopupController.swift in Sources */,

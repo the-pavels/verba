@@ -31,3 +31,7 @@ mkdir -p "${generated_dir}"
     --modulemap-filename module.modulemap \
     "${library_path}" \
     "${generated_dir}"
+
+/usr/bin/patch -s \
+    "${generated_dir}/verba_ffi.swift" \
+    "${SRCROOT}/scripts/uniffi-swift-6-sendable.patch"

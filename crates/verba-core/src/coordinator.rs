@@ -1,8 +1,11 @@
 use std::{
+    future::Future,
+    pin::Pin,
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, AtomicU64, Ordering},
     },
+    task::{Context, Poll, Waker},
     thread,
 };
 
@@ -81,19 +84,83 @@ pub trait ResultPresenter: Send + Sync {
     fn present(&self, update: PresentationUpdate);
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct CancellationToken {
-    cancelled: Arc<AtomicBool>,
+    state: Arc<CancellationState>,
+}
+
+struct CancellationState {
+    cancelled: AtomicBool,
+    wakers: Mutex<Vec<Waker>>,
+}
+
+impl Default for CancellationToken {
+    fn default() -> Self {
+        Self {
+            state: Arc::new(CancellationState {
+                cancelled: AtomicBool::new(false),
+                wakers: Mutex::new(Vec::new()),
+            }),
+        }
+    }
 }
 
 impl CancellationToken {
     #[must_use]
     pub fn is_cancelled(&self) -> bool {
-        self.cancelled.load(Ordering::Acquire)
+        self.state.cancelled.load(Ordering::Acquire)
+    }
+
+    #[must_use]
+    pub fn cancelled(&self) -> CancellationFuture {
+        CancellationFuture {
+            state: Arc::clone(&self.state),
+        }
     }
 
     pub(crate) fn cancel(&self) {
-        self.cancelled.store(true, Ordering::Release);
+        if self.state.cancelled.swap(true, Ordering::AcqRel) {
+            return;
+        }
+
+        let wakers = self
+            .state
+            .wakers
+            .lock()
+            .expect("cancellation waker lock poisoned")
+            .drain(..)
+            .collect::<Vec<_>>();
+        for waker in wakers {
+            waker.wake();
+        }
+    }
+}
+
+pub struct CancellationFuture {
+    state: Arc<CancellationState>,
+}
+
+impl Future for CancellationFuture {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
+        if self.state.cancelled.load(Ordering::Acquire) {
+            return Poll::Ready(());
+        }
+
+        let mut wakers = self
+            .state
+            .wakers
+            .lock()
+            .expect("cancellation waker lock poisoned");
+        if self.state.cancelled.load(Ordering::Acquire) {
+            Poll::Ready(())
+        } else {
+            if !wakers.iter().any(|waker| waker.will_wake(context.waker())) {
+                wakers.push(context.waker().clone());
+            }
+            Poll::Pending
+        }
     }
 }
 

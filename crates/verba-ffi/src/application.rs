@@ -5,16 +5,14 @@ use std::{
 };
 
 use verba_core::{
-    coordinator::{
-        CancellationToken, PresentationUpdate, ProcessingFailure, ProcessingOutcome,
-        ProcessingRequest, ResultPresenter, ShortcutCoordinator, TextActionProcessor,
-    },
-    presentation::{LanguagePair, ProofreadingPresentation, TextAction, TranslationPresentation},
+    coordinator::{PresentationUpdate, ResultPresenter, ShortcutCoordinator},
     shortcut::{ShortcutConfiguration, ShortcutRegistry},
 };
 use verba_macos::{MacOsShortcutRegistry, MacOsTextCapture};
 
-use crate::PresentationViewModel;
+use crate::{
+    PresentationViewModel, processor::ApplicationProcessor, translation::NativeTranslator,
+};
 
 #[uniffi::export(with_foreign)]
 pub trait PresentationObserver: Send + Sync {
@@ -32,11 +30,12 @@ impl ApplicationRuntime {
     #[uniffi::constructor]
     pub fn new(
         observer: Arc<dyn PresentationObserver>,
+        translator: Arc<dyn NativeTranslator>,
     ) -> Result<Arc<Self>, ApplicationRuntimeError> {
         let presenter = Arc::new(ForeignPresenter { observer });
         let coordinator = Arc::new(ShortcutCoordinator::new(
             Arc::new(MacOsTextCapture::new()),
-            Arc::new(PreviewProcessor),
+            Arc::new(ApplicationProcessor::new(translator)),
             presenter,
         ));
         let mut shortcut_registry = MacOsShortcutRegistry::new();
@@ -89,55 +88,5 @@ impl ResultPresenter for ForeignPresenter {
     fn present(&self, update: PresentationUpdate) {
         self.observer
             .present(update.request_id.value(), update.state.into());
-    }
-}
-
-struct PreviewProcessor;
-
-impl TextActionProcessor for PreviewProcessor {
-    fn process(
-        &self,
-        request: ProcessingRequest,
-        cancellation: &CancellationToken,
-    ) -> Result<ProcessingOutcome, ProcessingFailure> {
-        if cancellation.is_cancelled() {
-            return Err(ProcessingFailure::Cancelled);
-        }
-
-        Ok(preview_outcome(request.action, request.text.into_string()))
-    }
-}
-
-fn preview_outcome(action: TextAction, text: String) -> ProcessingOutcome {
-    match action {
-        TextAction::Translate => ProcessingOutcome::Translation(TranslationPresentation {
-            original_text: text.clone(),
-            language_pair: LanguagePair {
-                source: "Detected".to_owned(),
-                target: "English".to_owned(),
-            },
-            translated_text: format!("Translation preview: {text}"),
-        }),
-        TextAction::Proofread => ProcessingOutcome::Proofreading(ProofreadingPresentation {
-            corrected_text: text,
-            explanation: "Proofreading preview".to_owned(),
-        }),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn preview_results_match_the_requested_action() {
-        assert!(matches!(
-            preview_outcome(TextAction::Translate, "Hallo".to_owned()),
-            ProcessingOutcome::Translation(_)
-        ));
-        assert!(matches!(
-            preview_outcome(TextAction::Proofread, "Text".to_owned()),
-            ProcessingOutcome::Proofreading(_)
-        ));
     }
 }

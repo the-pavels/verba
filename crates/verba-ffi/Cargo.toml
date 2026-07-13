@@ -8,6 +8,8 @@ rust-version.workspace = true
 crate-type = ["rlib", "staticlib"]
 
 [dependencies]
+async-trait = "0.1.89"
+futures = "0.3.32"
 uniffi = "0.31.0"
 verba-core = { path = "../verba-core" }
 

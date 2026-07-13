@@ -11,9 +11,16 @@ struct VerbaApp: App {
     private let runtime: VerbaRuntime
 
     init() {
-        let popupController = PopupController()
+        let translationSessions = SystemTranslationSessionProvider()
+        let popupController = PopupController(translationSessions: translationSessions)
+        let translator = NativeAppleTranslator(
+            translator: AppleTranslator(sessions: translationSessions)
+        )
         self.popupController = popupController
-        runtime = VerbaRuntime(popupController: popupController)
+        runtime = VerbaRuntime(
+            popupController: popupController,
+            translator: translator
+        )
     }
 
     var body: some Scene {

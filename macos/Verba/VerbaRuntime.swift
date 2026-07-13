@@ -5,12 +5,15 @@ final class VerbaRuntime {
     private let observer: PopupPresentationObserver
     private let application: ApplicationRuntime?
 
-    init(popupController: PopupController) {
+    init(popupController: PopupController, translator: NativeTranslator) {
         let observer = PopupPresentationObserver(popupController: popupController)
         self.observer = observer
 
         do {
-            let application = try ApplicationRuntime(observer: observer)
+            let application = try ApplicationRuntime(
+                observer: observer,
+                translator: translator
+            )
             self.application = application
             popupController.onDismiss = { [weak application] in
                 _ = application?.cancelActive()

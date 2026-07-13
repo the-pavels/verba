@@ -1,0 +1,35 @@
+--- verba_ffi.swift
++++ verba_ffi.swift
+@@ -11 +11 @@
+-import verba_ffiFFI
++@preconcurrency import verba_ffiFFI
+@@ -749,2 +749 @@
+-            let makeCall = {
+-                () async throws -> NativeTranslationResponse in
++            let makeCall: @Sendable () async throws -> NativeTranslationResponse = {
+@@ -759 +758 @@
+-            let uniffiHandleSuccess = { (returnValue: NativeTranslationResponse) in
++            let uniffiHandleSuccess: @Sendable (NativeTranslationResponse) -> Void = { returnValue in
+@@ -768 +767 @@
+-            let uniffiHandleError = { (statusCode, errorBuf) in
++            let uniffiHandleError: @Sendable (Int8, RustBuffer) -> Void = { statusCode, errorBuf in
+@@ -1640,4 +1640,4 @@
+-private func uniffiTraitInterfaceCallAsync<T>(
+-    makeCall: @escaping () async throws -> T,
+-    handleSuccess: @escaping (T) -> (),
+-    handleError: @escaping (Int8, RustBuffer) -> (),
++private func uniffiTraitInterfaceCallAsync<T>(
++    makeCall: sending @escaping () async throws -> T,
++    handleSuccess: sending @escaping (T) -> (),
++    handleError: sending @escaping (Int8, RustBuffer) -> (),
+@@ -1671,5 +1671,5 @@
+-private func uniffiTraitInterfaceCallAsyncWithError<T, E>(
+-    makeCall: @escaping () async throws -> T,
+-    handleSuccess: @escaping (T) -> (),
+-    handleError: @escaping (Int8, RustBuffer) -> (),
+-    lowerError: @escaping (E) -> RustBuffer,
++private func uniffiTraitInterfaceCallAsyncWithError<T, E>(
++    makeCall: sending @escaping () async throws -> T,
++    handleSuccess: sending @escaping (T) -> (),
++    handleError: sending @escaping (Int8, RustBuffer) -> (),
++    lowerError: sending @escaping (E) -> RustBuffer,

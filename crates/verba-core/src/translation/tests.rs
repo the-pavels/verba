@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use futures::executor::block_on;
+
 use super::*;
 use crate::testing::FakeTranslator;
 
@@ -30,9 +32,8 @@ fn translates_valid_text_and_preserves_the_request_context() {
     let use_case = TranslateText::new(translator.clone());
     let settings = TranslationSettings::default();
 
-    let result = use_case
-        .execute(" Hallo\n", &settings, &CancellationToken::default())
-        .unwrap();
+    let result =
+        block_on(use_case.execute(" Hallo\n", &settings, &CancellationToken::default())).unwrap();
 
     assert_eq!(result.original_text(), " Hallo\n");
     assert_eq!(result.source_language(), &language("de"));
@@ -54,11 +55,11 @@ fn rejects_empty_input_without_calling_the_translator() {
 
     for text in ["", "  \n\t"] {
         assert_eq!(
-            use_case.execute(
+            block_on(use_case.execute(
                 text,
                 &TranslationSettings::default(),
                 &CancellationToken::default()
-            ),
+            )),
             Err(TranslationFailure::EmptyInput)
         );
     }
@@ -73,11 +74,11 @@ fn rejects_oversized_input_by_character_count() {
     let text = "é".repeat(MAX_TRANSLATION_CHARACTERS + 1);
 
     assert_eq!(
-        use_case.execute(
+        block_on(use_case.execute(
             text,
             &TranslationSettings::default(),
             &CancellationToken::default()
-        ),
+        )),
         Err(TranslationFailure::InputTooLong {
             maximum_characters: MAX_TRANSLATION_CHARACTERS,
             actual_characters: MAX_TRANSLATION_CHARACTERS + 1,
@@ -92,11 +93,11 @@ fn reports_same_language_results() {
     let use_case = TranslateText::new(translator);
 
     assert_eq!(
-        use_case.execute(
+        block_on(use_case.execute(
             "Hello",
             &TranslationSettings::default(),
             &CancellationToken::default()
-        ),
+        )),
         Err(TranslationFailure::SameLanguage {
             language: language("en"),
         })
@@ -111,7 +112,7 @@ fn skips_translation_when_the_request_is_already_cancelled() {
     cancellation.cancel();
 
     assert_eq!(
-        use_case.execute("Hallo", &TranslationSettings::default(), &cancellation),
+        block_on(use_case.execute("Hallo", &TranslationSettings::default(), &cancellation)),
         Err(TranslationFailure::Cancelled)
     );
     assert!(translator.requests().is_empty());
@@ -127,11 +128,11 @@ fn preserves_unsupported_pair_details_from_the_translator() {
     let use_case = TranslateText::new(translator);
 
     assert_eq!(
-        use_case.execute(
+        block_on(use_case.execute(
             "Dia dhuit",
             &TranslationSettings::default(),
             &CancellationToken::default()
-        ),
+        )),
         Err(failure)
     );
 }
@@ -142,11 +143,11 @@ fn rejects_an_empty_translator_result() {
     let use_case = TranslateText::new(translator);
 
     assert_eq!(
-        use_case.execute(
+        block_on(use_case.execute(
             "Hallo",
             &TranslationSettings::default(),
             &CancellationToken::default()
-        ),
+        )),
         Err(TranslationFailure::InvalidResult)
     );
 }

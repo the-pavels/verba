@@ -164,8 +164,9 @@ pub enum TranslationFailure {
     Failed,
 }
 
+#[async_trait::async_trait]
 pub trait Translator: Send + Sync {
-    fn translate(
+    async fn translate(
         &self,
         request: &TranslationRequest,
         cancellation: &CancellationToken,
@@ -182,7 +183,7 @@ impl TranslateText {
         Self { translator }
     }
 
-    pub fn execute(
+    pub async fn execute(
         &self,
         text: impl Into<String>,
         settings: &TranslationSettings,
@@ -209,7 +210,7 @@ impl TranslateText {
             text,
             target_language: settings.target_language.clone(),
         };
-        let response = self.translator.translate(&request, cancellation)?;
+        let response = self.translator.translate(&request, cancellation).await?;
 
         if cancellation.is_cancelled() {
             return Err(TranslationFailure::Cancelled);
