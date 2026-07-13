@@ -1,12 +1,16 @@
 //! Swift-facing bridge for the Verba Rust application.
 
 #[cfg(target_os = "macos")]
+mod api_key_settings;
+#[cfg(target_os = "macos")]
 mod application;
 mod presentation;
 #[cfg(target_os = "macos")]
 mod processor;
 mod translation;
 
+#[cfg(target_os = "macos")]
+pub use api_key_settings::{OpenAiApiKeyError, OpenAiApiKeySettings};
 #[cfg(target_os = "macos")]
 pub use application::{
     ApplicationRuntime, ApplicationRuntimeError, PresentationObserver,

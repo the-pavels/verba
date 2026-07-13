@@ -1518,6 +1518,7 @@ dependencies = [
  "uniffi",
  "verba-core",
  "verba-macos",
+ "verba-openai",
 ]
 
 [[package]]

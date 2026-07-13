@@ -29,6 +29,10 @@
 		100000000000000000000049 /* TargetLanguageSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000004C /* TargetLanguageSettingsController.swift */; };
 		10000000000000000000004A /* TargetLanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000004D /* TargetLanguageSettingsView.swift */; };
 		10000000000000000000004B /* TargetLanguageSettingsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */; };
+		10000000000000000000004F /* ApiKeySettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000053 /* ApiKeySettingsController.swift */; };
+		100000000000000000000050 /* ApiKeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000054 /* ApiKeySettingsView.swift */; };
+		100000000000000000000051 /* VerbaSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000055 /* VerbaSettingsView.swift */; };
+		100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000056 /* ApiKeySettingsControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +70,10 @@
 		10000000000000000000004C /* TargetLanguageSettingsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetLanguageSettingsController.swift; sourceTree = "<group>"; };
 		10000000000000000000004D /* TargetLanguageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetLanguageSettingsView.swift; sourceTree = "<group>"; };
 		10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetLanguageSettingsControllerTests.swift; sourceTree = "<group>"; };
+		100000000000000000000053 /* ApiKeySettingsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeySettingsController.swift; sourceTree = "<group>"; };
+		100000000000000000000054 /* ApiKeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeySettingsView.swift; sourceTree = "<group>"; };
+		100000000000000000000055 /* VerbaSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbaSettingsView.swift; sourceTree = "<group>"; };
+		100000000000000000000056 /* ApiKeySettingsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeySettingsControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -100,6 +108,8 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002B /* AccessibilityPermissionController.swift */,
+				100000000000000000000053 /* ApiKeySettingsController.swift */,
+				100000000000000000000054 /* ApiKeySettingsView.swift */,
 				100000000000000000000044 /* AppleTranslator.swift */,
 				100000000000000000000017 /* MenuBarContentView.swift */,
 				100000000000000000000048 /* NativeAppleTranslator.swift */,
@@ -117,6 +127,7 @@
 				10000000000000000000004D /* TargetLanguageSettingsView.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 				100000000000000000000039 /* VerbaRuntime.swift */,
+				100000000000000000000055 /* VerbaSettingsView.swift */,
 			);
 			path = Verba;
 			sourceTree = "<group>";
@@ -142,6 +153,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */,
+				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
 				10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */,
 			);
@@ -274,6 +286,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */,
+				10000000000000000000004F /* ApiKeySettingsController.swift in Sources */,
+				100000000000000000000050 /* ApiKeySettingsView.swift in Sources */,
 				100000000000000000000041 /* AppleTranslator.swift in Sources */,
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
 				100000000000000000000047 /* NativeAppleTranslator.swift in Sources */,
@@ -291,6 +305,7 @@
 				10000000000000000000004A /* TargetLanguageSettingsView.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				10000000000000000000003A /* VerbaRuntime.swift in Sources */,
+				100000000000000000000051 /* VerbaSettingsView.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -300,6 +315,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */,
+				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
 				10000000000000000000004B /* TargetLanguageSettingsControllerTests.swift in Sources */,
 			);

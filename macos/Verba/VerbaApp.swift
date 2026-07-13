@@ -6,6 +6,7 @@ import SwiftUI
 struct VerbaApp: App {
     @StateObject private var accessibilityPermission = AccessibilityPermissionController()
     @StateObject private var targetLanguageSettings: TargetLanguageSettingsController
+    @StateObject private var apiKeySettings: ApiKeySettingsController
 
     private let initialState = initialPresentation()
     private let popupController: PopupController
@@ -27,6 +28,9 @@ struct VerbaApp: App {
         _targetLanguageSettings = StateObject(
             wrappedValue: targetLanguageSettings
         )
+        _apiKeySettings = StateObject(
+            wrappedValue: ApiKeySettingsController(settings: runtime)
+        )
         Task {
             await targetLanguageSettings.load()
         }
@@ -46,7 +50,10 @@ struct VerbaApp: App {
         .menuBarExtraStyle(.menu)
 
         Settings {
-            TargetLanguageSettingsView(controller: targetLanguageSettings)
+            VerbaSettingsView(
+                targetLanguage: targetLanguageSettings,
+                apiKey: apiKeySettings
+            )
         }
     }
 }
