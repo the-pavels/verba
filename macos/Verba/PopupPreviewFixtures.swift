@@ -10,5 +10,11 @@ extension PresentationViewModel {
         correctedText: "This sentence is now grammatically correct.",
         explanation: "Added the missing verb and adjusted the punctuation."
     )
+
+    static let errorPreview = Self.error(
+        action: .translate,
+        title: "Translation failed",
+        message: "Check your internet connection and try again."
+    )
 }
 #endif

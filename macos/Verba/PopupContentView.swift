@@ -49,19 +49,21 @@ struct PopupContentView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-        case .error:
-            placeholder(title: "Unable to Complete Request")
-        }
-    }
+        case let .error(_, title, message):
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
 
-    private func placeholder(title: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.headline)
+                    Text(title)
+                        .font(.headline)
+                }
 
-            Text("Popup content will be added in a later step.")
+                Text(message)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }

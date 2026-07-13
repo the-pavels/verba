@@ -45,6 +45,10 @@ struct MenuBarContentView: View {
             Button("No Issues Found") {
                 presentPopupPreview(.noIssues)
             }
+
+            Button("Error") {
+                presentPopupPreview(.errorPreview)
+            }
         }
 #endif
 
