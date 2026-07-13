@@ -119,7 +119,7 @@ impl CancellationToken {
         }
     }
 
-    pub(crate) fn cancel(&self) {
+    pub fn cancel(&self) {
         if self.state.cancelled.swap(true, Ordering::AcqRel) {
             return;
         }
