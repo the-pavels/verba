@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 struct MenuBarContentView: View {
+    let initialPresentation: PresentationViewModel
     let rustCoreVersion: String
 
     var body: some View {
@@ -22,7 +23,7 @@ struct MenuBarContentView: View {
 
         Divider()
 
-        Text("Rust core \(rustCoreVersion)")
+        Text("Rust core \(rustCoreVersion) - \(initialPresentation.diagnosticName)")
 
         Button("Quit Verba") {
             NSApplication.shared.terminate(nil)
@@ -32,5 +33,24 @@ struct MenuBarContentView: View {
 
     private func unavailableCommand() {
         // Disabled commands are enabled only when their feature is connected.
+    }
+}
+
+private extension PresentationViewModel {
+    var diagnosticName: String {
+        switch self {
+        case .idle:
+            "idle"
+        case .loading:
+            "loading"
+        case .translation:
+            "translation"
+        case .proofreading:
+            "proofreading"
+        case .noIssues:
+            "no issues"
+        case .error:
+            "error"
+        }
     }
 }

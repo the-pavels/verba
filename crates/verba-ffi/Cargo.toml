@@ -9,6 +9,7 @@ crate-type = ["rlib", "staticlib"]
 
 [dependencies]
 uniffi = "0.31.0"
+verba-core = { path = "../verba-core" }
 
 [lints]
 workspace = true
