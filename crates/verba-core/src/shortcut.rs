@@ -27,13 +27,27 @@ pub struct ShortcutKey(ShortcutKeyKind);
 
 impl ShortcutKey {
     pub fn character(character: char) -> Result<Self, ShortcutValidationError> {
-        if !character.is_ascii_graphic() {
+        let character = character.to_ascii_uppercase();
+        if !matches!(
+            character,
+            'A'..='Z'
+                | '0'..='9'
+                | '-'
+                | '='
+                | '['
+                | ']'
+                | ';'
+                | '\''
+                | '\\'
+                | ','
+                | '.'
+                | '/'
+                | '`'
+        ) {
             return Err(ShortcutValidationError::InvalidCharacter);
         }
 
-        Ok(Self(ShortcutKeyKind::Character(
-            character.to_ascii_uppercase(),
-        )))
+        Ok(Self(ShortcutKeyKind::Character(character)))
     }
 
     pub fn function(number: u8) -> Result<Self, ShortcutValidationError> {
@@ -277,6 +291,10 @@ mod tests {
         );
         assert_eq!(
             ShortcutKey::character(' '),
+            Err(ShortcutValidationError::InvalidCharacter)
+        );
+        assert_eq!(
+            ShortcutKey::character('!'),
             Err(ShortcutValidationError::InvalidCharacter)
         );
     }

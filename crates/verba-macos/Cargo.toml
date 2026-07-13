@@ -4,5 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[dependencies]
+verba-core = { path = "../verba-core" }
+
 [lints]
 workspace = true

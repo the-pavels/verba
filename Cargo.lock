@@ -697,6 +697,9 @@ dependencies = [
 [[package]]
 name = "verba-macos"
 version = "0.1.0"
+dependencies = [
+ "verba-core",
+]
 
 [[package]]
 name = "verba-openai"
