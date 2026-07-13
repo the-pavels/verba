@@ -31,6 +31,12 @@ struct MenuBarContentView: View {
             Button("Proofreading Loading") {
                 presentPopupPreview(.loading(action: .proofread))
             }
+
+            Divider()
+
+            Button("Translation Result") {
+                presentPopupPreview(.translationPreview)
+            }
         }
 #endif
 

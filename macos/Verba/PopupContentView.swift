@@ -28,8 +28,12 @@ struct PopupContentView: View {
                 Text(action.loadingTitle)
                     .font(.headline)
             }
-        case .translation:
-            placeholder(title: "Translation Result")
+        case let .translation(originalText, languagePair, translatedText):
+            TranslationResultView(
+                originalText: originalText,
+                languagePair: languagePair,
+                translatedText: translatedText
+            )
         case .proofreading:
             placeholder(title: "Proofreading Result")
         case .noIssues:

@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class PopupController {
-    private static let contentSize = NSSize(width: 380, height: 112)
+    private static let compactContentSize = NSSize(width: 380, height: 112)
     private static let clickEventMask: NSEvent.EventTypeMask = [
         .leftMouseDown,
         .rightMouseDown,
@@ -18,7 +18,7 @@ final class PopupController {
         hostingController = NSHostingController(
             rootView: PopupContentView(presentation: .idle)
         )
-        panel = PopupPanel(contentSize: Self.contentSize)
+        panel = PopupPanel(contentSize: Self.compactContentSize)
         panel.contentViewController = hostingController
         panel.onDismissRequest = { [weak self] in
             self?.dismiss()
@@ -31,11 +31,12 @@ final class PopupController {
             return
         }
 
+        let contentSize = presentation.contentSize
         hostingController.rootView = PopupContentView(presentation: presentation)
-        panel.setContentSize(Self.contentSize)
+        panel.setContentSize(contentSize)
         panel.setFrameOrigin(
             PopupPositioner.origin(
-                popupSize: Self.contentSize,
+                popupSize: contentSize,
                 pointer: NSEvent.mouseLocation,
                 screens: NSScreen.screens
             )
@@ -88,6 +89,15 @@ final class PopupController {
 }
 
 private extension PresentationViewModel {
+    var contentSize: NSSize {
+        switch self {
+        case .translation:
+            NSSize(width: 420, height: 300)
+        default:
+            NSSize(width: 380, height: 112)
+        }
+    }
+
     var isIdle: Bool {
         if case .idle = self {
             true

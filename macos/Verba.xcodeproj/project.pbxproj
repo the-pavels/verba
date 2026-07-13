@@ -14,6 +14,8 @@
 		10000000000000000000001A /* PopupController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001B /* PopupController.swift */; };
 		10000000000000000000001C /* PopupPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001D /* PopupPanel.swift */; };
 		10000000000000000000001E /* PopupPositioner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000001F /* PopupPositioner.swift */; };
+		100000000000000000000020 /* TranslationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000021 /* TranslationResultView.swift */; };
+		100000000000000000000022 /* PopupPreviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000023 /* PopupPreviewFixtures.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +27,8 @@
 		10000000000000000000001B /* PopupController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupController.swift; sourceTree = "<group>"; };
 		10000000000000000000001D /* PopupPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPanel.swift; sourceTree = "<group>"; };
 		10000000000000000000001F /* PopupPositioner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPositioner.swift; sourceTree = "<group>"; };
+		100000000000000000000021 /* TranslationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationResultView.swift; sourceTree = "<group>"; };
+		100000000000000000000023 /* PopupPreviewFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPreviewFixtures.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,9 +56,11 @@
 			children = (
 				100000000000000000000017 /* MenuBarContentView.swift */,
 				100000000000000000000019 /* PopupContentView.swift */,
+				100000000000000000000023 /* PopupPreviewFixtures.swift */,
 				10000000000000000000001B /* PopupController.swift */,
 				10000000000000000000001D /* PopupPanel.swift */,
 				10000000000000000000001F /* PopupPositioner.swift */,
+				100000000000000000000021 /* TranslationResultView.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 			);
 			path = Verba;
@@ -176,6 +182,8 @@
 				10000000000000000000001A /* PopupController.swift in Sources */,
 				10000000000000000000001C /* PopupPanel.swift in Sources */,
 				10000000000000000000001E /* PopupPositioner.swift in Sources */,
+				100000000000000000000022 /* PopupPreviewFixtures.swift in Sources */,
+				100000000000000000000020 /* TranslationResultView.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
 			);
