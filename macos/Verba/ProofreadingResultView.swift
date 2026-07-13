@@ -3,11 +3,20 @@ import SwiftUI
 struct ProofreadingResultView: View {
     let correctedText: String
     let explanation: String
+    let copyText: (String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Proofreading", systemImage: "checkmark.circle")
-                .font(.headline)
+            HStack(spacing: 12) {
+                Label("Proofreading", systemImage: "checkmark.circle")
+                    .font(.headline)
+
+                Spacer()
+
+                ResultCopyButton(helpText: "Copy corrected text") {
+                    copyText(correctedText)
+                }
+            }
 
             Divider()
 

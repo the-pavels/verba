@@ -18,6 +18,7 @@
 		100000000000000000000022 /* PopupPreviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000023 /* PopupPreviewFixtures.swift */; };
 		100000000000000000000024 /* ProofreadingResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000025 /* ProofreadingResultView.swift */; };
 		100000000000000000000026 /* PasteboardWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000027 /* PasteboardWriter.swift */; };
+		100000000000000000000028 /* ResultCopyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000029 /* ResultCopyButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		100000000000000000000023 /* PopupPreviewFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPreviewFixtures.swift; sourceTree = "<group>"; };
 		100000000000000000000025 /* ProofreadingResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProofreadingResultView.swift; sourceTree = "<group>"; };
 		100000000000000000000027 /* PasteboardWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardWriter.swift; sourceTree = "<group>"; };
+		100000000000000000000029 /* ResultCopyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultCopyButton.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +68,7 @@
 				10000000000000000000001D /* PopupPanel.swift */,
 				10000000000000000000001F /* PopupPositioner.swift */,
 				100000000000000000000025 /* ProofreadingResultView.swift */,
+				100000000000000000000029 /* ResultCopyButton.swift */,
 				100000000000000000000021 /* TranslationResultView.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 			);
@@ -191,6 +194,7 @@
 				10000000000000000000001E /* PopupPositioner.swift in Sources */,
 				100000000000000000000022 /* PopupPreviewFixtures.swift in Sources */,
 				100000000000000000000024 /* ProofreadingResultView.swift in Sources */,
+				100000000000000000000028 /* ResultCopyButton.swift in Sources */,
 				100000000000000000000020 /* TranslationResultView.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,

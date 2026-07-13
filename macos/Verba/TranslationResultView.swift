@@ -21,14 +21,9 @@ struct TranslationResultView: View {
                         "From \(languagePair.source) to \(languagePair.target)"
                     )
 
-                Button {
+                ResultCopyButton(helpText: "Copy translation") {
                     copyText(translatedText)
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .help("Copy translation")
             }
 
             Divider()

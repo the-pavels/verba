@@ -39,7 +39,8 @@ struct PopupContentView: View {
         case let .proofreading(correctedText, explanation):
             ProofreadingResultView(
                 correctedText: correctedText,
-                explanation: explanation
+                explanation: explanation,
+                copyText: copyText
             )
         case .noIssues:
             VStack(alignment: .leading, spacing: 7) {
