@@ -3,6 +3,8 @@ import SwiftUI
 struct PopupContentView: View {
     let presentation: PresentationViewModel
     let copyText: (String) -> Void
+    let continueProofreading: () -> Void
+    let cancelProofreading: () -> Void
 
     var body: some View {
         content
@@ -28,6 +30,30 @@ struct PopupContentView: View {
 
                 Text(action.loadingTitle)
                     .font(.headline)
+            }
+        case .proofreadingDisclosure:
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Send selected text to OpenAI?", systemImage: "hand.raised.fill")
+                    .font(.headline)
+                    .foregroundStyle(.orange)
+
+                Text(
+                    "Proofreading sends the selected text to OpenAI using your API key. "
+                        + "Translation remains on this Mac."
+                )
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+                HStack {
+                    Spacer()
+
+                    Button("Cancel", action: cancelProofreading)
+                        .keyboardShortcut(.cancelAction)
+
+                    Button("Continue", action: continueProofreading)
+                        .keyboardShortcut(.defaultAction)
+                }
             }
         case let .translation(originalText, languagePair, translatedText):
             TranslationResultView(

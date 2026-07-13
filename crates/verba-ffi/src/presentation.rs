@@ -21,6 +21,7 @@ pub enum PresentationViewModel {
     Loading {
         action: PresentationAction,
     },
+    ProofreadingDisclosure,
     Translation {
         original_text: String,
         language_pair: LanguagePairViewModel,
@@ -69,6 +70,7 @@ impl From<core::PresentationState> for PresentationViewModel {
             core::PresentationState::Loading { action } => Self::Loading {
                 action: action.into(),
             },
+            core::PresentationState::ProofreadingDisclosure => Self::ProofreadingDisclosure,
             core::PresentationState::Translation(translation) => Self::Translation {
                 original_text: translation.original_text,
                 language_pair: translation.language_pair.into(),
@@ -107,6 +109,10 @@ mod tests {
                 PresentationViewModel::Loading {
                     action: PresentationAction::Translate,
                 },
+            ),
+            (
+                PresentationState::ProofreadingDisclosure,
+                PresentationViewModel::ProofreadingDisclosure,
             ),
             (
                 PresentationState::Translation(TranslationPresentation {

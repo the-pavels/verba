@@ -20,6 +20,6 @@ pub use pasteboard::{
     MacOsPasteboard, PasteboardRestoreOutcome, PasteboardSnapshot, PasteboardSnapshotError,
 };
 #[cfg(target_os = "macos")]
-pub use settings::MacOsTranslationSettingsStore;
+pub use settings::{MacOsProofreadingConsentStore, MacOsTranslationSettingsStore};
 #[cfg(target_os = "macos")]
 pub use shortcut::MacOsShortcutRegistry;

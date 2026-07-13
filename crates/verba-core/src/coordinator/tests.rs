@@ -3,7 +3,7 @@ use std::{
     future::Future,
     sync::{
         Condvar,
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     task::{Context, Poll},
     time::Duration,
@@ -101,6 +101,116 @@ fn capture_failures_become_actionable_presentations_without_processing() {
 
     let updates = presenter.wait_for(2);
     assert!(matches!(updates[1].state, PresentationState::Error(_)));
+    assert!(processor.requests().is_empty());
+}
+
+#[test]
+fn first_proofreading_waits_for_disclosure_and_resumes_after_acknowledgement() {
+    let capture = Arc::new(FakeTextCapture::new(captured("Text")));
+    let processor = Arc::new(QueueProcessor::new([
+        Ok(proofreading()),
+        Ok(proofreading()),
+    ]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let consent = Arc::new(TestProofreadingConsent::new(false, false));
+    let coordinator = ShortcutCoordinator::with_proofreading_consent(
+        capture,
+        processor.clone(),
+        presenter.clone(),
+        consent.clone(),
+    );
+
+    coordinator.on_shortcut(TextAction::Proofread);
+    assert_eq!(
+        presenter.wait_for(2),
+        vec![
+            PresentationUpdate {
+                request_id: RequestId(1),
+                state: PresentationState::Loading {
+                    action: TextAction::Proofread,
+                },
+            },
+            PresentationUpdate {
+                request_id: RequestId(1),
+                state: PresentationState::ProofreadingDisclosure,
+            },
+        ]
+    );
+    assert!(processor.requests().is_empty());
+
+    assert_eq!(coordinator.resolve_proofreading_disclosure(true), Ok(true));
+    let updates = presenter.wait_for(4);
+    assert_eq!(
+        updates[2].state,
+        PresentationState::Loading {
+            action: TextAction::Proofread,
+        }
+    );
+    assert!(matches!(
+        updates[3].state,
+        PresentationState::Proofreading(_)
+    ));
+    assert_eq!(processor.requests().len(), 1);
+    assert!(consent.is_granted());
+
+    coordinator.on_shortcut(TextAction::Proofread);
+    let updates = presenter.wait_for(6);
+    assert!(matches!(
+        updates[4].state,
+        PresentationState::Loading {
+            action: TextAction::Proofread
+        }
+    ));
+    assert!(matches!(
+        updates[5].state,
+        PresentationState::Proofreading(_)
+    ));
+    assert_eq!(processor.requests().len(), 2);
+}
+
+#[test]
+fn cancelling_the_disclosure_drops_captured_text_without_persisting_or_processing() {
+    let processor = Arc::new(QueueProcessor::new([Ok(proofreading())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let consent = Arc::new(TestProofreadingConsent::new(false, false));
+    let coordinator = ShortcutCoordinator::with_proofreading_consent(
+        Arc::new(FakeTextCapture::new(captured("Private text"))),
+        processor.clone(),
+        presenter.clone(),
+        consent.clone(),
+    );
+
+    coordinator.on_shortcut(TextAction::Proofread);
+    presenter.wait_for(2);
+    assert_eq!(coordinator.resolve_proofreading_disclosure(false), Ok(true));
+
+    let updates = presenter.wait_for(3);
+    assert_eq!(updates[2].state, PresentationState::Idle);
+    assert!(processor.requests().is_empty());
+    assert!(!consent.is_granted());
+    assert_eq!(coordinator.resolve_proofreading_disclosure(true), Ok(false));
+}
+
+#[test]
+fn failed_disclosure_persistence_prevents_processing() {
+    let processor = Arc::new(QueueProcessor::new([Ok(proofreading())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let coordinator = ShortcutCoordinator::with_proofreading_consent(
+        Arc::new(FakeTextCapture::new(captured("Private text"))),
+        processor.clone(),
+        presenter.clone(),
+        Arc::new(TestProofreadingConsent::new(false, true)),
+    );
+
+    coordinator.on_shortcut(TextAction::Proofread);
+    presenter.wait_for(2);
+    assert_eq!(
+        coordinator.resolve_proofreading_disclosure(true),
+        Err(ProofreadingConsentStoreError)
+    );
+
+    let updates = presenter.wait_for(3);
+    assert!(matches!(updates[2].state, PresentationState::Error(_)));
     assert!(processor.requests().is_empty());
 }
 
@@ -341,6 +451,34 @@ struct BlockingCapture {
     started: (Mutex<bool>, Condvar),
     released: (Mutex<bool>, Condvar),
     call_count: AtomicUsize,
+}
+
+struct TestProofreadingConsent {
+    granted: AtomicBool,
+    fail_grant: bool,
+}
+
+impl TestProofreadingConsent {
+    fn new(granted: bool, fail_grant: bool) -> Self {
+        Self {
+            granted: AtomicBool::new(granted),
+            fail_grant,
+        }
+    }
+}
+
+impl ProofreadingConsentGate for TestProofreadingConsent {
+    fn is_granted(&self) -> bool {
+        self.granted.load(Ordering::Acquire)
+    }
+
+    fn grant(&self) -> Result<(), ProofreadingConsentStoreError> {
+        if self.fail_grant {
+            return Err(ProofreadingConsentStoreError);
+        }
+        self.granted.store(true, Ordering::Release);
+        Ok(())
+    }
 }
 
 impl BlockingCapture {

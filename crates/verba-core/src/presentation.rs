@@ -40,6 +40,7 @@ pub struct ErrorPresentation {
 pub enum PresentationState {
     Idle,
     Loading { action: TextAction },
+    ProofreadingDisclosure,
     Translation(TranslationPresentation),
     Proofreading(ProofreadingPresentation),
     NoIssues,
@@ -60,7 +61,9 @@ impl PresentationState {
             Self::Idle => None,
             Self::Loading { action } => Some(*action),
             Self::Translation(_) => Some(TextAction::Translate),
-            Self::Proofreading(_) | Self::NoIssues => Some(TextAction::Proofread),
+            Self::ProofreadingDisclosure | Self::Proofreading(_) | Self::NoIssues => {
+                Some(TextAction::Proofread)
+            }
             Self::Error(error) => error.action,
         }
     }
@@ -81,6 +84,7 @@ mod tests {
             PresentationState::Loading {
                 action: TextAction::Translate,
             },
+            PresentationState::ProofreadingDisclosure,
             translation_state(),
             proofreading_state(),
             PresentationState::NoIssues,
@@ -107,6 +111,10 @@ mod tests {
             (translation_state(), Some(TextAction::Translate)),
             (proofreading_state(), Some(TextAction::Proofread)),
             (PresentationState::NoIssues, Some(TextAction::Proofread)),
+            (
+                PresentationState::ProofreadingDisclosure,
+                Some(TextAction::Proofread),
+            ),
             (
                 PresentationState::Error(ErrorPresentation {
                     action: Some(TextAction::Translate),

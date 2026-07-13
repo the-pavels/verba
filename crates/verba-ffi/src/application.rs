@@ -6,10 +6,14 @@ use std::{
 
 use verba_core::{
     coordinator::{PresentationUpdate, ResultPresenter, ShortcutCoordinator},
+    proofreading::ProofreadingConsentPreferences,
     shortcut::{ShortcutConfiguration, ShortcutRegistry},
     translation::{LanguageIdentifier, TranslationPreferenceFailure, TranslationPreferences},
 };
-use verba_macos::{MacOsShortcutRegistry, MacOsTextCapture, MacOsTranslationSettingsStore};
+use verba_macos::{
+    MacOsProofreadingConsentStore, MacOsShortcutRegistry, MacOsTextCapture,
+    MacOsTranslationSettingsStore,
+};
 
 use crate::{
     PresentationViewModel, processor::ApplicationProcessor, translation::NativeTranslator,
@@ -39,13 +43,18 @@ impl ApplicationRuntime {
                 .map_err(|_| ApplicationRuntimeError::SettingsUnavailable)?,
         );
         let presenter = Arc::new(ForeignPresenter { observer });
-        let coordinator = Arc::new(ShortcutCoordinator::new(
+        let proofreading_consent = Arc::new(
+            ProofreadingConsentPreferences::load(Arc::new(MacOsProofreadingConsentStore::new()))
+                .map_err(|_| ApplicationRuntimeError::SettingsUnavailable)?,
+        );
+        let coordinator = Arc::new(ShortcutCoordinator::with_proofreading_consent(
             Arc::new(MacOsTextCapture::new()),
             Arc::new(ApplicationProcessor::new(
                 translator,
                 Arc::clone(&translation_preferences),
             )),
             presenter,
+            proofreading_consent,
         ));
         let mut shortcut_registry = MacOsShortcutRegistry::new();
         coordinator
@@ -61,6 +70,12 @@ impl ApplicationRuntime {
 
     pub fn cancel_active(&self) -> bool {
         self.coordinator.cancel_active()
+    }
+
+    pub fn acknowledge_proofreading_disclosure(&self) -> Result<bool, ProofreadingDisclosureError> {
+        self.coordinator
+            .resolve_proofreading_disclosure(true)
+            .map_err(|_| ProofreadingDisclosureError::PersistenceFailed)
     }
 
     pub fn configure_supported_target_languages(
@@ -119,6 +134,19 @@ impl fmt::Display for ApplicationRuntimeError {
 }
 
 impl Error for ApplicationRuntimeError {}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, uniffi::Error)]
+pub enum ProofreadingDisclosureError {
+    PersistenceFailed,
+}
+
+impl fmt::Display for ProofreadingDisclosureError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str("proofreading acknowledgement could not be saved")
+    }
+}
+
+impl Error for ProofreadingDisclosureError {}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, uniffi::Error)]
 pub enum TargetLanguagePreferenceError {

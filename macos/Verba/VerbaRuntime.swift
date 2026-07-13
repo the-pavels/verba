@@ -20,6 +20,9 @@ final class VerbaRuntime {
             popupController.onDismiss = { [weak application] in
                 _ = application?.cancelActive()
             }
+            popupController.onProofreadingDisclosureContinue = { [weak application] in
+                _ = try? application?.acknowledgeProofreadingDisclosure()
+            }
         } catch let error as ApplicationRuntimeError {
             application = nil
             switch error {

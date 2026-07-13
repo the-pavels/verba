@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 use crate::coordinator::CancellationToken;
 
@@ -9,6 +12,54 @@ pub const MAX_PROOFREADING_EXPLANATION_CHARACTERS: usize = 280;
 pub enum ProofreadingConsent {
     NotGranted,
     Granted,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ProofreadingConsentStoreError;
+
+pub trait ProofreadingConsentStore: Send + Sync {
+    fn load_acknowledged(&self) -> Result<bool, ProofreadingConsentStoreError>;
+
+    fn save_acknowledged(&self) -> Result<(), ProofreadingConsentStoreError>;
+}
+
+pub trait ProofreadingConsentGate: Send + Sync {
+    fn is_granted(&self) -> bool;
+
+    fn grant(&self) -> Result<(), ProofreadingConsentStoreError>;
+}
+
+pub struct ProofreadingConsentPreferences {
+    store: Arc<dyn ProofreadingConsentStore>,
+    acknowledged: AtomicBool,
+}
+
+impl ProofreadingConsentPreferences {
+    pub fn load(
+        store: Arc<dyn ProofreadingConsentStore>,
+    ) -> Result<Self, ProofreadingConsentStoreError> {
+        let acknowledged = store.load_acknowledged()?;
+        Ok(Self {
+            store,
+            acknowledged: AtomicBool::new(acknowledged),
+        })
+    }
+}
+
+impl ProofreadingConsentGate for ProofreadingConsentPreferences {
+    fn is_granted(&self) -> bool {
+        self.acknowledged.load(Ordering::Acquire)
+    }
+
+    fn grant(&self) -> Result<(), ProofreadingConsentStoreError> {
+        if self.is_granted() {
+            return Ok(());
+        }
+
+        self.store.save_acknowledged()?;
+        self.acknowledged.store(true, Ordering::Release);
+        Ok(())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

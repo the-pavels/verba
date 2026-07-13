@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use objc2_foundation::{NSString, NSUserDefaults};
+use verba_core::proofreading::{ProofreadingConsentStore, ProofreadingConsentStoreError};
 use verba_core::translation::{
     LanguageIdentifier, TranslationSettingsStore, TranslationSettingsStoreError,
 };
 
 const TARGET_LANGUAGE_KEY: &str = "translation.targetLanguageIdentifier";
+const PROOFREADING_DISCLOSURE_KEY: &str = "proofreading.disclosureAcknowledged";
 
 trait StringPreferences: Send + Sync {
     fn get(&self, key: &str) -> Option<String>;
@@ -70,6 +72,39 @@ impl TranslationSettingsStore for MacOsTranslationSettingsStore {
     }
 }
 
+pub struct MacOsProofreadingConsentStore {
+    preferences: Arc<dyn StringPreferences>,
+}
+
+impl MacOsProofreadingConsentStore {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            preferences: Arc::new(UserDefaultsPreferences),
+        }
+    }
+}
+
+impl Default for MacOsProofreadingConsentStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ProofreadingConsentStore for MacOsProofreadingConsentStore {
+    fn load_acknowledged(&self) -> Result<bool, ProofreadingConsentStoreError> {
+        Ok(self
+            .preferences
+            .get(PROOFREADING_DISCLOSURE_KEY)
+            .is_some_and(|value| value == "true"))
+    }
+
+    fn save_acknowledged(&self) -> Result<(), ProofreadingConsentStoreError> {
+        self.preferences.set(PROOFREADING_DISCLOSURE_KEY, "true");
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Mutex;
@@ -126,6 +161,26 @@ mod tests {
         assert_eq!(
             preferences.writes.lock().unwrap().as_slice(),
             &[(TARGET_LANGUAGE_KEY.to_owned(), "de".to_owned())]
+        );
+    }
+
+    #[test]
+    fn loads_and_persists_the_non_secret_proofreading_acknowledgement() {
+        let preferences = Arc::new(MemoryPreferences::default());
+        let store = MacOsProofreadingConsentStore {
+            preferences: preferences.clone(),
+        };
+
+        assert!(!store.load_acknowledged().unwrap());
+        *preferences.value.lock().unwrap() = Some("false".to_owned());
+        assert!(!store.load_acknowledged().unwrap());
+        *preferences.value.lock().unwrap() = Some("true".to_owned());
+        assert!(store.load_acknowledged().unwrap());
+
+        store.save_acknowledged().unwrap();
+        assert_eq!(
+            preferences.writes.lock().unwrap().as_slice(),
+            &[(PROOFREADING_DISCLOSURE_KEY.to_owned(), "true".to_owned())]
         );
     }
 }

@@ -6,6 +6,61 @@ use super::*;
 use crate::testing::FakeProofreader;
 
 #[test]
+fn disclosure_acknowledgement_is_loaded_and_persisted_before_becoming_granted() {
+    use std::sync::Mutex;
+
+    struct MemoryConsentStore {
+        acknowledged: bool,
+        saves: Mutex<usize>,
+        fail_save: bool,
+    }
+
+    impl ProofreadingConsentStore for MemoryConsentStore {
+        fn load_acknowledged(&self) -> Result<bool, ProofreadingConsentStoreError> {
+            Ok(self.acknowledged)
+        }
+
+        fn save_acknowledged(&self) -> Result<(), ProofreadingConsentStoreError> {
+            if self.fail_save {
+                return Err(ProofreadingConsentStoreError);
+            }
+            *self.saves.lock().unwrap() += 1;
+            Ok(())
+        }
+    }
+
+    let already_granted = Arc::new(MemoryConsentStore {
+        acknowledged: true,
+        saves: Mutex::new(0),
+        fail_save: false,
+    });
+    let preferences = ProofreadingConsentPreferences::load(already_granted.clone()).unwrap();
+    assert!(preferences.is_granted());
+    preferences.grant().unwrap();
+    assert_eq!(*already_granted.saves.lock().unwrap(), 0);
+
+    let new_acknowledgement = Arc::new(MemoryConsentStore {
+        acknowledged: false,
+        saves: Mutex::new(0),
+        fail_save: false,
+    });
+    let preferences = ProofreadingConsentPreferences::load(new_acknowledgement.clone()).unwrap();
+    assert!(!preferences.is_granted());
+    preferences.grant().unwrap();
+    assert!(preferences.is_granted());
+    assert_eq!(*new_acknowledgement.saves.lock().unwrap(), 1);
+
+    let failing_store = Arc::new(MemoryConsentStore {
+        acknowledged: false,
+        saves: Mutex::new(0),
+        fail_save: true,
+    });
+    let preferences = ProofreadingConsentPreferences::load(failing_store).unwrap();
+    assert_eq!(preferences.grant(), Err(ProofreadingConsentStoreError));
+    assert!(!preferences.is_granted());
+}
+
+#[test]
 fn strict_policy_preserves_every_proofreading_invariant() {
     let policy = ProofreadingPolicy::strict();
 

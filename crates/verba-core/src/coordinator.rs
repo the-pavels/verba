@@ -15,6 +15,7 @@ use crate::{
         ErrorPresentation, PresentationState, ProofreadingPresentation, TextAction,
         TranslationPresentation,
     },
+    proofreading::{ProofreadingConsentGate, ProofreadingConsentStoreError},
     shortcut::{
         ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutRegistryError,
     },
@@ -176,11 +177,27 @@ impl ShortcutCoordinator {
         processor: Arc<dyn TextActionProcessor>,
         presenter: Arc<dyn ResultPresenter>,
     ) -> Self {
+        Self::with_proofreading_consent(
+            capture,
+            processor,
+            presenter,
+            Arc::new(AlwaysGrantedProofreadingConsent),
+        )
+    }
+
+    #[must_use]
+    pub fn with_proofreading_consent(
+        capture: Arc<dyn TextCapture>,
+        processor: Arc<dyn TextActionProcessor>,
+        presenter: Arc<dyn ResultPresenter>,
+        proofreading_consent: Arc<dyn ProofreadingConsentGate>,
+    ) -> Self {
         Self {
             inner: Arc::new(CoordinatorInner {
                 capture,
                 processor,
                 presenter,
+                proofreading_consent,
                 next_request_id: AtomicU64::new(1),
                 active: Mutex::new(None),
                 capture_order: Mutex::new(()),
@@ -202,6 +219,13 @@ impl ShortcutCoordinator {
         self.inner.cancel_active(true)
     }
 
+    pub fn resolve_proofreading_disclosure(
+        &self,
+        accepted: bool,
+    ) -> Result<bool, ProofreadingConsentStoreError> {
+        self.inner.resolve_proofreading_disclosure(accepted)
+    }
+
     pub fn shutdown(&self) {
         self.inner.cancel_active(false);
     }
@@ -217,6 +241,7 @@ struct CoordinatorInner {
     capture: Arc<dyn TextCapture>,
     processor: Arc<dyn TextActionProcessor>,
     presenter: Arc<dyn ResultPresenter>,
+    proofreading_consent: Arc<dyn ProofreadingConsentGate>,
     next_request_id: AtomicU64,
     active: Mutex<Option<ActiveRequest>>,
     capture_order: Mutex<()>,
@@ -247,6 +272,7 @@ impl CoordinatorInner {
                 id: RequestId(self.next_request_id.fetch_add(1, Ordering::Relaxed)),
                 action,
                 cancellation: CancellationToken::default(),
+                pending_text: Arc::new(Mutex::new(None)),
             };
             *active = Some(request.clone());
             drop(active);
@@ -298,6 +324,19 @@ impl CoordinatorInner {
             return;
         }
 
+        if request.action == TextAction::Proofread && !self.proofreading_consent.is_granted() {
+            self.present_proofreading_disclosure(&request, captured);
+            return;
+        }
+
+        self.process_captured(request, captured);
+    }
+
+    fn process_captured(self: Arc<Self>, request: ActiveRequest, captured: CapturedText) {
+        if request.cancellation.is_cancelled() {
+            return;
+        }
+
         let processing_request = ProcessingRequest {
             request_id: request.id,
             action: request.action,
@@ -315,6 +354,112 @@ impl CoordinatorInner {
         };
 
         self.complete(&request, state);
+    }
+
+    fn present_proofreading_disclosure(&self, request: &ActiveRequest, captured: CapturedText) {
+        let _presentation_guard = self
+            .presentation_order
+            .lock()
+            .expect("presentation order lock poisoned");
+        let active = self.active.lock().expect("active request lock poisoned");
+        if request.cancellation.is_cancelled()
+            || active.as_ref().is_none_or(|active| active.id != request.id)
+        {
+            return;
+        }
+
+        *request
+            .pending_text
+            .lock()
+            .expect("pending proofreading text lock poisoned") = Some(captured);
+        self.presenter.present(PresentationUpdate {
+            request_id: request.id,
+            state: PresentationState::ProofreadingDisclosure,
+        });
+    }
+
+    fn resolve_proofreading_disclosure(
+        self: &Arc<Self>,
+        accepted: bool,
+    ) -> Result<bool, ProofreadingConsentStoreError> {
+        let request = {
+            let active = self.active.lock().expect("active request lock poisoned");
+            active
+                .as_ref()
+                .filter(|request| {
+                    request.action == TextAction::Proofread
+                        && request
+                            .pending_text
+                            .lock()
+                            .expect("pending proofreading text lock poisoned")
+                            .is_some()
+                })
+                .cloned()
+        };
+        let Some(request) = request else {
+            return Ok(false);
+        };
+
+        if !accepted {
+            self.cancel_active(true);
+            return Ok(true);
+        }
+
+        if let Err(error) = self.proofreading_consent.grant() {
+            self.complete(
+                &request,
+                PresentationState::Error(ErrorPresentation {
+                    action: Some(TextAction::Proofread),
+                    title: "Privacy setting unavailable".to_owned(),
+                    message: "Verba couldn’t save your acknowledgement. Try again.".to_owned(),
+                }),
+            );
+            return Err(error);
+        }
+
+        let captured = {
+            let _presentation_guard = self
+                .presentation_order
+                .lock()
+                .expect("presentation order lock poisoned");
+            let active = self.active.lock().expect("active request lock poisoned");
+            if request.cancellation.is_cancelled()
+                || active.as_ref().is_none_or(|active| active.id != request.id)
+            {
+                return Ok(false);
+            }
+            let captured = request
+                .pending_text
+                .lock()
+                .expect("pending proofreading text lock poisoned")
+                .take();
+            if captured.is_some() {
+                self.presenter.present(PresentationUpdate {
+                    request_id: request.id,
+                    state: PresentationState::Loading {
+                        action: TextAction::Proofread,
+                    },
+                });
+            }
+            captured
+        };
+        let Some(captured) = captured else {
+            return Ok(false);
+        };
+
+        let coordinator = Arc::clone(self);
+        let worker_request = request.clone();
+        if thread::Builder::new()
+            .name("verba-action".to_owned())
+            .spawn(move || coordinator.process_captured(worker_request, captured))
+            .is_err()
+        {
+            self.complete(
+                &request,
+                processing_failure_presentation(TextAction::Proofread, ProcessingFailure::Failed),
+            );
+        }
+        Ok(true)
     }
 
     fn complete(&self, request: &ActiveRequest, state: PresentationState) {
@@ -368,6 +513,19 @@ struct ActiveRequest {
     id: RequestId,
     action: TextAction,
     cancellation: CancellationToken,
+    pending_text: Arc<Mutex<Option<CapturedText>>>,
+}
+
+struct AlwaysGrantedProofreadingConsent;
+
+impl ProofreadingConsentGate for AlwaysGrantedProofreadingConsent {
+    fn is_granted(&self) -> bool {
+        true
+    }
+
+    fn grant(&self) -> Result<(), ProofreadingConsentStoreError> {
+        Ok(())
+    }
 }
 
 fn capture_failure_presentation(action: TextAction, failure: CaptureFailure) -> PresentationState {

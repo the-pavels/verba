@@ -17,6 +17,7 @@ final class PopupController {
     private var latestRequestID: UInt64 = 0
 
     var onDismiss: (() -> Void)?
+    var onProofreadingDisclosureContinue: (() -> Void)?
 
     init(
         translationSessions: SystemTranslationSessionProvider,
@@ -27,6 +28,8 @@ final class PopupController {
             rootView: TranslationPopupHost(
                 presentation: .idle,
                 copyText: pasteboardWriter.copy,
+                continueProofreading: {},
+                cancelProofreading: {},
                 translationSessions: translationSessions
             )
         )
@@ -47,6 +50,12 @@ final class PopupController {
         hostingController.rootView = TranslationPopupHost(
             presentation: presentation,
             copyText: pasteboardWriter.copy,
+            continueProofreading: { [weak self] in
+                self?.onProofreadingDisclosureContinue?()
+            },
+            cancelProofreading: { [weak self] in
+                self?.dismiss()
+            },
             translationSessions: hostingController.rootView.translationSessions
         )
         panel.setContentSize(contentSize)
@@ -121,12 +130,16 @@ final class PopupController {
 private struct TranslationPopupHost: View {
     let presentation: PresentationViewModel
     let copyText: (String) -> Void
+    let continueProofreading: () -> Void
+    let cancelProofreading: () -> Void
     @ObservedObject var translationSessions: SystemTranslationSessionProvider
 
     var body: some View {
         PopupContentView(
             presentation: presentation,
-            copyText: copyText
+            copyText: copyText,
+            continueProofreading: continueProofreading,
+            cancelProofreading: cancelProofreading
         )
         .background {
             TranslationSessionHost(sessions: translationSessions)
@@ -141,6 +154,8 @@ private extension PresentationViewModel {
             NSSize(width: 420, height: 300)
         case .proofreading:
             NSSize(width: 420, height: 260)
+        case .proofreadingDisclosure:
+            NSSize(width: 420, height: 190)
         case .error:
             NSSize(width: 380, height: 136)
         default:

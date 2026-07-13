@@ -74,6 +74,10 @@ struct MenuBarContentView: View {
                 presentPopupPreview(.loading(action: .proofread))
             }
 
+            Button("Proofreading Disclosure") {
+                presentPopupPreview(.proofreadingDisclosure)
+            }
+
             Divider()
 
             Button("Translation Result") {
@@ -136,6 +140,8 @@ private extension PresentationViewModel {
             "idle"
         case .loading:
             "loading"
+        case .proofreadingDisclosure:
+            "proofreading disclosure"
         case .translation:
             "translation"
         case .proofreading:

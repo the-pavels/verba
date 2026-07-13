@@ -13,7 +13,7 @@ mod translation;
 pub use api_key_settings::{OpenAiApiKeyError, OpenAiApiKeySettings};
 #[cfg(target_os = "macos")]
 pub use application::{
-    ApplicationRuntime, ApplicationRuntimeError, PresentationObserver,
+    ApplicationRuntime, ApplicationRuntimeError, PresentationObserver, ProofreadingDisclosureError,
     TargetLanguagePreferenceError,
 };
 pub use presentation::{
