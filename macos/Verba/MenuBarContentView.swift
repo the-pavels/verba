@@ -4,18 +4,56 @@ import SwiftUI
 struct MenuBarContentView: View {
     let initialPresentation: PresentationViewModel
     let rustCoreVersion: String
+    @ObservedObject var accessibilityPermission: AccessibilityPermissionController
     let presentPopupPreview: (PresentationViewModel) -> Void
 
     var body: some View {
-        Button("Translate Selected Text", action: unavailableCommand)
+        menuContent
+            .onAppear {
+                accessibilityPermission.refresh()
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            ) { _ in
+                accessibilityPermission.refresh()
+            }
+    }
+
+    @ViewBuilder
+    private var menuContent: some View {
+        Button("Translate Selected Text") {}
             .disabled(true)
 
-        Button("Proofread Selected Text", action: unavailableCommand)
+        Button("Proofread Selected Text") {}
             .disabled(true)
 
         Divider()
 
-        Button("Settings...", action: unavailableCommand)
+        Label(
+            accessibilityPermission.status.menuTitle,
+            systemImage: accessibilityPermission.status.systemImage
+        )
+
+        switch accessibilityPermission.status {
+        case .notRequested:
+            Text("Required to copy selected text from other applications.")
+
+            Button("Request Accessibility Access...") {
+                accessibilityPermission.requestPermission()
+            }
+        case .denied:
+            Text("Allow Verba in Privacy & Security to capture selected text.")
+
+            Button("Open Accessibility Settings...") {
+                accessibilityPermission.openSystemSettings()
+            }
+        case .granted:
+            EmptyView()
+        }
+
+        Divider()
+
+        Button("Settings...") {}
             .disabled(true)
 
         Button("About Verba") {
@@ -61,9 +99,29 @@ struct MenuBarContentView: View {
         }
         .keyboardShortcut("q")
     }
+}
 
-    private func unavailableCommand() {
-        // Disabled commands are enabled only when their feature is connected.
+private extension AccessibilityPermissionStatus {
+    var menuTitle: String {
+        switch self {
+        case .notRequested:
+            "Accessibility: Not Enabled"
+        case .denied:
+            "Accessibility: Access Needed"
+        case .granted:
+            "Accessibility: Enabled"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .notRequested:
+            "hand.raised"
+        case .denied:
+            "exclamationmark.triangle"
+        case .granted:
+            "checkmark.circle"
+        }
     }
 }
 

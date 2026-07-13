@@ -16,7 +16,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 echo "Testing Rust"
 cargo test --workspace
 
-echo "Building the macOS host"
+echo "Testing the macOS host"
 xcodebuild \
     -quiet \
     -project macos/Verba.xcodeproj \
@@ -25,6 +25,6 @@ xcodebuild \
     -destination "platform=macOS,arch=arm64" \
     -derivedDataPath "${derived_data_path}" \
     CODE_SIGNING_ALLOWED=NO \
-    build
+    test
 
 echo "All checks passed"

@@ -4,6 +4,8 @@ import SwiftUI
 @main
 @MainActor
 struct VerbaApp: App {
+    @StateObject private var accessibilityPermission = AccessibilityPermissionController()
+
     private let initialState = initialPresentation()
     private let popupController = PopupController()
 
@@ -12,6 +14,7 @@ struct VerbaApp: App {
             MenuBarContentView(
                 initialPresentation: initialState,
                 rustCoreVersion: rustCoreVersion(),
+                accessibilityPermission: accessibilityPermission,
                 presentPopupPreview: { presentation in
                     popupController.present(presentation)
                 }
