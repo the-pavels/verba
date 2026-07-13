@@ -34,8 +34,11 @@ struct PopupContentView: View {
                 languagePair: languagePair,
                 translatedText: translatedText
             )
-        case .proofreading:
-            placeholder(title: "Proofreading Result")
+        case let .proofreading(correctedText, explanation):
+            ProofreadingResultView(
+                correctedText: correctedText,
+                explanation: explanation
+            )
         case .noIssues:
             placeholder(title: "No Issues Found")
         case .error:

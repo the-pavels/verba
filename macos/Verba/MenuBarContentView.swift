@@ -37,6 +37,10 @@ struct MenuBarContentView: View {
             Button("Translation Result") {
                 presentPopupPreview(.translationPreview)
             }
+
+            Button("Proofreading Result") {
+                presentPopupPreview(.proofreadingPreview)
+            }
         }
 #endif
 

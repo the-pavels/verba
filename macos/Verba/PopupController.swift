@@ -93,6 +93,8 @@ private extension PresentationViewModel {
         switch self {
         case .translation:
             NSSize(width: 420, height: 300)
+        case .proofreading:
+            NSSize(width: 420, height: 260)
         default:
             NSSize(width: 380, height: 112)
         }
