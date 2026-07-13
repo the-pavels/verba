@@ -4,6 +4,7 @@ struct TranslationResultView: View {
     let originalText: String
     let languagePair: LanguagePairViewModel
     let translatedText: String
+    let copyText: (String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -19,6 +20,15 @@ struct TranslationResultView: View {
                     .accessibilityLabel(
                         "From \(languagePair.source) to \(languagePair.target)"
                     )
+
+                Button {
+                    copyText(translatedText)
+                } label: {
+                    Label("Copy", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Copy translation")
             }
 
             Divider()

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PopupContentView: View {
     let presentation: PresentationViewModel
+    let copyText: (String) -> Void
 
     var body: some View {
         content
@@ -32,7 +33,8 @@ struct PopupContentView: View {
             TranslationResultView(
                 originalText: originalText,
                 languagePair: languagePair,
-                translatedText: translatedText
+                translatedText: translatedText,
+                copyText: copyText
             )
         case let .proofreading(correctedText, explanation):
             ProofreadingResultView(

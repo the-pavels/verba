@@ -17,6 +17,7 @@
 		100000000000000000000020 /* TranslationResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000021 /* TranslationResultView.swift */; };
 		100000000000000000000022 /* PopupPreviewFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000023 /* PopupPreviewFixtures.swift */; };
 		100000000000000000000024 /* ProofreadingResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000025 /* ProofreadingResultView.swift */; };
+		100000000000000000000026 /* PasteboardWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000027 /* PasteboardWriter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		100000000000000000000021 /* TranslationResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationResultView.swift; sourceTree = "<group>"; };
 		100000000000000000000023 /* PopupPreviewFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupPreviewFixtures.swift; sourceTree = "<group>"; };
 		100000000000000000000025 /* ProofreadingResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProofreadingResultView.swift; sourceTree = "<group>"; };
+		100000000000000000000027 /* PasteboardWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardWriter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				100000000000000000000017 /* MenuBarContentView.swift */,
+				100000000000000000000027 /* PasteboardWriter.swift */,
 				100000000000000000000019 /* PopupContentView.swift */,
 				100000000000000000000023 /* PopupPreviewFixtures.swift */,
 				10000000000000000000001B /* PopupController.swift */,
@@ -181,6 +184,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
+				100000000000000000000026 /* PasteboardWriter.swift in Sources */,
 				100000000000000000000018 /* PopupContentView.swift in Sources */,
 				10000000000000000000001A /* PopupController.swift in Sources */,
 				10000000000000000000001C /* PopupPanel.swift in Sources */,

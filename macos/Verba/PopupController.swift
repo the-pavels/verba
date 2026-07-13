@@ -12,11 +12,16 @@ final class PopupController {
 
     private let hostingController: NSHostingController<PopupContentView>
     private let panel: PopupPanel
+    private let pasteboardWriter: PasteboardWriter
     private var clickMonitors: [Any] = []
 
-    init() {
+    init(pasteboardWriter: PasteboardWriter = PasteboardWriter()) {
+        self.pasteboardWriter = pasteboardWriter
         hostingController = NSHostingController(
-            rootView: PopupContentView(presentation: .idle)
+            rootView: PopupContentView(
+                presentation: .idle,
+                copyText: pasteboardWriter.copy
+            )
         )
         panel = PopupPanel(contentSize: Self.compactContentSize)
         panel.contentViewController = hostingController
@@ -32,7 +37,10 @@ final class PopupController {
         }
 
         let contentSize = presentation.contentSize
-        hostingController.rootView = PopupContentView(presentation: presentation)
+        hostingController.rootView = PopupContentView(
+            presentation: presentation,
+            copyText: pasteboardWriter.copy
+        )
         panel.setContentSize(contentSize)
         panel.setFrameOrigin(
             PopupPositioner.origin(
