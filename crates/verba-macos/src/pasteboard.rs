@@ -1,5 +1,5 @@
 use objc2::{rc::Retained, runtime::ProtocolObject};
-use objc2_app_kit::{NSPasteboard, NSPasteboardItem, NSPasteboardWriting};
+use objc2_app_kit::{NSPasteboard, NSPasteboardItem, NSPasteboardTypeString, NSPasteboardWriting};
 use objc2_foundation::{NSArray, NSData, NSString};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -71,6 +71,14 @@ impl MacOsPasteboard {
         expected_change_count: i64,
     ) -> Result<PasteboardRestoreOutcome, PasteboardSnapshotError> {
         self.inner.restore(snapshot, expected_change_count)
+    }
+
+    #[must_use]
+    pub fn plain_text(&self) -> Option<String> {
+        let string_type = unsafe { NSPasteboardTypeString };
+        NSPasteboard::generalPasteboard()
+            .stringForType(string_type)
+            .map(|text| text.to_string())
     }
 }
 
