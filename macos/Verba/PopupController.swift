@@ -14,6 +14,9 @@ final class PopupController {
         )
         panel = PopupPanel(contentSize: Self.contentSize)
         panel.contentViewController = hostingController
+        panel.onDismissRequest = { [weak self] in
+            self?.dismiss()
+        }
     }
 
     func present(_ presentation: PresentationViewModel) {
@@ -32,6 +35,7 @@ final class PopupController {
             )
         )
         panel.orderFrontRegardless()
+        panel.makeKey()
     }
 
     func dismiss() {
