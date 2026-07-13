@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 struct VerbaApp: App {
     @StateObject private var accessibilityPermission = AccessibilityPermissionController()
+    @StateObject private var targetLanguageSettings: TargetLanguageSettingsController
 
     private let initialState = initialPresentation()
     private let popupController: PopupController
@@ -17,10 +18,18 @@ struct VerbaApp: App {
             translator: AppleTranslator(sessions: translationSessions)
         )
         self.popupController = popupController
-        runtime = VerbaRuntime(
+        let runtime = VerbaRuntime(
             popupController: popupController,
             translator: translator
         )
+        self.runtime = runtime
+        let targetLanguageSettings = TargetLanguageSettingsController(preferences: runtime)
+        _targetLanguageSettings = StateObject(
+            wrappedValue: targetLanguageSettings
+        )
+        Task {
+            await targetLanguageSettings.load()
+        }
     }
 
     var body: some Scene {
@@ -35,5 +44,9 @@ struct VerbaApp: App {
             )
         }
         .menuBarExtraStyle(.menu)
+
+        Settings {
+            TargetLanguageSettingsView(controller: targetLanguageSettings)
+        }
     }
 }

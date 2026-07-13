@@ -26,6 +26,9 @@
 		100000000000000000000042 /* TranslationSessionProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000045 /* TranslationSessionProvider.swift */; };
 		100000000000000000000043 /* AppleTranslatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000046 /* AppleTranslatorTests.swift */; };
 		100000000000000000000047 /* NativeAppleTranslator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000048 /* NativeAppleTranslator.swift */; };
+		100000000000000000000049 /* TargetLanguageSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000004C /* TargetLanguageSettingsController.swift */; };
+		10000000000000000000004A /* TargetLanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000004D /* TargetLanguageSettingsView.swift */; };
+		10000000000000000000004B /* TargetLanguageSettingsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +63,9 @@
 		100000000000000000000045 /* TranslationSessionProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationSessionProvider.swift; sourceTree = "<group>"; };
 		100000000000000000000046 /* AppleTranslatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTranslatorTests.swift; sourceTree = "<group>"; };
 		100000000000000000000048 /* NativeAppleTranslator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAppleTranslator.swift; sourceTree = "<group>"; };
+		10000000000000000000004C /* TargetLanguageSettingsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetLanguageSettingsController.swift; sourceTree = "<group>"; };
+		10000000000000000000004D /* TargetLanguageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetLanguageSettingsView.swift; sourceTree = "<group>"; };
+		10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetLanguageSettingsControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +113,8 @@
 				100000000000000000000029 /* ResultCopyButton.swift */,
 				100000000000000000000021 /* TranslationResultView.swift */,
 				100000000000000000000045 /* TranslationSessionProvider.swift */,
+				10000000000000000000004C /* TargetLanguageSettingsController.swift */,
+				10000000000000000000004D /* TargetLanguageSettingsView.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
 				100000000000000000000039 /* VerbaRuntime.swift */,
 			);
@@ -135,6 +143,7 @@
 			children = (
 				10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
+				10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */,
 			);
 			path = VerbaTests;
 			sourceTree = "<group>";
@@ -278,6 +287,8 @@
 				100000000000000000000028 /* ResultCopyButton.swift in Sources */,
 				100000000000000000000020 /* TranslationResultView.swift in Sources */,
 				100000000000000000000042 /* TranslationSessionProvider.swift in Sources */,
+				100000000000000000000049 /* TargetLanguageSettingsController.swift in Sources */,
+				10000000000000000000004A /* TargetLanguageSettingsView.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
 				10000000000000000000003A /* VerbaRuntime.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
@@ -290,6 +301,7 @@
 			files = (
 				10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
+				10000000000000000000004B /* TargetLanguageSettingsControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

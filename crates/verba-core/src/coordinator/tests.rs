@@ -228,6 +228,19 @@ fn rejects_processor_output_for_the_wrong_action() {
     );
 }
 
+#[test]
+fn unsupported_translation_points_to_the_target_language_setting() {
+    let PresentationState::Error(error) = processing_failure_presentation(
+        TextAction::Translate,
+        ProcessingFailure::UnsupportedConfiguration,
+    ) else {
+        panic!("processing failure should produce an error presentation");
+    };
+
+    assert_eq!(error.title, "Language pair unavailable");
+    assert!(error.message.contains("Settings"));
+}
+
 fn captured(text: &str) -> Result<CapturedText, CaptureFailure> {
     Ok(CapturedText::new(text).unwrap())
 }

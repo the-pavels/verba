@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct MenuBarContentView: View {
+    @Environment(\.openSettings) private var openSettings
+
     let initialPresentation: PresentationViewModel
     let rustCoreVersion: String
     @ObservedObject var accessibilityPermission: AccessibilityPermissionController
@@ -53,8 +55,10 @@ struct MenuBarContentView: View {
 
         Divider()
 
-        Button("Settings...") {}
-            .disabled(true)
+        Button("Settings...") {
+            NSApplication.shared.activate()
+            openSettings()
+        }
 
         Button("About Verba") {
             NSApplication.shared.orderFrontStandardAboutPanel()

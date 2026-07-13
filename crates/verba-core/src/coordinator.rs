@@ -64,6 +64,7 @@ pub enum ProcessingFailure {
     Failed,
     Cancelled,
     InvalidOutput,
+    UnsupportedConfiguration,
 }
 
 pub trait TextActionProcessor: Send + Sync {
@@ -418,6 +419,14 @@ fn processing_failure_presentation(
         (TextAction::Proofread, ProcessingFailure::InvalidOutput) => (
             "Proofreading unavailable",
             "The proofreading result was invalid. Try again.",
+        ),
+        (TextAction::Translate, ProcessingFailure::UnsupportedConfiguration) => (
+            "Language pair unavailable",
+            "Choose a different target language in Settings and try again.",
+        ),
+        (TextAction::Proofread, ProcessingFailure::UnsupportedConfiguration) => (
+            "Proofreading unavailable",
+            "Check your settings and try again.",
         ),
         (TextAction::Translate, ProcessingFailure::Failed) => ("Translation failed", "Try again."),
         (TextAction::Proofread, ProcessingFailure::Failed) => ("Proofreading failed", "Try again."),

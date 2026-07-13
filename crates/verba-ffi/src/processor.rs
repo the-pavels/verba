@@ -10,21 +10,24 @@ use verba_core::{
         TextActionProcessor,
     },
     presentation::{LanguagePair, ProofreadingPresentation, TextAction, TranslationPresentation},
-    translation::{TranslateText, TranslationFailure, TranslationSettings},
+    translation::{TranslateText, TranslationFailure, TranslationPreferences},
 };
 
 use crate::translation::{ForeignTranslator, NativeTranslator};
 
 pub(crate) struct ApplicationProcessor {
     translation: TranslateText,
-    translation_settings: TranslationSettings,
+    translation_preferences: Arc<TranslationPreferences>,
 }
 
 impl ApplicationProcessor {
-    pub(crate) fn new(translator: Arc<dyn NativeTranslator>) -> Self {
+    pub(crate) fn new(
+        translator: Arc<dyn NativeTranslator>,
+        translation_preferences: Arc<TranslationPreferences>,
+    ) -> Self {
         Self {
             translation: TranslateText::new(Arc::new(ForeignTranslator::new(translator))),
-            translation_settings: TranslationSettings::default(),
+            translation_preferences,
         }
     }
 
@@ -33,12 +36,9 @@ impl ApplicationProcessor {
         text: String,
         cancellation: &CancellationToken,
     ) -> Result<ProcessingOutcome, ProcessingFailure> {
+        let settings = self.translation_preferences.settings();
         let result = block_on(async {
-            let translation = Box::pin(self.translation.execute(
-                text,
-                &self.translation_settings,
-                cancellation,
-            ));
+            let translation = Box::pin(self.translation.execute(text, &settings, cancellation));
             let cancelled = Box::pin(cancellation.cancelled());
 
             match select(translation, cancelled).await {
@@ -84,8 +84,8 @@ fn processing_failure(failure: TranslationFailure) -> ProcessingFailure {
         TranslationFailure::EmptyInput
         | TranslationFailure::InputTooLong { .. }
         | TranslationFailure::SameLanguage { .. }
-        | TranslationFailure::UnsupportedPair { .. }
         | TranslationFailure::Failed => ProcessingFailure::Failed,
+        TranslationFailure::UnsupportedPair { .. } => ProcessingFailure::UnsupportedConfiguration,
     }
 }
 
@@ -102,9 +102,29 @@ mod tests {
 
     use super::*;
     use crate::{NativeTranslationError, NativeTranslationRequest, NativeTranslationResponse};
+    use verba_core::translation::{
+        LanguageIdentifier, TranslationSettingsStore, TranslationSettingsStoreError,
+    };
 
     struct FakeNativeTranslator {
         requests: Mutex<Vec<NativeTranslationRequest>>,
+    }
+
+    struct MemorySettingsStore;
+
+    impl TranslationSettingsStore for MemorySettingsStore {
+        fn load_target_language(
+            &self,
+        ) -> Result<Option<LanguageIdentifier>, TranslationSettingsStoreError> {
+            Ok(None)
+        }
+
+        fn save_target_language(
+            &self,
+            _target_language: &LanguageIdentifier,
+        ) -> Result<(), TranslationSettingsStoreError> {
+            Ok(())
+        }
     }
 
     #[async_trait::async_trait]
@@ -126,14 +146,24 @@ mod tests {
         let translator = Arc::new(FakeNativeTranslator {
             requests: Mutex::new(Vec::new()),
         });
-        let processor = ApplicationProcessor::new(translator.clone());
+        let preferences =
+            Arc::new(TranslationPreferences::load(Arc::new(MemorySettingsStore)).unwrap());
+        let processor = ApplicationProcessor::new(translator.clone(), preferences.clone());
 
-        let outcome = processor
+        let first_outcome = processor
+            .translate("Hallo".to_owned(), &CancellationToken::default())
+            .unwrap();
+
+        preferences
+            .set_supported_targets([language("en"), language("fr")])
+            .unwrap();
+        preferences.set_target_language(language("fr")).unwrap();
+        let second_outcome = processor
             .translate("Hallo".to_owned(), &CancellationToken::default())
             .unwrap();
 
         assert_eq!(
-            outcome,
+            first_outcome,
             ProcessingOutcome::Translation(TranslationPresentation {
                 original_text: "Hallo".to_owned(),
                 language_pair: LanguagePair {
@@ -143,12 +173,25 @@ mod tests {
                 translated_text: "Hello".to_owned(),
             })
         );
+        assert!(matches!(
+            second_outcome,
+            ProcessingOutcome::Translation(TranslationPresentation {
+                language_pair: LanguagePair { ref target, .. },
+                ..
+            }) if target == "fr"
+        ));
         assert_eq!(
             translator.requests.lock().unwrap().as_slice(),
-            &[NativeTranslationRequest {
-                text: "Hallo".to_owned(),
-                target_language_identifier: "en".to_owned(),
-            }]
+            &[
+                NativeTranslationRequest {
+                    text: "Hallo".to_owned(),
+                    target_language_identifier: "en".to_owned(),
+                },
+                NativeTranslationRequest {
+                    text: "Hallo".to_owned(),
+                    target_language_identifier: "fr".to_owned(),
+                },
+            ]
         );
     }
 
@@ -158,5 +201,20 @@ mod tests {
             proofreading_preview("Text".to_owned()),
             ProcessingOutcome::Proofreading(_)
         ));
+    }
+
+    #[test]
+    fn unsupported_pairs_point_to_configuration() {
+        assert_eq!(
+            processing_failure(TranslationFailure::UnsupportedPair {
+                source_language: Some(language("de")),
+                target_language: language("ga"),
+            }),
+            ProcessingFailure::UnsupportedConfiguration
+        );
+    }
+
+    fn language(identifier: &str) -> LanguageIdentifier {
+        LanguageIdentifier::new(identifier).unwrap()
     }
 }

@@ -18,17 +18,57 @@ final class VerbaRuntime {
             popupController.onDismiss = { [weak application] in
                 _ = application?.cancelActive()
             }
+        } catch let error as ApplicationRuntimeError {
+            application = nil
+            switch error {
+            case .ShortcutRegistrationFailed:
+                popupController.present(
+                    .error(
+                        action: nil,
+                        title: "Shortcuts unavailable",
+                        message: "Quit other Verba instances and reopen the app."
+                    )
+                )
+            case .SettingsUnavailable:
+                popupController.present(
+                    .error(
+                        action: nil,
+                        title: "Settings unavailable",
+                        message: "Quit and reopen Verba, then try again."
+                    )
+                )
+            }
         } catch {
             application = nil
             popupController.present(
                 .error(
                     action: nil,
-                    title: "Shortcuts unavailable",
-                    message: "Quit other Verba instances and reopen the app."
+                    title: "Verba unavailable",
+                    message: "Quit and reopen Verba, then try again."
                 )
             )
         }
     }
+}
+
+extension VerbaRuntime: TargetLanguagePreferenceManaging {
+    func configureSupportedTargetLanguages(_ identifiers: [String]) throws -> String {
+        guard let application else {
+            throw VerbaRuntimeError.unavailable
+        }
+        return try application.configureSupportedTargetLanguages(identifiers: identifiers)
+    }
+
+    func setTargetLanguage(_ identifier: String) throws {
+        guard let application else {
+            throw VerbaRuntimeError.unavailable
+        }
+        try application.setTargetLanguage(identifier: identifier)
+    }
+}
+
+private enum VerbaRuntimeError: Error {
+    case unavailable
 }
 
 private final class PopupPresentationObserver: PresentationObserver, @unchecked Sendable {

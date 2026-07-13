@@ -8,7 +8,10 @@ mod processor;
 mod translation;
 
 #[cfg(target_os = "macos")]
-pub use application::{ApplicationRuntime, ApplicationRuntimeError, PresentationObserver};
+pub use application::{
+    ApplicationRuntime, ApplicationRuntimeError, PresentationObserver,
+    TargetLanguagePreferenceError,
+};
 pub use presentation::{
     LanguagePairViewModel, PresentationAction, PresentationViewModel, initial_presentation,
 };

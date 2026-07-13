@@ -2,6 +2,13 @@ use std::sync::Arc;
 
 use crate::coordinator::CancellationToken;
 
+mod preferences;
+
+pub use preferences::{
+    TranslationPreferenceFailure, TranslationPreferences, TranslationSettingsStore,
+    TranslationSettingsStoreError,
+};
+
 pub const MAX_TRANSLATION_CHARACTERS: usize = 10_000;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
