@@ -12,8 +12,8 @@ struct VerbaApp: App {
             MenuBarContentView(
                 initialPresentation: initialState,
                 rustCoreVersion: rustCoreVersion(),
-                showPopupPreview: {
-                    popupController.present(.loading(action: .translate))
+                presentPopupPreview: { presentation in
+                    popupController.present(presentation)
                 }
             )
         }

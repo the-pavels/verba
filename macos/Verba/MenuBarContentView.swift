@@ -4,7 +4,7 @@ import SwiftUI
 struct MenuBarContentView: View {
     let initialPresentation: PresentationViewModel
     let rustCoreVersion: String
-    let showPopupPreview: () -> Void
+    let presentPopupPreview: (PresentationViewModel) -> Void
 
     var body: some View {
         Button("Translate Selected Text", action: unavailableCommand)
@@ -23,7 +23,15 @@ struct MenuBarContentView: View {
         }
 
 #if DEBUG
-        Button("Show Loading Popup", action: showPopupPreview)
+        Menu("Preview Popup") {
+            Button("Translation Loading") {
+                presentPopupPreview(.loading(action: .translate))
+            }
+
+            Button("Proofreading Loading") {
+                presentPopupPreview(.loading(action: .proofread))
+            }
+        }
 #endif
 
         Divider()
