@@ -11,5 +11,8 @@ crate-type = ["rlib", "staticlib"]
 uniffi = "0.31.0"
 verba-core = { path = "../verba-core" }
 
+[target.'cfg(target_os = "macos")'.dependencies]
+verba-macos = { path = "../verba-macos" }
+
 [lints]
 workspace = true

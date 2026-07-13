@@ -14,6 +14,9 @@ final class PopupController {
     private let panel: PopupPanel
     private let pasteboardWriter: PasteboardWriter
     private var clickMonitors: [Any] = []
+    private var latestRequestID: UInt64 = 0
+
+    var onDismiss: (() -> Void)?
 
     init(pasteboardWriter: PasteboardWriter = PasteboardWriter()) {
         self.pasteboardWriter = pasteboardWriter
@@ -32,7 +35,7 @@ final class PopupController {
 
     func present(_ presentation: PresentationViewModel) {
         guard !presentation.isIdle else {
-            dismiss()
+            hide()
             return
         }
 
@@ -54,7 +57,21 @@ final class PopupController {
         startClickAwayMonitoring()
     }
 
+    func present(requestID: UInt64, presentation: PresentationViewModel) {
+        guard requestID >= latestRequestID else {
+            return
+        }
+
+        latestRequestID = requestID
+        present(presentation)
+    }
+
     func dismiss() {
+        hide()
+        onDismiss?()
+    }
+
+    private func hide() {
         stopClickAwayMonitoring()
         panel.orderOut(nil)
     }

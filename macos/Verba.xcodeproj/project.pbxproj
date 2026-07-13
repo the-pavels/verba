@@ -21,6 +21,7 @@
 		100000000000000000000028 /* ResultCopyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000029 /* ResultCopyButton.swift */; };
 		10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000002B /* AccessibilityPermissionController.swift */; };
 		10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */; };
+		10000000000000000000003A /* VerbaRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000039 /* VerbaRuntime.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +51,7 @@
 		10000000000000000000002B /* AccessibilityPermissionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionController.swift; sourceTree = "<group>"; };
 		10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPermissionControllerTests.swift; sourceTree = "<group>"; };
 		10000000000000000000002E /* VerbaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VerbaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000039 /* VerbaRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbaRuntime.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +97,7 @@
 				100000000000000000000029 /* ResultCopyButton.swift */,
 				100000000000000000000021 /* TranslationResultView.swift */,
 				100000000000000000000002 /* VerbaApp.swift */,
+				100000000000000000000039 /* VerbaRuntime.swift */,
 			);
 			path = Verba;
 			sourceTree = "<group>";
@@ -261,6 +264,7 @@
 				100000000000000000000028 /* ResultCopyButton.swift in Sources */,
 				100000000000000000000020 /* TranslationResultView.swift in Sources */,
 				100000000000000000000001 /* VerbaApp.swift in Sources */,
+				10000000000000000000003A /* VerbaRuntime.swift in Sources */,
 				100000000000000000000012 /* verba_ffi.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -323,6 +327,12 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"$(SRCROOT)/../target/debug/libverba_ffi.a",
+					"-framework",
+					Carbon,
+					"-framework",
+					ApplicationServices,
+					"-framework",
+					CoreGraphics,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.Verba;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -347,6 +357,12 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"$(SRCROOT)/../target/release/libverba_ffi.a",
+					"-framework",
+					Carbon,
+					"-framework",
+					ApplicationServices,
+					"-framework",
+					CoreGraphics,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.Verba;
 				PRODUCT_NAME = "$(TARGET_NAME)";

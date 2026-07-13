@@ -1,6 +1,7 @@
 //! Domain types and application use cases for Verba.
 
 pub mod capture;
+pub mod coordinator;
 pub mod presentation;
 pub mod shortcut;
 

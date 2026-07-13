@@ -728,6 +728,7 @@ version = "0.1.0"
 dependencies = [
  "uniffi",
  "verba-core",
+ "verba-macos",
 ]
 
 [[package]]

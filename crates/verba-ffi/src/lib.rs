@@ -1,7 +1,11 @@
 //! Swift-facing bridge for the Verba Rust application.
 
+#[cfg(target_os = "macos")]
+mod application;
 mod presentation;
 
+#[cfg(target_os = "macos")]
+pub use application::{ApplicationRuntime, ApplicationRuntimeError, PresentationObserver};
 pub use presentation::{
     LanguagePairViewModel, PresentationAction, PresentationViewModel, initial_presentation,
 };

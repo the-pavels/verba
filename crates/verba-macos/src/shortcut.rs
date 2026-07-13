@@ -1,5 +1,6 @@
 use std::{
     ffi::c_void,
+    num::NonZeroUsize,
     panic::{AssertUnwindSafe, catch_unwind},
     ptr,
     sync::{Arc, Mutex},
@@ -411,8 +412,8 @@ trait HotKeySystem {
 struct CarbonSystem;
 
 impl HotKeySystem for CarbonSystem {
-    type HotKeyRef = *mut c_void;
-    type EventHandlerRef = *mut c_void;
+    type HotKeyRef = NonZeroUsize;
+    type EventHandlerRef = NonZeroUsize;
 
     fn install_event_handler(
         &mut self,
@@ -435,18 +436,14 @@ impl HotKeySystem for CarbonSystem {
         };
 
         status_result(status)?;
-        if reference.is_null() {
-            Err(SystemError::Failed)
-        } else {
-            Ok(reference)
-        }
+        NonZeroUsize::new(reference as usize).ok_or(SystemError::Failed)
     }
 
     fn remove_event_handler(
         &mut self,
         reference: Self::EventHandlerRef,
     ) -> Result<(), SystemError> {
-        status_result(unsafe { remove_event_handler(reference) })
+        status_result(unsafe { remove_event_handler(reference.get() as *mut c_void) })
     }
 
     fn register_hot_key(
@@ -468,15 +465,11 @@ impl HotKeySystem for CarbonSystem {
         };
 
         status_result(status)?;
-        if reference.is_null() {
-            Err(SystemError::Failed)
-        } else {
-            Ok(reference)
-        }
+        NonZeroUsize::new(reference as usize).ok_or(SystemError::Failed)
     }
 
     fn unregister_hot_key(&mut self, reference: Self::HotKeyRef) -> Result<(), SystemError> {
-        status_result(unsafe { unregister_event_hot_key(reference) })
+        status_result(unsafe { unregister_event_hot_key(reference.get() as *mut c_void) })
     }
 }
 

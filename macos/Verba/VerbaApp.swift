@@ -7,7 +7,14 @@ struct VerbaApp: App {
     @StateObject private var accessibilityPermission = AccessibilityPermissionController()
 
     private let initialState = initialPresentation()
-    private let popupController = PopupController()
+    private let popupController: PopupController
+    private let runtime: VerbaRuntime
+
+    init() {
+        let popupController = PopupController()
+        self.popupController = popupController
+        runtime = VerbaRuntime(popupController: popupController)
+    }
 
     var body: some Scene {
         MenuBarExtra("Verba", systemImage: "character.cursor.ibeam") {
