@@ -8,6 +8,7 @@ Initial direct-distribution release for macOS 15 or later on Apple silicon.
 
 - Translate selected text with Apple's Translation framework and a configurable target language.
 - Proofread selected text with the OpenAI Responses API using a user-supplied API key stored in macOS Keychain.
+- Keep proofreading responses concise and use GPT-5.6 Luna after live comparison with Terra.
 - Invoke both actions from configurable global shortcuts and review results in a native menu-bar popup.
 - Compare proofreading corrections at a glance with word-level additions and removals highlighted inline.
 - Preserve rich clipboard contents during cross-application selection capture and avoid overwriting concurrent clipboard changes.
