@@ -52,6 +52,24 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(PopupAnimationPolicy.behavior(reduceMotion: false), .utilityWindow)
     }
 
+    func testLoadingPopupPreservesSourceFocusThroughCaptureWindow() {
+        let loadingDelay = PopupKeyboardFocusPolicy.delay(
+            for: .loading(action: .translate)
+        )
+        let errorDelay = PopupKeyboardFocusPolicy.delay(
+            for: .error(
+                action: .translate,
+                title: "Selection timed out",
+                message: "Try again.",
+                recovery: .retry,
+                diagnosticCode: "capture.timed-out"
+            )
+        )
+
+        XCTAssertGreaterThan(loadingDelay, 0.5)
+        XCTAssertEqual(errorDelay, 0)
+    }
+
     func testFocusRestorationIsWeakAndOneShot() {
         let restorer = PopupFocusRestorer<FocusOwner>()
         let popup = FocusOwner()

@@ -14,6 +14,7 @@ final class PopupController {
     private let pasteboardWriter: PasteboardWriter
     private let focusRestorer = PopupFocusRestorer<NSWindow>()
     private var clickMonitors: [ClickMonitor] = []
+    private var focusGeneration: UInt64 = 0
     private var latestRequestID: UInt64 = 0
 
     var onDismiss: (() -> Void)?
@@ -91,9 +92,7 @@ final class PopupController {
             focusRestorer.capture(NSApplication.shared.keyWindow, excluding: panel)
         }
         panel.orderFrontRegardless()
-        panel.makeKey()
-        panel.makeFirstResponder(hostingController.view)
-        NSAccessibility.post(element: panel, notification: .focusedWindowChanged)
+        scheduleKeyboardFocus(for: presentation)
         startClickAwayMonitoring()
     }
 
@@ -125,6 +124,7 @@ final class PopupController {
     }
 
     private func hide() {
+        focusGeneration &+= 1
         stopClickAwayMonitoring()
         let shouldRestoreFocus = panel.isKeyWindow
         let previousKeyWindow = focusRestorer.take()
@@ -138,6 +138,33 @@ final class PopupController {
                 )
             }
         }
+    }
+
+    private func scheduleKeyboardFocus(for presentation: PresentationViewModel) {
+        focusGeneration &+= 1
+        let generation = focusGeneration
+        let delay = PopupKeyboardFocusPolicy.delay(for: presentation)
+
+        guard delay > 0 else {
+            takeKeyboardFocus()
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self, self.focusGeneration == generation else {
+                return
+            }
+            self.takeKeyboardFocus()
+        }
+    }
+
+    private func takeKeyboardFocus() {
+        guard panel.isVisible else {
+            return
+        }
+        panel.makeKey()
+        panel.makeFirstResponder(hostingController.view)
+        NSAccessibility.post(element: panel, notification: .focusedWindowChanged)
     }
 
     private func perform(_ command: PopupRecoveryCommand) {
@@ -249,6 +276,19 @@ enum PopupSizePolicy {
 enum PopupAnimationPolicy {
     static func behavior(reduceMotion: Bool) -> NSWindow.AnimationBehavior {
         reduceMotion ? .none : .utilityWindow
+    }
+}
+
+enum PopupKeyboardFocusPolicy {
+    private static let captureWindow: TimeInterval = 0.65
+
+    static func delay(for presentation: PresentationViewModel) -> TimeInterval {
+        if case .loading = presentation {
+            // Synthetic Copy must reach the source app during the bounded capture window.
+            captureWindow
+        } else {
+            0
+        }
     }
 }
 

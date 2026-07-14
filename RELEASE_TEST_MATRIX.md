@@ -8,7 +8,7 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.0-4-arm64-notarized.zip` |
+| Artifact | `Verba-1.0.0-5-arm64-notarized.zip` |
 | SHA-256 | Pending |
 | Source revision | Pending |
 | Source state in manifest | Must be `clean` |
@@ -28,12 +28,13 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | --- | --- | --- | --- |
 | 1.0.0 (2) | `2fc531cd8e4ddefb746db0c2582b447b4ef7a1dea586a3114b2e6caef53c82be` | Accepted, submission `08560573-446e-4ede-8988-94d08f23ce6a` | Rejected during manual permission testing: the menu did not refresh after macOS granted Accessibility access, leaving both actions disabled until another lifecycle refresh. |
 | 1.0.0 (3) | `37a5492d00494b7612b28c06f5df7f79c6e9625e091bc6fa2ddf8d8e58e60202` | Accepted, submission `80809719-6038-4385-a878-289f8550c5e2` | Rejected during manual translation testing: preparing missing language assets with automatic source detection failed before macOS received source text. |
+| 1.0.0 (4) | `e4b9899fa123d5241d24c6c7b9eb9e7f3a27252caf81127f93a873f5cc36d6ae` | Accepted, submission `9a58936d-ac47-4ee8-88e3-ab99dd3fbf63` | Rejected during manual capture testing: the loading popup could take keyboard focus before synthetic Copy reached the source app, intermittently producing `Selection timed out`. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for the build 4 source tree, including explicit-source translation preparation and the selected German text regression. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for the build 5 source tree, including the loading-popup source-focus regression. |
 | RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed; the accepted duplicate `winnow` versions remain documented in `SECURITY.md`. |
 | Developer ID signing | Pending | |
 | Apple notarization | Pending | |
@@ -46,9 +47,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-4-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-5-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 4, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 5, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
