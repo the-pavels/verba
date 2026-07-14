@@ -71,7 +71,7 @@ impl Proofreader for OpenAiProofreader {
             .api_key_provider
             .load_api_key()
             .map_err(|error| match error {
-                ApiKeyProviderError::Missing => ProofreaderError::Authentication,
+                ApiKeyProviderError::Missing => ProofreaderError::MissingCredential,
                 ApiKeyProviderError::Unavailable => ProofreaderError::Failed,
             })?;
         if cancellation.is_cancelled() {

@@ -200,7 +200,7 @@ fn maps_missing_and_unavailable_keys_without_calling_the_api() {
     for (key_error, expected) in [
         (
             ApiKeyProviderError::Missing,
-            ProofreaderError::Authentication,
+            ProofreaderError::MissingCredential,
         ),
         (ApiKeyProviderError::Unavailable, ProofreaderError::Failed),
     ] {

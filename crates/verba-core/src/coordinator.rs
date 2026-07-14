@@ -15,7 +15,7 @@ use crate::{
         ErrorPresentation, PresentationState, ProofreadingPresentation, TextAction,
         TranslationPresentation,
     },
-    proofreading::{ProofreadingConsentGate, ProofreadingConsentStoreError},
+    proofreading::{ProofreaderError, ProofreadingConsentGate, ProofreadingConsentStoreError},
     shortcut::{
         ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutRegistryError,
     },
@@ -66,6 +66,8 @@ pub enum ProcessingFailure {
     Cancelled,
     InvalidOutput,
     UnsupportedConfiguration,
+    ProofreadingInputTooLong,
+    ProofreadingProvider(ProofreaderError),
 }
 
 pub trait TextActionProcessor: Send + Sync {
@@ -586,6 +588,18 @@ fn processing_failure_presentation(
             "Proofreading unavailable",
             "Check your settings and try again.",
         ),
+        (TextAction::Proofread, ProcessingFailure::ProofreadingInputTooLong) => (
+            "Selection too long",
+            "Select at most 10,000 characters and invoke Proofread again.",
+        ),
+        (TextAction::Proofread, ProcessingFailure::ProofreadingProvider(error)) => {
+            proofreading_provider_failure(error)
+        }
+        (
+            TextAction::Translate,
+            ProcessingFailure::ProofreadingInputTooLong
+            | ProcessingFailure::ProofreadingProvider(_),
+        ) => ("Translation failed", "Invoke Translate again."),
         (TextAction::Translate, ProcessingFailure::Failed) => ("Translation failed", "Try again."),
         (TextAction::Proofread, ProcessingFailure::Failed) => ("Proofreading failed", "Try again."),
     };
@@ -595,6 +609,52 @@ fn processing_failure_presentation(
         title: title.to_owned(),
         message: message.to_owned(),
     })
+}
+
+fn proofreading_provider_failure(error: ProofreaderError) -> (&'static str, &'static str) {
+    match error {
+        ProofreaderError::MissingCredential => (
+            "OpenAI API key required",
+            "Add your API key in Settings, then invoke Proofread again.",
+        ),
+        ProofreaderError::Authentication => (
+            "OpenAI API key rejected",
+            "Replace the key in Settings before invoking Proofread again.",
+        ),
+        ProofreaderError::RateLimited => (
+            "OpenAI rate limit reached",
+            "Wait a moment, then invoke Proofread again.",
+        ),
+        ProofreaderError::QuotaExceeded => (
+            "OpenAI quota unavailable",
+            "Check your OpenAI billing and usage limits before trying again.",
+        ),
+        ProofreaderError::Offline => (
+            "No internet connection",
+            "Reconnect to the internet, then invoke Proofread again.",
+        ),
+        ProofreaderError::TimedOut => (
+            "OpenAI request timed out",
+            "Check your connection, then invoke Proofread again.",
+        ),
+        ProofreaderError::Refused => (
+            "Proofreading refused",
+            "Select different text before trying again.",
+        ),
+        ProofreaderError::Incomplete | ProofreaderError::MalformedResponse => (
+            "Invalid proofreading response",
+            "OpenAI returned an unusable result. Invoke Proofread again.",
+        ),
+        ProofreaderError::ServiceUnavailable => (
+            "OpenAI unavailable",
+            "Wait a moment, then invoke Proofread again.",
+        ),
+        ProofreaderError::Cancelled => ("Request cancelled", "Invoke Proofread to try again."),
+        ProofreaderError::Failed => (
+            "Proofreading failed",
+            "Check your connection and settings, then invoke Proofread again.",
+        ),
+    }
 }
 
 #[cfg(test)]

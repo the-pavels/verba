@@ -10,6 +10,9 @@ use verba_core::{
         TextActionProcessor,
     },
     presentation::{LanguagePair, ProofreadingPresentation, TextAction, TranslationPresentation},
+    proofreading::{
+        ProofreadText, Proofreader, ProofreadingConsent, ProofreadingFailure, ProofreadingResult,
+    },
     translation::{TranslateText, TranslationFailure, TranslationPreferences},
 };
 
@@ -18,16 +21,19 @@ use crate::translation::{ForeignTranslator, NativeTranslator};
 pub(crate) struct ApplicationProcessor {
     translation: TranslateText,
     translation_preferences: Arc<TranslationPreferences>,
+    proofreading: ProofreadText,
 }
 
 impl ApplicationProcessor {
     pub(crate) fn new(
         translator: Arc<dyn NativeTranslator>,
         translation_preferences: Arc<TranslationPreferences>,
+        proofreader: Arc<dyn Proofreader>,
     ) -> Self {
         Self {
             translation: TranslateText::new(Arc::new(ForeignTranslator::new(translator))),
             translation_preferences,
+            proofreading: ProofreadText::new(proofreader),
         }
     }
 
@@ -46,7 +52,7 @@ impl ApplicationProcessor {
                 Either::Right(((), _)) => Err(TranslationFailure::Cancelled),
             }
         })
-        .map_err(processing_failure)?;
+        .map_err(translation_processing_failure)?;
 
         Ok(ProcessingOutcome::Translation(TranslationPresentation {
             original_text: result.original_text().to_owned(),
@@ -56,6 +62,37 @@ impl ApplicationProcessor {
             },
             translated_text: result.translated_text().to_owned(),
         }))
+    }
+
+    fn proofread(
+        &self,
+        text: String,
+        cancellation: &CancellationToken,
+    ) -> Result<ProcessingOutcome, ProcessingFailure> {
+        let result = block_on(async {
+            let proofreading = Box::pin(self.proofreading.execute(
+                text,
+                ProofreadingConsent::Granted,
+                cancellation,
+            ));
+            let cancelled = Box::pin(cancellation.cancelled());
+
+            match select(proofreading, cancelled).await {
+                Either::Left((result, _)) => result,
+                Either::Right(((), _)) => Err(ProofreadingFailure::Cancelled),
+            }
+        })
+        .map_err(proofreading_processing_failure)?;
+
+        Ok(match result {
+            ProofreadingResult::NoIssues => ProcessingOutcome::NoIssues,
+            ProofreadingResult::Corrected(correction) => {
+                ProcessingOutcome::Proofreading(ProofreadingPresentation {
+                    corrected_text: correction.corrected_text().to_owned(),
+                    explanation: correction.explanation().to_owned(),
+                })
+            }
+        })
     }
 }
 
@@ -72,12 +109,12 @@ impl TextActionProcessor for ApplicationProcessor {
         let text = request.text.into_string();
         match request.action {
             TextAction::Translate => self.translate(text, cancellation),
-            TextAction::Proofread => Ok(proofreading_preview(text)),
+            TextAction::Proofread => self.proofread(text, cancellation),
         }
     }
 }
 
-fn processing_failure(failure: TranslationFailure) -> ProcessingFailure {
+fn translation_processing_failure(failure: TranslationFailure) -> ProcessingFailure {
     match failure {
         TranslationFailure::Cancelled => ProcessingFailure::Cancelled,
         TranslationFailure::InvalidResult => ProcessingFailure::InvalidOutput,
@@ -89,11 +126,15 @@ fn processing_failure(failure: TranslationFailure) -> ProcessingFailure {
     }
 }
 
-fn proofreading_preview(text: String) -> ProcessingOutcome {
-    ProcessingOutcome::Proofreading(ProofreadingPresentation {
-        corrected_text: text,
-        explanation: "Proofreading preview".to_owned(),
-    })
+fn proofreading_processing_failure(failure: ProofreadingFailure) -> ProcessingFailure {
+    match failure {
+        ProofreadingFailure::Cancelled => ProcessingFailure::Cancelled,
+        ProofreadingFailure::InvalidResult => ProcessingFailure::InvalidOutput,
+        ProofreadingFailure::ConsentRequired => ProcessingFailure::UnsupportedConfiguration,
+        ProofreadingFailure::InputTooLong { .. } => ProcessingFailure::ProofreadingInputTooLong,
+        ProofreadingFailure::Provider(error) => ProcessingFailure::ProofreadingProvider(error),
+        ProofreadingFailure::EmptyInput => ProcessingFailure::Failed,
+    }
 }
 
 #[cfg(test)]
@@ -102,6 +143,9 @@ mod tests {
 
     use super::*;
     use crate::{NativeTranslationError, NativeTranslationRequest, NativeTranslationResponse};
+    use verba_core::proofreading::{
+        ProofreaderError, ProofreaderResponse, ProofreadingCorrection, ProofreadingRequest,
+    };
     use verba_core::translation::{
         LanguageIdentifier, TranslationSettingsStore, TranslationSettingsStoreError,
     };
@@ -111,6 +155,39 @@ mod tests {
     }
 
     struct MemorySettingsStore;
+
+    struct FakeProofreader {
+        result: Mutex<Option<Result<ProofreaderResponse, ProofreaderError>>>,
+        requests: Mutex<Vec<String>>,
+    }
+
+    impl FakeProofreader {
+        fn new(result: Result<ProofreaderResponse, ProofreaderError>) -> Self {
+            Self {
+                result: Mutex::new(Some(result)),
+                requests: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl Proofreader for FakeProofreader {
+        async fn proofread(
+            &self,
+            request: &ProofreadingRequest,
+            _cancellation: &CancellationToken,
+        ) -> Result<ProofreaderResponse, ProofreaderError> {
+            self.requests
+                .lock()
+                .unwrap()
+                .push(request.text().to_owned());
+            self.result
+                .lock()
+                .unwrap()
+                .take()
+                .expect("proofreader should be called once")
+        }
+    }
 
     impl TranslationSettingsStore for MemorySettingsStore {
         fn load_target_language(
@@ -148,7 +225,11 @@ mod tests {
         });
         let preferences =
             Arc::new(TranslationPreferences::load(Arc::new(MemorySettingsStore)).unwrap());
-        let processor = ApplicationProcessor::new(translator.clone(), preferences.clone());
+        let processor = ApplicationProcessor::new(
+            translator.clone(),
+            preferences.clone(),
+            Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::NoIssues))),
+        );
 
         let first_outcome = processor
             .translate("Hallo".to_owned(), &CancellationToken::default())
@@ -196,17 +277,65 @@ mod tests {
     }
 
     #[test]
-    fn proofreading_keeps_its_preview_processor() {
-        assert!(matches!(
-            proofreading_preview("Text".to_owned()),
-            ProcessingOutcome::Proofreading(_)
-        ));
+    fn proofreading_renders_corrected_and_no_issues_outcomes() {
+        let correction =
+            ProofreadingCorrection::new("This is correct.", "Fixed subject-verb agreement.");
+        let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::Corrected(
+            correction,
+        ))));
+        let processor = test_processor(proofreader.clone());
+
+        assert_eq!(
+            processor.proofread(
+                "This are correct.".to_owned(),
+                &CancellationToken::default()
+            ),
+            Ok(ProcessingOutcome::Proofreading(ProofreadingPresentation {
+                corrected_text: "This is correct.".to_owned(),
+                explanation: "Fixed subject-verb agreement.".to_owned(),
+            }))
+        );
+        assert_eq!(
+            proofreader.requests.lock().unwrap().as_slice(),
+            ["This are correct."]
+        );
+
+        let processor = test_processor(Arc::new(FakeProofreader::new(Ok(
+            ProofreaderResponse::NoIssues,
+        ))));
+        assert_eq!(
+            processor.proofread("Looks good.".to_owned(), &CancellationToken::default()),
+            Ok(ProcessingOutcome::NoIssues)
+        );
+    }
+
+    #[test]
+    fn proofreading_preserves_typed_provider_failures_for_user_recovery() {
+        for error in [
+            ProofreaderError::MissingCredential,
+            ProofreaderError::Authentication,
+            ProofreaderError::RateLimited,
+            ProofreaderError::QuotaExceeded,
+            ProofreaderError::Offline,
+            ProofreaderError::TimedOut,
+            ProofreaderError::Refused,
+            ProofreaderError::Incomplete,
+            ProofreaderError::MalformedResponse,
+            ProofreaderError::ServiceUnavailable,
+            ProofreaderError::Failed,
+        ] {
+            let processor = test_processor(Arc::new(FakeProofreader::new(Err(error))));
+            assert_eq!(
+                processor.proofread("Text".to_owned(), &CancellationToken::default()),
+                Err(ProcessingFailure::ProofreadingProvider(error))
+            );
+        }
     }
 
     #[test]
     fn unsupported_pairs_point_to_configuration() {
         assert_eq!(
-            processing_failure(TranslationFailure::UnsupportedPair {
+            translation_processing_failure(TranslationFailure::UnsupportedPair {
                 source_language: Some(language("de")),
                 target_language: language("ga"),
             }),
@@ -216,5 +345,17 @@ mod tests {
 
     fn language(identifier: &str) -> LanguageIdentifier {
         LanguageIdentifier::new(identifier).unwrap()
+    }
+
+    fn test_processor(proofreader: Arc<dyn Proofreader>) -> ApplicationProcessor {
+        let preferences =
+            Arc::new(TranslationPreferences::load(Arc::new(MemorySettingsStore)).unwrap());
+        ApplicationProcessor::new(
+            Arc::new(FakeNativeTranslator {
+                requests: Mutex::new(Vec::new()),
+            }),
+            preferences,
+            proofreader,
+        )
     }
 }

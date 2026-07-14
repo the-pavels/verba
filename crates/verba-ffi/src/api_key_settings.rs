@@ -5,11 +5,36 @@ use verba_core::{
     proofreading::ProofreaderError,
     secrets::{SecretStore, SecretStoreError},
 };
-use verba_macos::MacOsSecretStore;
-use verba_openai::{OpenAiClient, OpenAiConfig, OpenAiConnectionTester};
+use verba_macos::{MacOsSecretStore, MacOsSecretStoreBuildError};
+use verba_openai::{
+    ApiKeyProvider, ApiKeyProviderError, OpenAiClient, OpenAiConfig, OpenAiConnectionTester,
+};
 
 const KEYCHAIN_SERVICE: &str = "com.example.Verba";
 const KEYCHAIN_ACCOUNT: &str = "openai-api-key";
+
+pub(crate) fn openai_secret_store() -> Result<Arc<MacOsSecretStore>, MacOsSecretStoreBuildError> {
+    MacOsSecretStore::new(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT).map(Arc::new)
+}
+
+pub(crate) struct SecretStoreApiKeyProvider {
+    secret_store: Arc<dyn SecretStore>,
+}
+
+impl SecretStoreApiKeyProvider {
+    pub(crate) fn new(secret_store: Arc<dyn SecretStore>) -> Self {
+        Self { secret_store }
+    }
+}
+
+impl ApiKeyProvider for SecretStoreApiKeyProvider {
+    fn load_api_key(&self) -> Result<String, ApiKeyProviderError> {
+        self.secret_store
+            .load()
+            .map_err(|_| ApiKeyProviderError::Unavailable)?
+            .ok_or(ApiKeyProviderError::Missing)
+    }
+}
 
 #[derive(uniffi::Object)]
 pub struct OpenAiApiKeySettings {
@@ -21,13 +46,13 @@ pub struct OpenAiApiKeySettings {
 impl OpenAiApiKeySettings {
     #[uniffi::constructor]
     pub fn new() -> Result<Arc<Self>, OpenAiApiKeyError> {
-        let secret_store = MacOsSecretStore::new(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT)
-            .map_err(|_| OpenAiApiKeyError::KeychainUnavailable)?;
+        let secret_store =
+            openai_secret_store().map_err(|_| OpenAiApiKeyError::KeychainUnavailable)?;
         let client = OpenAiClient::new(OpenAiConfig::default())
             .map_err(|_| OpenAiApiKeyError::ConnectionFailed)?;
 
         Ok(Arc::new(Self {
-            secret_store: Arc::new(secret_store),
+            secret_store,
             connection_tester: Arc::new(ProductionConnectionTester(OpenAiConnectionTester::new(
                 Arc::new(client),
             ))),
@@ -137,6 +162,7 @@ fn map_secret_store_error(error: SecretStoreError) -> OpenAiApiKeyError {
 
 fn map_connection_error(error: ProofreaderError) -> OpenAiApiKeyError {
     match error {
+        ProofreaderError::MissingCredential => OpenAiApiKeyError::NotConfigured,
         ProofreaderError::Authentication => OpenAiApiKeyError::Authentication,
         ProofreaderError::RateLimited => OpenAiApiKeyError::RateLimited,
         ProofreaderError::QuotaExceeded => OpenAiApiKeyError::QuotaExceeded,
@@ -243,6 +269,24 @@ mod tests {
         }
     }
 
+    #[test]
+    fn key_provider_reads_each_request_from_secret_storage() {
+        let store = Arc::new(MemorySecretStore::default());
+        let provider = SecretStoreApiKeyProvider::new(store.clone());
+
+        assert_eq!(provider.load_api_key(), Err(ApiKeyProviderError::Missing));
+        store.save("first-key").unwrap();
+        assert_eq!(provider.load_api_key(), Ok("first-key".to_owned()));
+        store.save("replacement-key").unwrap();
+        assert_eq!(provider.load_api_key(), Ok("replacement-key".to_owned()));
+
+        let unavailable = SecretStoreApiKeyProvider::new(Arc::new(UnavailableSecretStore));
+        assert_eq!(
+            unavailable.load_api_key(),
+            Err(ApiKeyProviderError::Unavailable)
+        );
+    }
+
     fn test_settings(
         store: Arc<dyn SecretStore>,
         test_result: Result<(), ProofreaderError>,
@@ -271,6 +315,22 @@ mod tests {
         fn delete(&self) -> Result<(), SecretStoreError> {
             *self.secret.lock().unwrap() = None;
             Ok(())
+        }
+    }
+
+    struct UnavailableSecretStore;
+
+    impl SecretStore for UnavailableSecretStore {
+        fn save(&self, _secret: &str) -> Result<(), SecretStoreError> {
+            Err(SecretStoreError::Unavailable)
+        }
+
+        fn load(&self) -> Result<Option<String>, SecretStoreError> {
+            Err(SecretStoreError::Unavailable)
+        }
+
+        fn delete(&self) -> Result<(), SecretStoreError> {
+            Err(SecretStoreError::Unavailable)
         }
     }
 

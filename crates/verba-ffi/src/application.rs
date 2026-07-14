@@ -14,9 +14,13 @@ use verba_macos::{
     MacOsProofreadingConsentStore, MacOsShortcutRegistry, MacOsTextCapture,
     MacOsTranslationSettingsStore,
 };
+use verba_openai::{OpenAiClient, OpenAiConfig, OpenAiProofreader};
 
 use crate::{
-    PresentationViewModel, processor::ApplicationProcessor, translation::NativeTranslator,
+    PresentationViewModel,
+    api_key_settings::{SecretStoreApiKeyProvider, openai_secret_store},
+    processor::ApplicationProcessor,
+    translation::NativeTranslator,
 };
 
 #[uniffi::export(with_foreign)]
@@ -47,11 +51,20 @@ impl ApplicationRuntime {
             ProofreadingConsentPreferences::load(Arc::new(MacOsProofreadingConsentStore::new()))
                 .map_err(|_| ApplicationRuntimeError::SettingsUnavailable)?,
         );
+        let api_key_provider = Arc::new(SecretStoreApiKeyProvider::new(
+            openai_secret_store().map_err(|_| ApplicationRuntimeError::SettingsUnavailable)?,
+        ));
+        let openai_client = Arc::new(
+            OpenAiClient::new(OpenAiConfig::default())
+                .map_err(|_| ApplicationRuntimeError::ProofreadingUnavailable)?,
+        );
+        let proofreader = Arc::new(OpenAiProofreader::new(openai_client, api_key_provider));
         let coordinator = Arc::new(ShortcutCoordinator::with_proofreading_consent(
             Arc::new(MacOsTextCapture::new()),
             Arc::new(ApplicationProcessor::new(
                 translator,
                 Arc::clone(&translation_preferences),
+                proofreader,
             )),
             presenter,
             proofreading_consent,
@@ -122,6 +135,7 @@ impl Drop for ApplicationRuntime {
 pub enum ApplicationRuntimeError {
     ShortcutRegistrationFailed,
     SettingsUnavailable,
+    ProofreadingUnavailable,
 }
 
 impl fmt::Display for ApplicationRuntimeError {
@@ -129,6 +143,7 @@ impl fmt::Display for ApplicationRuntimeError {
         match self {
             Self::ShortcutRegistrationFailed => formatter.write_str("shortcut registration failed"),
             Self::SettingsUnavailable => formatter.write_str("settings unavailable"),
+            Self::ProofreadingUnavailable => formatter.write_str("proofreading unavailable"),
         }
     }
 }

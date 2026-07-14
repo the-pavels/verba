@@ -186,6 +186,7 @@ pub enum ProofreadingResult {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ProofreaderError {
+    MissingCredential,
     Authentication,
     RateLimited,
     QuotaExceeded,

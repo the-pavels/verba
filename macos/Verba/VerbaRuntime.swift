@@ -42,6 +42,14 @@ final class VerbaRuntime {
                         message: "Quit and reopen Verba, then try again."
                     )
                 )
+            case .ProofreadingUnavailable:
+                popupController.present(
+                    .error(
+                        action: .proofread,
+                        title: "Proofreading unavailable",
+                        message: "Quit and reopen Verba, then try again."
+                    )
+                )
             }
         } catch {
             application = nil

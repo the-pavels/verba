@@ -105,6 +105,64 @@ fn capture_failures_become_actionable_presentations_without_processing() {
 }
 
 #[test]
+fn proofreading_provider_failures_require_an_explicit_user_recovery_action() {
+    let cases = [
+        (
+            ProofreaderError::MissingCredential,
+            "OpenAI API key required",
+            "Settings",
+        ),
+        (
+            ProofreaderError::Authentication,
+            "OpenAI API key rejected",
+            "Replace",
+        ),
+        (
+            ProofreaderError::RateLimited,
+            "OpenAI rate limit reached",
+            "invoke Proofread again",
+        ),
+        (
+            ProofreaderError::QuotaExceeded,
+            "OpenAI quota unavailable",
+            "billing and usage limits",
+        ),
+        (
+            ProofreaderError::Offline,
+            "No internet connection",
+            "Reconnect",
+        ),
+        (
+            ProofreaderError::TimedOut,
+            "OpenAI request timed out",
+            "invoke Proofread again",
+        ),
+        (
+            ProofreaderError::MalformedResponse,
+            "Invalid proofreading response",
+            "Invoke Proofread again",
+        ),
+        (
+            ProofreaderError::ServiceUnavailable,
+            "OpenAI unavailable",
+            "invoke Proofread again",
+        ),
+    ];
+
+    for (error, expected_title, expected_recovery) in cases {
+        let PresentationState::Error(presentation) = processing_failure_presentation(
+            TextAction::Proofread,
+            ProcessingFailure::ProofreadingProvider(error),
+        ) else {
+            panic!("provider failure should produce an error presentation");
+        };
+        assert_eq!(presentation.action, Some(TextAction::Proofread));
+        assert_eq!(presentation.title, expected_title);
+        assert!(presentation.message.contains(expected_recovery));
+    }
+}
+
+#[test]
 fn first_proofreading_waits_for_disclosure_and_resumes_after_acknowledgement() {
     let capture = Arc::new(FakeTextCapture::new(captured("Text")));
     let processor = Arc::new(QueueProcessor::new([
