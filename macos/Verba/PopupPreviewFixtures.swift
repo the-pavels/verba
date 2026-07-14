@@ -7,6 +7,7 @@ extension PresentationViewModel {
     )
 
     static let proofreadingPreview = Self.proofreading(
+        originalText: "This sentence now grammatically correct",
         correctedText: "This sentence is now grammatically correct.",
         explanation: "Added the missing verb and adjusted the punctuation."
     )

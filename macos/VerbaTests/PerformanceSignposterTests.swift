@@ -86,7 +86,11 @@ struct PerformanceSignposterTests {
         signposter.processingCompleted(requestId: 9)
         signposter.presentationDidPresent(
             requestID: 9,
-            presentation: .proofreading(correctedText: "secret", explanation: "secret")
+            presentation: .proofreading(
+                originalText: "secret",
+                correctedText: "secret",
+                explanation: "secret"
+            )
         )
 
         #expect(

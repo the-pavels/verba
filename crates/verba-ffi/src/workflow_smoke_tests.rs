@@ -468,6 +468,7 @@ fn proofreading_runs_from_shortcut_through_the_popup_view_model() {
             (
                 1,
                 PresentationViewModel::Proofreading {
+                    original_text: "This correct.".to_owned(),
                     corrected_text: "This is correct.".to_owned(),
                     explanation: "Added the missing verb.".to_owned(),
                 },
@@ -581,6 +582,7 @@ fn a_different_overlapping_shortcut_replaces_the_active_workflow() {
     assert_eq!(
         updates.last().unwrap().1,
         PresentationViewModel::Proofreading {
+            original_text: "This right.".to_owned(),
             corrected_text: "This is right.".to_owned(),
             explanation: "Fixed grammar.".to_owned(),
         }

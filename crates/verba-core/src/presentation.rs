@@ -23,6 +23,7 @@ pub struct TranslationPresentation {
 /// Content displayed when proofreading produces a correction.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProofreadingPresentation {
+    pub original_text: String,
     pub corrected_text: String,
     pub explanation: String,
 }
@@ -165,6 +166,7 @@ mod tests {
         assert_eq!(
             proofreading,
             PresentationState::Proofreading(ProofreadingPresentation {
+                original_text: "This correct.".to_owned(),
                 corrected_text: "This is correct.".to_owned(),
                 explanation: "Added the missing verb.".to_owned(),
             })
@@ -184,6 +186,7 @@ mod tests {
 
     fn proofreading_state() -> PresentationState {
         PresentationState::Proofreading(ProofreadingPresentation {
+            original_text: "This correct.".to_owned(),
             corrected_text: "This is correct.".to_owned(),
             explanation: "Added the missing verb.".to_owned(),
         })

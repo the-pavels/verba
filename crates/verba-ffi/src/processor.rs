@@ -69,6 +69,7 @@ impl ApplicationProcessor {
         text: String,
         cancellation: &CancellationToken,
     ) -> Result<ProcessingOutcome, ProcessingFailure> {
+        let original_text = text.clone();
         let result = block_on(async {
             let proofreading = Box::pin(self.proofreading.execute(
                 text,
@@ -88,6 +89,7 @@ impl ApplicationProcessor {
             ProofreadingResult::NoIssues => ProcessingOutcome::NoIssues,
             ProofreadingResult::Corrected(correction) => {
                 ProcessingOutcome::Proofreading(ProofreadingPresentation {
+                    original_text,
                     corrected_text: correction.corrected_text().to_owned(),
                     explanation: correction.explanation().to_owned(),
                 })
@@ -291,6 +293,7 @@ mod tests {
                 &CancellationToken::default()
             ),
             Ok(ProcessingOutcome::Proofreading(ProofreadingPresentation {
+                original_text: "This are correct.".to_owned(),
                 corrected_text: "This is correct.".to_owned(),
                 explanation: "Fixed subject-verb agreement.".to_owned(),
             }))

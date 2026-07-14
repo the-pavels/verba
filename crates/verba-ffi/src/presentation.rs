@@ -38,6 +38,7 @@ pub enum PresentationViewModel {
         translated_text: String,
     },
     Proofreading {
+        original_text: String,
         corrected_text: String,
         explanation: String,
     },
@@ -110,6 +111,7 @@ impl From<core::PresentationState> for PresentationViewModel {
                 translated_text: translation.translated_text,
             },
             core::PresentationState::Proofreading(proofreading) => Self::Proofreading {
+                original_text: proofreading.original_text,
                 corrected_text: proofreading.corrected_text,
                 explanation: proofreading.explanation,
             },
@@ -171,10 +173,12 @@ mod tests {
             ),
             (
                 PresentationState::Proofreading(ProofreadingPresentation {
+                    original_text: "This correct.".to_owned(),
                     corrected_text: "This is correct.".to_owned(),
                     explanation: "Added the missing verb.".to_owned(),
                 }),
                 PresentationViewModel::Proofreading {
+                    original_text: "This correct.".to_owned(),
                     corrected_text: "This is correct.".to_owned(),
                     explanation: "Added the missing verb.".to_owned(),
                 },
