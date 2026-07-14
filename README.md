@@ -1,6 +1,14 @@
 # Verba
 
-Verba is a planned macOS menu-bar utility for translating and proofreading text selected in any application. The application will use a Rust core with a small native Swift/AppKit host for macOS integration and presentation.
+Verba is a macOS menu-bar utility for translating and proofreading text selected in another application. It uses a Rust core with a small native Swift/AppKit host for macOS integration and presentation.
+
+Verba supports macOS 15 or later on Apple silicon. Translation uses Apple's Translation framework. Proofreading uses the OpenAI Responses API with an API key stored in the user's macOS Keychain.
+
+- [Privacy and data handling](PRIVACY.md)
+- [Release checklist](RELEASE_CHECKLIST.md)
+- [Security review](SECURITY.md)
+- [Release packaging](RELEASE.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## Development
 
@@ -28,7 +36,7 @@ Build and inspect the unsigned arm64 release package with:
 ./scripts/package-release.sh
 ```
 
-The workflow, outputs, and verification contract are documented in [Release packaging](RELEASE.md). Signing and notarization are intentionally handled by later roadmap items.
+The workflow, outputs, and verification contract are documented in [Release packaging](RELEASE.md). This unsigned artifact is for inspection only.
 
 When a Developer ID Application certificate is installed, build the signed archive with:
 
@@ -38,7 +46,7 @@ VERBA_SIGNING_IDENTITY='Developer ID Application: Your Name (YOURTEAMID)' \
 ./scripts/package-signed-release.sh
 ```
 
-The team ID and signing identity stay outside source control. The signed artifact is not ready to distribute until the notarization and stapling workflow is completed.
+The team ID and signing identity stay outside source control. Create the distributable notarized artifact with `./scripts/notarize-release.sh`, then follow the [release checklist](RELEASE_CHECKLIST.md).
 
 ## Performance budgets
 

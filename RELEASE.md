@@ -32,7 +32,7 @@ The requested marketing version must match the Rust workspace version. The workf
 - `Verba-VERSION-BUILD-arm64-unsigned.zip.sha256`
 - `Verba-VERSION-BUILD-arm64-unsigned.manifest.txt`
 
-The manifest records the source revision and clean/dirty state plus the SHA-256 of every file in the app bundle. The archive checksum is the value to publish after signing and notarization are added; item 42 will need to regenerate it after those operations change the bundle.
+The manifest records the source revision and clean/dirty state plus the SHA-256 of every file in the app bundle. Only the checksum produced for the final notarized archive is publishable.
 
 Unsigned bundle timestamps are normalized to `SOURCE_DATE_EPOCH`, which defaults to the current Git commit time. Set that variable explicitly when reproducing an unsigned artifact from exported sources that do not include Git metadata. Developer ID bundles are not modified after signing because changing signed bundle metadata invalidates the signature; Apple's secure timestamp also means signed archive bytes are not expected to be reproducible.
 
@@ -122,3 +122,5 @@ After acceptance, the workflow extracts the submitted app, staples and validates
 - `Verba-VERSION-BUILD-arm64-developer-id.notary-SUBMISSION_ID.log.json`
 
 The notarized manifest records the accepted submission ID, submitted archive hash, notarization-log hash, source state, and hashes of the final stapled bundle files. Publish only the checksum generated for the notarized ZIP.
+
+Use the [release checklist](RELEASE_CHECKLIST.md) for clean-machine installation, publication, artifact retention, and rollback. Publish [third-party notices](THIRD_PARTY_NOTICES.md) with every release.
