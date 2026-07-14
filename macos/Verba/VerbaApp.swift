@@ -10,7 +10,6 @@ struct VerbaApp: App {
     @StateObject private var shortcutSettings: ShortcutSettingsController
     @StateObject private var settingsSupport: SettingsSupportController
 
-    private let initialState = initialPresentation()
     private let popupController: PopupController
     private let runtime: VerbaRuntime
     private let lifecycle: ApplicationLifecycleController
@@ -73,8 +72,6 @@ struct VerbaApp: App {
     var body: some Scene {
         MenuBarExtra("Verba", systemImage: "character.cursor.ibeam") {
             MenuBarContentView(
-                initialPresentation: initialState,
-                rustCoreVersion: rustCoreVersion(),
                 accessibilityPermission: accessibilityPermission,
                 presentPopupPreview: { presentation in
                     popupController.present(presentation)

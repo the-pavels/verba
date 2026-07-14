@@ -29,6 +29,8 @@
 "Copy translation" = "Copy translation";
 "Delete" = "Delete";
 "Dismiss" = "Dismiss";
+"Enable Accessibility…" = "Enable Accessibility…";
+"Enable Verba in Privacy & Security to read selected text." = "Enable Verba in Privacy & Security to read selected text.";
 "Enabled" = "Enabled";
 "Enter a valid OpenAI API key." = "Enter a valid OpenAI API key.";
 "Enter an OpenAI API key first." = "Enter an OpenAI API key first.";
@@ -70,6 +72,7 @@
 "Original" = "Original";
 "Press shortcut…" = "Press shortcut…";
 "Press to record a new shortcut. Press Escape to cancel." = "Press to record a new shortcut. Press Escape to cancel.";
+"Popup Previews" = "Popup Previews";
 "Preview Popup" = "Preview Popup";
 "Privacy" = "Privacy";
 "Proofread" = "Proofread";
@@ -114,6 +117,7 @@
 "Selection too long" = "Selection too long";
 "Send selected text to OpenAI?" = "Send selected text to OpenAI?";
 "Settings..." = "Settings...";
+"Settings…" = "Settings…";
 "Settings unavailable" = "Settings unavailable";
 "Shortcut error: %@" = "Shortcut error: %@";
 "Shortcut recovery failed. Reopen Verba to restore your saved shortcuts." = "Shortcut recovery failed. Reopen Verba to restore your saved shortcuts.";
@@ -162,6 +166,8 @@
 "Verba couldn’t use the translation result. Try again." = "Verba couldn’t use the translation result. Try again.";
 "Verba does not keep selected-text history or include private content in support diagnostics." = "Verba does not keep selected-text history or include private content in support diagnostics.";
 "Verba result" = "Verba result";
+"Verba is ready" = "Verba is ready";
+"Verba needs Accessibility access to read selected text in other apps." = "Verba needs Accessibility access to read selected text in other apps.";
 "Verba stores the key only in your macOS Keychain." = "Verba stores the key only in your macOS Keychain.";
 "Verba unavailable" = "Verba unavailable";
 "Wait a moment, then invoke Proofread again." = "Wait a moment, then invoke Proofread again.";

@@ -4,8 +4,6 @@ import SwiftUI
 struct MenuBarContentView: View {
     @Environment(\.openSettings) private var openSettings
 
-    let initialPresentation: PresentationViewModel
-    let rustCoreVersion: String
     @ObservedObject var accessibilityPermission: AccessibilityPermissionController
     let presentPopupPreview: (PresentationViewModel) -> Void
 
@@ -23,39 +21,23 @@ struct MenuBarContentView: View {
 
     @ViewBuilder
     private var menuContent: some View {
-        Button("Translate Selected Text") {}
-            .disabled(true)
+        let permission = accessibilityPermission.status.menuPresentation
 
-        Button("Proofread Selected Text") {}
-            .disabled(true)
+        Label(permission.title, systemImage: permission.systemImage)
 
-        Divider()
+        if let message = permission.message {
+            Text(message)
+        }
 
-        Label(
-            "Accessibility: \(accessibilityPermission.status.title)",
-            systemImage: accessibilityPermission.status.systemImage
-        )
-
-        switch accessibilityPermission.status {
-        case .notRequested:
-            Text("Required to copy selected text from other applications.")
-
-            Button("Request Accessibility Access...") {
-                accessibilityPermission.requestPermission()
+        if let action = permission.action {
+            Button(action.title) {
+                perform(action)
             }
-        case .denied:
-            Text("Allow Verba in Privacy & Security to capture selected text.")
-
-            Button("Open Accessibility Settings...") {
-                accessibilityPermission.openSystemSettings()
-            }
-        case .granted:
-            EmptyView()
         }
 
         Divider()
 
-        Button("Settings...") {
+        Button("Settings…") {
             NSApplication.shared.activate()
             openSettings()
         }
@@ -65,7 +47,7 @@ struct MenuBarContentView: View {
         }
 
 #if DEBUG
-        Menu("Preview Popup") {
+        Menu("Popup Previews") {
             Button("Translation Loading") {
                 presentPopupPreview(.loading(action: .translate))
             }
@@ -100,32 +82,70 @@ struct MenuBarContentView: View {
 
         Divider()
 
-        Text("Rust core \(rustCoreVersion) - \(initialPresentation.diagnosticName)")
-
         Button("Quit Verba") {
             NSApplication.shared.terminate(nil)
         }
         .keyboardShortcut("q")
     }
+    private func perform(_ action: MenuBarPermissionAction) {
+        switch action {
+        case .requestAccess:
+            accessibilityPermission.requestPermission()
+        case .openSettings:
+            accessibilityPermission.openSystemSettings()
+        }
+    }
 }
 
-private extension PresentationViewModel {
-    var diagnosticName: String {
+struct MenuBarPermissionPresentation: Equatable {
+    let title: String
+    let systemImage: String
+    let message: String?
+    let action: MenuBarPermissionAction?
+}
+
+enum MenuBarPermissionAction: Equatable {
+    case requestAccess
+    case openSettings
+
+    var title: String {
         switch self {
-        case .idle:
-            "idle"
-        case .loading:
-            "loading"
-        case .proofreadingDisclosure:
-            "proofreading disclosure"
-        case .translation:
-            "translation"
-        case .proofreading:
-            "proofreading"
-        case .noIssues:
-            "no issues"
-        case .error:
-            "error"
+        case .requestAccess:
+            LocalizedCopy.text("Enable Accessibility…")
+        case .openSettings:
+            LocalizedCopy.text("Open Accessibility Settings…")
+        }
+    }
+}
+
+extension AccessibilityPermissionStatus {
+    var menuPresentation: MenuBarPermissionPresentation {
+        switch self {
+        case .notRequested:
+            MenuBarPermissionPresentation(
+                title: LocalizedCopy.text("Accessibility access required"),
+                systemImage: systemImage,
+                message: LocalizedCopy.text(
+                    "Verba needs Accessibility access to read selected text in other apps."
+                ),
+                action: .requestAccess
+            )
+        case .denied:
+            MenuBarPermissionPresentation(
+                title: LocalizedCopy.text("Accessibility access required"),
+                systemImage: systemImage,
+                message: LocalizedCopy.text(
+                    "Enable Verba in Privacy & Security to read selected text."
+                ),
+                action: .openSettings
+            )
+        case .granted:
+            MenuBarPermissionPresentation(
+                title: LocalizedCopy.text("Verba is ready"),
+                systemImage: systemImage,
+                message: nil,
+                action: nil
+            )
         }
     }
 }
