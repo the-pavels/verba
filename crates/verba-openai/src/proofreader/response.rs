@@ -1,8 +1,5 @@
 use serde::Deserialize;
-use verba_core::proofreading::{
-    MAX_PROOFREADING_EXPLANATION_CHARACTERS, ProofreaderError, ProofreaderResponse,
-    ProofreadingCorrection,
-};
+use verba_core::proofreading::{ProofreaderError, ProofreaderResponse, ProofreadingCorrection};
 
 use crate::ResponsesApiResponse;
 
@@ -44,17 +41,13 @@ pub(super) fn decode_response(
     let output_text = output_text.ok_or(ProofreaderError::MalformedResponse)?;
     let payload = serde_json::from_str::<ProofreadingPayload>(&output_text)
         .map_err(|_| ProofreaderError::MalformedResponse)?;
-    match (payload.outcome, payload.corrected_text, payload.explanation) {
-        (ProofreadingOutcome::NoIssues, None, None) => Ok(ProofreaderResponse::NoIssues),
-        (ProofreadingOutcome::Corrected, Some(corrected_text), Some(explanation))
-            if !corrected_text.trim().is_empty()
-                && corrected_text != original_text
-                && !explanation.trim().is_empty()
-                && explanation.chars().count() <= MAX_PROOFREADING_EXPLANATION_CHARACTERS =>
+    match (payload.outcome, payload.corrected_text) {
+        (ProofreadingOutcome::NoIssues, None) => Ok(ProofreaderResponse::NoIssues),
+        (ProofreadingOutcome::Corrected, Some(corrected_text))
+            if !corrected_text.trim().is_empty() && corrected_text != original_text =>
         {
             Ok(ProofreaderResponse::Corrected(ProofreadingCorrection::new(
                 corrected_text,
-                explanation,
             )))
         }
         _ => Err(ProofreaderError::MalformedResponse),
@@ -108,7 +101,6 @@ enum OutputContent {
 struct ProofreadingPayload {
     outcome: ProofreadingOutcome,
     corrected_text: Option<String>,
-    explanation: Option<String>,
 }
 
 #[derive(Deserialize)]

@@ -25,7 +25,6 @@ pub struct TranslationPresentation {
 pub struct ProofreadingPresentation {
     pub original_text: String,
     pub corrected_text: String,
-    pub explanation: String,
 }
 
 /// The single next step offered for a failed operation.
@@ -168,7 +167,6 @@ mod tests {
             PresentationState::Proofreading(ProofreadingPresentation {
                 original_text: "This correct.".to_owned(),
                 corrected_text: "This is correct.".to_owned(),
-                explanation: "Added the missing verb.".to_owned(),
             })
         );
     }
@@ -188,7 +186,6 @@ mod tests {
         PresentationState::Proofreading(ProofreadingPresentation {
             original_text: "This correct.".to_owned(),
             corrected_text: "This is correct.".to_owned(),
-            explanation: "Added the missing verb.".to_owned(),
         })
     }
 }

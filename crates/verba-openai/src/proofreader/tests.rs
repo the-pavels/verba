@@ -2,9 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use futures::executor::block_on;
 use serde_json::{Value, json};
-use verba_core::proofreading::{
-    MAX_PROOFREADING_EXPLANATION_CHARACTERS, ProofreaderResponse, ProofreadingCorrection,
-};
+use verba_core::proofreading::{ProofreaderResponse, ProofreadingCorrection};
 
 use super::*;
 
@@ -38,13 +36,9 @@ fn builds_a_strict_schema_and_separates_instructions_from_selected_text() {
                         },
                         "corrected_text": {
                             "type": ["string", "null"]
-                        },
-                        "explanation": {
-                            "type": ["string", "null"],
-                            "maxLength": MAX_PROOFREADING_EXPLANATION_CHARACTERS
                         }
                     },
-                    "required": ["outcome", "corrected_text", "explanation"],
+                    "required": ["outcome", "corrected_text"],
                     "additionalProperties": false
                 }
             }
@@ -58,21 +52,19 @@ fn decodes_no_issues_and_corrected_outcomes() {
         decode_response(
             completed_output(json!({
                 "outcome": "no_issues",
-                "corrected_text": null,
-                "explanation": null
+                "corrected_text": null
             })),
             "Already correct."
         ),
         Ok(ProofreaderResponse::NoIssues)
     );
 
-    let correction = ProofreadingCorrection::new("This is correct.", "Fixed subject agreement.");
+    let correction = ProofreadingCorrection::new("This is correct.");
     assert_eq!(
         decode_response(
             completed_output(json!({
                 "outcome": "corrected",
-                "corrected_text": "This is correct.",
-                "explanation": "Fixed subject agreement."
+                "corrected_text": "This is correct."
             })),
             "This are correct."
         ),
@@ -113,32 +105,22 @@ fn treats_refusal_and_incomplete_responses_distinctly() {
 
 #[test]
 fn rejects_malformed_structured_outputs() {
-    let too_long = "x".repeat(MAX_PROOFREADING_EXPLANATION_CHARACTERS + 1);
     for payload in [
         json!({
             "outcome": "no_issues",
-            "corrected_text": "Text",
-            "explanation": null
+            "corrected_text": "Text"
         }),
         json!({
             "outcome": "corrected",
-            "corrected_text": null,
-            "explanation": null
+            "corrected_text": null
         }),
         json!({
             "outcome": "corrected",
-            "corrected_text": "Text",
-            "explanation": "Unchanged"
-        }),
-        json!({
-            "outcome": "corrected",
-            "corrected_text": "Corrected",
-            "explanation": too_long
+            "corrected_text": "Text"
         }),
         json!({
             "outcome": "no_issues",
             "corrected_text": null,
-            "explanation": null,
             "unexpected": true
         }),
     ] {
@@ -164,8 +146,7 @@ fn rejects_malformed_structured_outputs() {
 fn loads_the_key_for_each_request_and_preserves_provider_failures() {
     let client = Arc::new(FakeResponsesClient::new(Ok(completed_output(json!({
         "outcome": "no_issues",
-        "corrected_text": null,
-        "explanation": null
+        "corrected_text": null
     })))));
     let key_provider = Arc::new(FakeApiKeyProvider::new(Ok("test-key".to_owned())));
     let proofreader = OpenAiProofreader::with_client(client.clone(), key_provider.clone());
@@ -206,8 +187,7 @@ fn maps_missing_and_unavailable_keys_without_calling_the_api() {
     ] {
         let client = Arc::new(FakeResponsesClient::new(Ok(completed_output(json!({
             "outcome": "no_issues",
-            "corrected_text": null,
-            "explanation": null
+            "corrected_text": null
         })))));
         let proofreader = OpenAiProofreader::with_client(
             client.clone(),

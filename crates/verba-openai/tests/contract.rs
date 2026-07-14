@@ -18,8 +18,7 @@ fn sends_the_responses_api_contract_over_http() {
         200,
         completed_response(json!({
             "outcome": "no_issues",
-            "corrected_text": null,
-            "explanation": null
+            "corrected_text": null
         })),
     ));
     let result = run_proofreading(
@@ -70,15 +69,11 @@ fn sends_the_responses_api_contract_over_http() {
     assert_eq!(format["strict"], true);
     assert_eq!(
         format["schema"]["required"],
-        json!(["outcome", "corrected_text", "explanation"])
+        json!(["outcome", "corrected_text"])
     );
     assert_eq!(format["schema"]["additionalProperties"], false);
     assert_eq!(
         format["schema"]["properties"]["corrected_text"]["type"],
-        json!(["string", "null"])
-    );
-    assert_eq!(
-        format["schema"]["properties"]["explanation"]["type"],
         json!(["string", "null"])
     );
 }

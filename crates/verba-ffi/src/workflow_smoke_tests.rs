@@ -302,10 +302,10 @@ struct RecordingProofreader {
 }
 
 impl RecordingProofreader {
-    fn corrected(corrected_text: &'static str, explanation: &'static str) -> Arc<Self> {
+    fn corrected(corrected_text: &'static str) -> Arc<Self> {
         Arc::new(Self {
             responses: Mutex::new(VecDeque::from([Ok(ProofreaderResponse::Corrected(
-                ProofreadingCorrection::new(corrected_text, explanation),
+                ProofreadingCorrection::new(corrected_text),
             ))])),
             requests: Mutex::new(Vec::new()),
         })
@@ -444,8 +444,7 @@ fn translation_runs_from_shortcut_through_the_popup_view_model() {
 
 #[test]
 fn proofreading_runs_from_shortcut_through_the_popup_view_model() {
-    let proofreader =
-        RecordingProofreader::corrected("This is correct.", "Added the missing verb.");
+    let proofreader = RecordingProofreader::corrected("This is correct.");
     let (coordinator, registry, popup) = workflow(
         ["This correct."],
         RecordingNativeTranslator::new([]),
@@ -470,7 +469,6 @@ fn proofreading_runs_from_shortcut_through_the_popup_view_model() {
                 PresentationViewModel::Proofreading {
                     original_text: "This correct.".to_owned(),
                     corrected_text: "This is correct.".to_owned(),
-                    explanation: "Added the missing verb.".to_owned(),
                 },
             ),
         ]
@@ -556,7 +554,7 @@ fn shutdown_cancels_work_without_publishing_a_new_popup_state() {
 #[test]
 fn a_different_overlapping_shortcut_replaces_the_active_workflow() {
     let translator = BlockingNativeTranslator::new();
-    let proofreader = RecordingProofreader::corrected("This is right.", "Fixed grammar.");
+    let proofreader = RecordingProofreader::corrected("This is right.");
     let (coordinator, registry, popup) = workflow(
         ["Hallo", "This right."],
         translator.clone(),
@@ -584,7 +582,6 @@ fn a_different_overlapping_shortcut_replaces_the_active_workflow() {
         PresentationViewModel::Proofreading {
             original_text: "This right.".to_owned(),
             corrected_text: "This is right.".to_owned(),
-            explanation: "Fixed grammar.".to_owned(),
         }
     );
     assert!(

@@ -18,13 +18,11 @@ fn preserves_curated_prompt_and_output_cases() {
         let response_payload = match fixture.expected {
             ExpectedOutcome::NoIssues => json!({
                 "outcome": "no_issues",
-                "corrected_text": null,
-                "explanation": null
+                "corrected_text": null
             }),
-            ExpectedOutcome::Corrected { text, explanation } => json!({
+            ExpectedOutcome::Corrected { text } => json!({
                 "outcome": "corrected",
-                "corrected_text": text,
-                "explanation": explanation
+                "corrected_text": text
             }),
         };
         let server = MockServer::start(MockResponse::json(
@@ -63,11 +61,10 @@ fn preserves_curated_prompt_and_output_cases() {
                 "{} fixture failed",
                 fixture.name
             ),
-            ExpectedOutcome::Corrected { text, explanation } => assert_eq!(
+            ExpectedOutcome::Corrected { text } => assert_eq!(
                 result,
                 Ok(ProofreadingResult::Corrected(ProofreadingCorrection::new(
-                    text,
-                    explanation
+                    text
                 ))),
                 "{} fixture failed",
                 fixture.name

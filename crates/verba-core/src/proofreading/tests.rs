@@ -73,7 +73,7 @@ fn strict_policy_preserves_every_proofreading_invariant() {
 
 #[test]
 fn returns_a_validated_correction_and_records_the_strict_request() {
-    let correction = ProofreadingCorrection::new("This is correct.", "Fixed the verb form.");
+    let correction = ProofreadingCorrection::new("This is correct.");
     let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::Corrected(
         correction.clone(),
     ))));
@@ -216,13 +216,9 @@ fn maps_provider_cancellation_and_preserves_typed_provider_errors() {
 
 #[test]
 fn rejects_invalid_corrections() {
-    let too_long = "x".repeat(MAX_PROOFREADING_EXPLANATION_CHARACTERS + 1);
-
     for correction in [
-        ProofreadingCorrection::new(" \n", "Fixed an error."),
-        ProofreadingCorrection::new("Original text", "Fixed an error."),
-        ProofreadingCorrection::new("Corrected text", " \n"),
-        ProofreadingCorrection::new("Corrected text", too_long),
+        ProofreadingCorrection::new(" \n"),
+        ProofreadingCorrection::new("Original text"),
     ] {
         let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::Corrected(
             correction,

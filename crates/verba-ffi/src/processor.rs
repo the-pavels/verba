@@ -91,7 +91,6 @@ impl ApplicationProcessor {
                 ProcessingOutcome::Proofreading(ProofreadingPresentation {
                     original_text,
                     corrected_text: correction.corrected_text().to_owned(),
-                    explanation: correction.explanation().to_owned(),
                 })
             }
         })
@@ -280,8 +279,7 @@ mod tests {
 
     #[test]
     fn proofreading_renders_corrected_and_no_issues_outcomes() {
-        let correction =
-            ProofreadingCorrection::new("This is correct.", "Fixed subject-verb agreement.");
+        let correction = ProofreadingCorrection::new("This is correct.");
         let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::Corrected(
             correction,
         ))));
@@ -295,7 +293,6 @@ mod tests {
             Ok(ProcessingOutcome::Proofreading(ProofreadingPresentation {
                 original_text: "This are correct.".to_owned(),
                 corrected_text: "This is correct.".to_owned(),
-                explanation: "Fixed subject-verb agreement.".to_owned(),
             }))
         );
         assert_eq!(

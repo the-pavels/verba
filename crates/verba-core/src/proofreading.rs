@@ -6,7 +6,6 @@ use std::sync::{
 use crate::coordinator::CancellationToken;
 
 pub const MAX_PROOFREADING_CHARACTERS: usize = 10_000;
-pub const MAX_PROOFREADING_EXPLANATION_CHARACTERS: usize = 280;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ProofreadingConsent {
@@ -149,26 +148,19 @@ impl ProofreadingRequest {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProofreadingCorrection {
     corrected_text: String,
-    explanation: String,
 }
 
 impl ProofreadingCorrection {
     #[must_use]
-    pub fn new(corrected_text: impl Into<String>, explanation: impl Into<String>) -> Self {
+    pub fn new(corrected_text: impl Into<String>) -> Self {
         Self {
             corrected_text: corrected_text.into(),
-            explanation: explanation.into(),
         }
     }
 
     #[must_use]
     pub fn corrected_text(&self) -> &str {
         &self.corrected_text
-    }
-
-    #[must_use]
-    pub fn explanation(&self) -> &str {
-        &self.explanation
     }
 }
 
@@ -278,9 +270,6 @@ impl ProofreadText {
             ProofreaderResponse::Corrected(correction) => {
                 if correction.corrected_text.trim().is_empty()
                     || correction.corrected_text == request.text
-                    || correction.explanation.trim().is_empty()
-                    || correction.explanation.chars().count()
-                        > MAX_PROOFREADING_EXPLANATION_CHARACTERS
                 {
                     return Err(ProofreadingFailure::InvalidResult);
                 }

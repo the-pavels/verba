@@ -88,8 +88,7 @@ struct PerformanceSignposterTests {
             requestID: 9,
             presentation: .proofreading(
                 originalText: "secret",
-                correctedText: "secret",
-                explanation: "secret"
+                correctedText: "secret"
             )
         )
 

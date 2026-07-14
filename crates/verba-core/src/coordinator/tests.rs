@@ -638,7 +638,6 @@ fn proofreading() -> ProcessingOutcome {
     ProcessingOutcome::Proofreading(ProofreadingPresentation {
         original_text: "This correct.".to_owned(),
         corrected_text: "This is correct.".to_owned(),
-        explanation: "Added the missing verb.".to_owned(),
     })
 }
 

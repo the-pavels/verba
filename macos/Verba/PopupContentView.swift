@@ -74,11 +74,10 @@ struct PopupContentView: View {
                 translatedText: translatedText,
                 copyText: copyText
             )
-        case let .proofreading(originalText, correctedText, explanation):
+        case let .proofreading(originalText, correctedText):
             ProofreadingResultView(
                 originalText: originalText,
                 correctedText: correctedText,
-                explanation: explanation,
                 copyText: copyText
             )
         case .noIssues:

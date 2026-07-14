@@ -3,7 +3,6 @@ import SwiftUI
 struct ProofreadingResultView: View {
     let originalText: String
     let correctedText: String
-    let explanation: String
     let copyText: (String) -> Void
 
     var body: some View {
@@ -50,17 +49,6 @@ struct ProofreadingResultView: View {
                         )
                     }
 
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("WHAT CHANGED")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .accessibilityAddTraits(.isHeader)
-
-                        Text(explanation)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

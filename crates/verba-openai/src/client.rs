@@ -9,7 +9,7 @@ use verba_core::{coordinator::CancellationToken, proofreading::ProofreaderError}
 use crate::transport::{HttpExecutor, HttpRequest, HttpResponse, ReqwestExecutor, TransportError};
 
 pub const OPENAI_BASE_URL: &str = "https://api.openai.com/";
-pub const DEFAULT_MODEL: &str = "gpt-5.6-terra";
+pub const DEFAULT_MODEL: &str = "gpt-5.6-luna";
 
 const DEFAULT_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);

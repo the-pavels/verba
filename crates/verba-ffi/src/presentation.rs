@@ -40,7 +40,6 @@ pub enum PresentationViewModel {
     Proofreading {
         original_text: String,
         corrected_text: String,
-        explanation: String,
     },
     NoIssues,
     Error {
@@ -113,7 +112,6 @@ impl From<core::PresentationState> for PresentationViewModel {
             core::PresentationState::Proofreading(proofreading) => Self::Proofreading {
                 original_text: proofreading.original_text,
                 corrected_text: proofreading.corrected_text,
-                explanation: proofreading.explanation,
             },
             core::PresentationState::NoIssues => Self::NoIssues,
             core::PresentationState::Error(error) => Self::Error {
@@ -175,12 +173,10 @@ mod tests {
                 PresentationState::Proofreading(ProofreadingPresentation {
                     original_text: "This correct.".to_owned(),
                     corrected_text: "This is correct.".to_owned(),
-                    explanation: "Added the missing verb.".to_owned(),
                 }),
                 PresentationViewModel::Proofreading {
                     original_text: "This correct.".to_owned(),
                     corrected_text: "This is correct.".to_owned(),
-                    explanation: "Added the missing verb.".to_owned(),
                 },
             ),
             (PresentationState::NoIssues, PresentationViewModel::NoIssues),

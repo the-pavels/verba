@@ -1,9 +1,6 @@
 pub enum ExpectedOutcome {
     NoIssues,
-    Corrected {
-        text: &'static str,
-        explanation: &'static str,
-    },
+    Corrected { text: &'static str },
 }
 
 pub struct PromptFixture {
@@ -23,7 +20,6 @@ pub const FIXTURES: &[PromptFixture] = &[
         input: "Das sind ein Test. Esta frase está bien.",
         expected: ExpectedOutcome::Corrected {
             text: "Das ist ein Test. Esta frase está bien.",
-            explanation: "Corrected German subject-verb agreement.",
         },
     },
     PromptFixture {
@@ -31,7 +27,6 @@ pub const FIXTURES: &[PromptFixture] = &[
         input: "Wait she said.",
         expected: ExpectedOutcome::Corrected {
             text: "Wait, she said.",
-            explanation: "Added the missing comma.",
         },
     },
     PromptFixture {
@@ -39,7 +34,6 @@ pub const FIXTURES: &[PromptFixture] = &[
         input: "The first paragraph are here.\n\nThe second paragraph stays unchanged.",
         expected: ExpectedOutcome::Corrected {
             text: "The first paragraph is here.\n\nThe second paragraph stays unchanged.",
-            explanation: "Corrected subject-verb agreement in the first paragraph.",
         },
     },
     PromptFixture {
@@ -47,7 +41,6 @@ pub const FIXTURES: &[PromptFixture] = &[
         input: "- Apples are fresh\n- This orange taste sweet\n  - Nested item stays",
         expected: ExpectedOutcome::Corrected {
             text: "- Apples are fresh\n- This orange tastes sweet\n  - Nested item stays",
-            explanation: "Corrected subject-verb agreement in the second list item.",
         },
     },
     PromptFixture {
@@ -55,7 +48,6 @@ pub const FIXTURES: &[PromptFixture] = &[
         input: "She said, \"This are ready.\"",
         expected: ExpectedOutcome::Corrected {
             text: "She said, \"This is ready.\"",
-            explanation: "Corrected subject-verb agreement inside the quotation.",
         },
     },
     PromptFixture {
@@ -63,7 +55,6 @@ pub const FIXTURES: &[PromptFixture] = &[
         input: "  **This are bold.**  ",
         expected: ExpectedOutcome::Corrected {
             text: "  **This is bold.**  ",
-            explanation: "Corrected subject-verb agreement while preserving formatting.",
         },
     },
 ];
