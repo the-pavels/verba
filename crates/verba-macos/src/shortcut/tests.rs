@@ -36,9 +36,11 @@ struct RegisterCall {
 struct FakeSystemState {
     install_count: usize,
     removed_handlers: Vec<u32>,
+    remove_handler_failure: bool,
     register_calls: Vec<RegisterCall>,
     unregistered_hot_keys: Vec<u32>,
     registration_failures: VecDeque<(usize, SystemError)>,
+    unregistration_failures: VecDeque<u32>,
     next_reference: u32,
 }
 
@@ -70,12 +72,13 @@ impl HotKeySystem for FakeSystem {
         &mut self,
         reference: Self::EventHandlerRef,
     ) -> Result<(), SystemError> {
-        self.state
-            .lock()
-            .expect("system lock poisoned")
-            .removed_handlers
-            .push(reference);
-        Ok(())
+        let mut state = self.state.lock().expect("system lock poisoned");
+        state.removed_handlers.push(reference);
+        if state.remove_handler_failure {
+            Err(SystemError::Failed)
+        } else {
+            Ok(())
+        }
     }
 
     fn register_hot_key(
@@ -109,12 +112,14 @@ impl HotKeySystem for FakeSystem {
     }
 
     fn unregister_hot_key(&mut self, reference: Self::HotKeyRef) -> Result<(), SystemError> {
-        self.state
-            .lock()
-            .expect("system lock poisoned")
-            .unregistered_hot_keys
-            .push(reference);
-        Ok(())
+        let mut state = self.state.lock().expect("system lock poisoned");
+        state.unregistered_hot_keys.push(reference);
+        if state.unregistration_failures.front() == Some(&reference) {
+            state.unregistration_failures.pop_front();
+            Err(SystemError::Failed)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -264,6 +269,44 @@ fn unregister_all_removes_hot_keys_and_event_handler() {
 }
 
 #[test]
+fn failed_unregistration_still_detaches_the_callback_and_retries_cleanup() {
+    let system = FakeSystem::default();
+    let state = system.state();
+    let mut registry = Registry::new(system);
+    let handler = Arc::new(RecordingHandler::default());
+    registry
+        .register(&ShortcutConfiguration::default(), handler)
+        .expect("registration should succeed");
+    {
+        let mut state = state.lock().expect("system lock poisoned");
+        state.unregistration_failures.push_back(1);
+        state.remove_handler_failure = true;
+    }
+
+    assert_eq!(
+        registry.unregister_all(),
+        Err(ShortcutRegistryError::UnregistrationFailed)
+    );
+    assert!(!registry.callback.dispatch(EventHotKeyId {
+        signature: HOT_KEY_SIGNATURE,
+        id: TRANSLATE_HOT_KEY_ID,
+    }));
+    assert_eq!(registry.configuration, None);
+    assert_eq!(registry.hot_key_refs, vec![1]);
+    assert!(registry.event_handler_ref.is_some());
+
+    state
+        .lock()
+        .expect("system lock poisoned")
+        .remove_handler_failure = false;
+    registry
+        .unregister_all()
+        .expect("a later cleanup attempt should succeed");
+    assert!(registry.hot_key_refs.is_empty());
+    assert!(registry.event_handler_ref.is_none());
+}
+
+#[test]
 fn drop_releases_native_registrations() {
     let system = FakeSystem::default();
     let state = system.state();
@@ -280,6 +323,31 @@ fn drop_releases_native_registrations() {
     let state = state.lock().expect("system lock poisoned");
     assert_eq!(state.unregistered_hot_keys, vec![1, 2]);
     assert_eq!(state.removed_handlers, vec![100]);
+}
+
+#[test]
+fn failed_handler_removal_drops_the_rust_handler_without_dangling_user_data() {
+    let system = FakeSystem::default();
+    let state = system.state();
+    let handler = Arc::new(RecordingHandler::default());
+    let weak_handler = Arc::downgrade(&handler);
+    {
+        let mut registry = Registry::new(system);
+        registry
+            .register(&ShortcutConfiguration::default(), handler.clone())
+            .expect("registration should succeed");
+        state
+            .lock()
+            .expect("system lock poisoned")
+            .remove_handler_failure = true;
+        drop(handler);
+    }
+
+    assert!(weak_handler.upgrade().is_none());
+    assert_eq!(
+        state.lock().expect("system lock poisoned").removed_handlers,
+        vec![100]
+    );
 }
 
 #[test]

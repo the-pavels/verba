@@ -13,6 +13,7 @@ struct VerbaApp: App {
     private let initialState = initialPresentation()
     private let popupController: PopupController
     private let runtime: VerbaRuntime
+    private let lifecycle: ApplicationLifecycleController
 
     init() {
         let accessibilityPermission = AccessibilityPermissionController()
@@ -47,6 +48,11 @@ struct VerbaApp: App {
             translator: translator
         )
         self.runtime = runtime
+        lifecycle = ApplicationLifecycleController(
+            runtime: runtime,
+            popup: popupController,
+            accessibilityPermission: accessibilityPermission
+        )
         let targetLanguageSettings = TargetLanguageSettingsController(preferences: runtime)
         _targetLanguageSettings = StateObject(
             wrappedValue: targetLanguageSettings

@@ -3,12 +3,14 @@ import Foundation
 @MainActor
 final class VerbaRuntime {
     private let observer: PopupPresentationObserver
-    private let application: ApplicationRuntime?
+    private var application: ApplicationRuntime?
     private let apiKeySettings: OpenAiApiKeySettings?
+    private weak var popupController: PopupController?
 
     init(popupController: PopupController, translator: NativeTranslator) {
         let observer = PopupPresentationObserver(popupController: popupController)
         self.observer = observer
+        self.popupController = popupController
         apiKeySettings = try? OpenAiApiKeySettings()
 
         do {
@@ -72,6 +74,33 @@ final class VerbaRuntime {
                 )
             )
         }
+    }
+}
+
+extension VerbaRuntime: ApplicationLifecycleRuntime {
+    func prepareForSleep() {
+        _ = try? application?.prepareForSleep()
+    }
+
+    func resumeAfterWake() {
+        do {
+            try application?.resumeAfterWake()
+        } catch {
+            popupController?.present(
+                .error(
+                    action: nil,
+                    title: "Shortcuts unavailable",
+                    message: "Quit and reopen Verba to restore global shortcuts.",
+                    recovery: .dismiss,
+                    diagnosticCode: "runtime.wake-shortcut-registration"
+                )
+            )
+        }
+    }
+
+    func shutdown() {
+        application?.shutdown()
+        application = nil
     }
 }
 

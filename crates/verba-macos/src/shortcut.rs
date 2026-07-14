@@ -199,9 +199,15 @@ impl<S: HotKeySystem> ShortcutRegistry for Registry<S> {
 
     fn unregister_all(&mut self) -> Result<(), ShortcutRegistryError> {
         self.configuration = None;
-        self.unregister_hot_keys()?;
+        let hot_key_result = self.unregister_hot_keys();
         self.callback.clear_handler();
-        self.remove_event_handler()
+        let event_handler_result = self.remove_event_handler();
+
+        if hot_key_result.is_err() || event_handler_result.is_err() {
+            Err(ShortcutRegistryError::UnregistrationFailed)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -210,7 +216,10 @@ impl<S: HotKeySystem> Drop for Registry<S> {
         self.configuration = None;
         let _ = self.unregister_hot_keys();
         self.callback.clear_handler();
-        let _ = self.remove_event_handler();
+        if self.remove_event_handler().is_err() {
+            // Carbon may still call user_data after a failed removal, so retain the empty state.
+            std::mem::forget(std::mem::take(&mut self.callback));
+        }
     }
 }
 

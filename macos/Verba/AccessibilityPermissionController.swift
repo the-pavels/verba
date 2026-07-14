@@ -119,6 +119,8 @@ final class AccessibilityPermissionController: ObservableObject {
     }
 }
 
+extension AccessibilityPermissionController: AccessibilityPermissionRefreshing {}
+
 private struct SystemAccessibilityTrustChecker: AccessibilityTrustChecking {
     func isTrusted(prompt: Bool) -> Bool {
         guard prompt else {

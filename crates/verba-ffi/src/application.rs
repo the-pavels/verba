@@ -41,6 +41,14 @@ pub struct ApplicationRuntime {
     shortcut_configuration: Mutex<ShortcutConfiguration>,
     shortcut_settings_store: Arc<dyn ShortcutSettingsStore>,
     translation_preferences: Arc<TranslationPreferences>,
+    lifecycle: Mutex<ApplicationLifecycle>,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ApplicationLifecycle {
+    Running,
+    Suspended,
+    ShutDown,
 }
 
 #[uniffi::export]
@@ -94,11 +102,43 @@ impl ApplicationRuntime {
             shortcut_configuration: Mutex::new(shortcut_configuration),
             shortcut_settings_store,
             translation_preferences,
+            lifecycle: Mutex::new(ApplicationLifecycle::Running),
         }))
     }
 
     pub fn cancel_active(&self) -> bool {
         self.coordinator.cancel_active()
+    }
+
+    pub fn prepare_for_sleep(&self) -> Result<(), RuntimeLifecycleError> {
+        self.stop(ApplicationLifecycle::Suspended)
+    }
+
+    pub fn resume_after_wake(&self) -> Result<(), RuntimeLifecycleError> {
+        let mut lifecycle = self.lifecycle.lock().expect("lifecycle lock poisoned");
+        match *lifecycle {
+            ApplicationLifecycle::Running => return Ok(()),
+            ApplicationLifecycle::ShutDown => return Err(RuntimeLifecycleError::ShutDown),
+            ApplicationLifecycle::Suspended => {}
+        }
+
+        let configuration = *self
+            .shortcut_configuration
+            .lock()
+            .expect("shortcut configuration lock poisoned");
+        let mut registry = self
+            .shortcut_registry
+            .lock()
+            .expect("shortcut registry lock poisoned");
+        self.coordinator
+            .register_shortcuts(&mut *registry, &configuration)
+            .map_err(|_| RuntimeLifecycleError::ShortcutRegistrationFailed)?;
+        *lifecycle = ApplicationLifecycle::Running;
+        Ok(())
+    }
+
+    pub fn shutdown(&self) {
+        let _ = self.stop(ApplicationLifecycle::ShutDown);
     }
 
     pub fn retry(&self, action: PresentationAction) {
@@ -174,14 +214,35 @@ impl ApplicationRuntime {
     }
 }
 
+impl ApplicationRuntime {
+    fn stop(&self, target: ApplicationLifecycle) -> Result<(), RuntimeLifecycleError> {
+        let mut lifecycle = self.lifecycle.lock().expect("lifecycle lock poisoned");
+        if *lifecycle == ApplicationLifecycle::ShutDown
+            || (*lifecycle == ApplicationLifecycle::Suspended
+                && target == ApplicationLifecycle::Suspended)
+        {
+            return Ok(());
+        }
+
+        if target == ApplicationLifecycle::Suspended {
+            self.coordinator.cancel_active();
+        } else {
+            self.coordinator.shutdown();
+        }
+        let result = self
+            .shortcut_registry
+            .lock()
+            .expect("shortcut registry lock poisoned")
+            .unregister_all()
+            .map_err(|_| RuntimeLifecycleError::ShortcutUnregistrationFailed);
+        *lifecycle = target;
+        result
+    }
+}
+
 impl Drop for ApplicationRuntime {
     fn drop(&mut self) {
-        self.coordinator.shutdown();
-        let _ = self
-            .shortcut_registry
-            .get_mut()
-            .expect("shortcut registry lock poisoned")
-            .unregister_all();
+        let _ = self.stop(ApplicationLifecycle::ShutDown);
     }
 }
 
@@ -203,6 +264,26 @@ impl fmt::Display for ApplicationRuntimeError {
 }
 
 impl Error for ApplicationRuntimeError {}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, uniffi::Error)]
+pub enum RuntimeLifecycleError {
+    ShortcutRegistrationFailed,
+    ShortcutUnregistrationFailed,
+    ShutDown,
+}
+
+impl fmt::Display for RuntimeLifecycleError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let message = match self {
+            Self::ShortcutRegistrationFailed => "shortcut registration failed after wake",
+            Self::ShortcutUnregistrationFailed => "shortcut unregistration failed",
+            Self::ShutDown => "application runtime is shut down",
+        };
+        formatter.write_str(message)
+    }
+}
+
+impl Error for RuntimeLifecycleError {}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, uniffi::Error)]
 pub enum ProofreadingDisclosureError {

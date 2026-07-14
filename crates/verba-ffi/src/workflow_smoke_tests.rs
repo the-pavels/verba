@@ -174,7 +174,9 @@ impl NativeTranslator for RecordingNativeTranslator {
 struct BlockingNativeTranslator {
     requests: Mutex<Vec<NativeTranslationRequest>>,
     started: Mutex<bool>,
-    changed: Condvar,
+    dropped: Mutex<bool>,
+    started_changed: Condvar,
+    dropped_changed: Condvar,
 }
 
 impl BlockingNativeTranslator {
@@ -182,17 +184,27 @@ impl BlockingNativeTranslator {
         Arc::new(Self {
             requests: Mutex::new(Vec::new()),
             started: Mutex::new(false),
-            changed: Condvar::new(),
+            dropped: Mutex::new(false),
+            started_changed: Condvar::new(),
+            dropped_changed: Condvar::new(),
         })
     }
 
     fn wait_until_started(&self) {
         let started = self.started.lock().unwrap();
         let (started, result) = self
-            .changed
+            .started_changed
             .wait_timeout_while(started, WAIT_TIMEOUT, |started| !*started)
             .unwrap();
         assert!(*started && !result.timed_out(), "translation did not start");
+    }
+
+    fn wait_until_dropped(&self) {
+        wait_for_signal(
+            &self.dropped,
+            &self.dropped_changed,
+            "translation did not stop",
+        );
     }
 }
 
@@ -204,9 +216,84 @@ impl NativeTranslator for BlockingNativeTranslator {
     ) -> Result<NativeTranslationResponse, NativeTranslationError> {
         self.requests.lock().unwrap().push(request);
         *self.started.lock().unwrap() = true;
-        self.changed.notify_all();
+        self.started_changed.notify_all();
+        let _drop_signal = DropSignal {
+            dropped: &self.dropped,
+            changed: &self.dropped_changed,
+        };
         futures::future::pending().await
     }
+}
+
+struct BlockingProofreader {
+    started: Mutex<bool>,
+    dropped: Mutex<bool>,
+    started_changed: Condvar,
+    dropped_changed: Condvar,
+}
+
+impl BlockingProofreader {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            started: Mutex::new(false),
+            dropped: Mutex::new(false),
+            started_changed: Condvar::new(),
+            dropped_changed: Condvar::new(),
+        })
+    }
+
+    fn wait_until_started(&self) {
+        wait_for_signal(
+            &self.started,
+            &self.started_changed,
+            "proofreading did not start",
+        );
+    }
+
+    fn wait_until_dropped(&self) {
+        wait_for_signal(
+            &self.dropped,
+            &self.dropped_changed,
+            "proofreading did not stop",
+        );
+    }
+}
+
+#[async_trait::async_trait]
+impl Proofreader for BlockingProofreader {
+    async fn proofread(
+        &self,
+        _request: &ProofreadingRequest,
+        _cancellation: &CancellationToken,
+    ) -> Result<ProofreaderResponse, ProofreaderError> {
+        *self.started.lock().unwrap() = true;
+        self.started_changed.notify_all();
+        let _drop_signal = DropSignal {
+            dropped: &self.dropped,
+            changed: &self.dropped_changed,
+        };
+        futures::future::pending().await
+    }
+}
+
+struct DropSignal<'a> {
+    dropped: &'a Mutex<bool>,
+    changed: &'a Condvar,
+}
+
+impl Drop for DropSignal<'_> {
+    fn drop(&mut self) {
+        *self.dropped.lock().unwrap() = true;
+        self.changed.notify_all();
+    }
+}
+
+fn wait_for_signal(signal: &Mutex<bool>, changed: &Condvar, failure: &str) {
+    let signal = signal.lock().unwrap();
+    let (signal, result) = changed
+        .wait_timeout_while(signal, WAIT_TIMEOUT, |signal| !*signal)
+        .unwrap();
+    assert!(*signal && !result.timed_out(), "{failure}");
 }
 
 struct RecordingProofreader {
@@ -409,6 +496,7 @@ fn cancelling_an_active_translation_returns_the_popup_to_idle() {
     registry.trigger(TextAction::Translate);
     translator.wait_until_started();
     assert!(coordinator.cancel_active());
+    translator.wait_until_dropped();
 
     let updates = popup.wait_for_count(2);
     assert_eq!(updates.last().unwrap().1, PresentationViewModel::Idle);
@@ -416,6 +504,51 @@ fn cancelling_an_active_translation_returns_the_popup_to_idle() {
         !updates
             .iter()
             .any(|(_, state)| matches!(state, PresentationViewModel::Translation { .. }))
+    );
+}
+
+#[test]
+fn cancelling_proofreading_drops_the_pending_provider_request() {
+    let proofreader = BlockingProofreader::new();
+    let (coordinator, registry, popup) = workflow(
+        ["This needs work."],
+        RecordingNativeTranslator::new([]),
+        proofreader.clone(),
+        preferences(Arc::new(MemoryTranslationSettingsStore::default())),
+    );
+
+    registry.trigger(TextAction::Proofread);
+    proofreader.wait_until_started();
+    assert!(coordinator.cancel_active());
+    proofreader.wait_until_dropped();
+
+    let updates = popup.wait_for_count(2);
+    assert_eq!(updates.last().unwrap().1, PresentationViewModel::Idle);
+}
+
+#[test]
+fn shutdown_cancels_work_without_publishing_a_new_popup_state() {
+    let translator = BlockingNativeTranslator::new();
+    let (coordinator, registry, popup) = workflow(
+        ["Hallo"],
+        translator.clone(),
+        RecordingProofreader::no_issues(),
+        preferences(Arc::new(MemoryTranslationSettingsStore::default())),
+    );
+
+    registry.trigger(TextAction::Translate);
+    translator.wait_until_started();
+    coordinator.shutdown();
+    translator.wait_until_dropped();
+
+    assert_eq!(
+        popup.wait_for_count(1),
+        vec![(
+            1,
+            PresentationViewModel::Loading {
+                action: PresentationAction::Translate,
+            },
+        )]
     );
 }
 

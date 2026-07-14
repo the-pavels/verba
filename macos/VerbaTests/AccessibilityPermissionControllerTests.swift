@@ -34,6 +34,20 @@ final class AccessibilityPermissionControllerTests: XCTestCase {
         XCTAssertEqual(fixture.controller.status, .granted)
     }
 
+    func testRepeatedRefreshTracksEveryPermissionTransition() {
+        let fixture = makeController(trusted: false, hasRequested: true)
+
+        fixture.checker.trusted = true
+        fixture.controller.refresh()
+        fixture.checker.trusted = false
+        fixture.controller.refresh()
+        fixture.checker.trusted = true
+        fixture.controller.refresh()
+
+        XCTAssertEqual(fixture.controller.status, .granted)
+        XCTAssertEqual(fixture.checker.promptValues, [false, false, false, false])
+    }
+
     func testOpenSystemSettingsUsesInjectedRoute() {
         let fixture = makeController(trusted: false, hasRequested: true)
 

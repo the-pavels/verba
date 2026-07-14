@@ -13,7 +13,7 @@ final class PopupController {
     private let hostingController: NSHostingController<TranslationPopupHost>
     private let panel: PopupPanel
     private let pasteboardWriter: PasteboardWriter
-    private var clickMonitors: [Any] = []
+    private var clickMonitors: [ClickMonitor] = []
     private var latestRequestID: UInt64 = 0
 
     var onDismiss: (() -> Void)?
@@ -96,6 +96,19 @@ final class PopupController {
         onDismiss?()
     }
 
+    func repositionForScreenChange() {
+        guard panel.isVisible else {
+            return
+        }
+        panel.setFrameOrigin(
+            PopupPositioner.origin(
+                popupSize: panel.frame.size,
+                pointer: NSEvent.mouseLocation,
+                screens: NSScreen.screens
+            )
+        )
+    }
+
     private func hide() {
         stopClickAwayMonitoring()
         panel.orderOut(nil)
@@ -135,13 +148,26 @@ final class PopupController {
                 }
             }
         ) {
-            clickMonitors.append(globalMonitor)
+            clickMonitors.append(ClickMonitor(token: globalMonitor))
         }
     }
 
     private func stopClickAwayMonitoring() {
-        clickMonitors.forEach(NSEvent.removeMonitor)
         clickMonitors.removeAll()
+    }
+}
+
+extension PopupController: ApplicationLifecyclePopup {}
+
+private final class ClickMonitor: @unchecked Sendable {
+    private let token: Any
+
+    init(token: Any) {
+        self.token = token
+    }
+
+    deinit {
+        NSEvent.removeMonitor(token)
     }
 }
 

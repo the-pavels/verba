@@ -39,6 +39,8 @@
 		10000000000000000000005D /* SettingsSupportController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000005F /* SettingsSupportController.swift */; };
 		10000000000000000000005E /* SettingsSupportControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000060 /* SettingsSupportControllerTests.swift */; };
 		100000000000000000000061 /* PopupRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000062 /* PopupRecoveryTests.swift */; };
+		100000000000000000000063 /* ApplicationLifecycleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000064 /* ApplicationLifecycleController.swift */; };
+		100000000000000000000065 /* ApplicationLifecycleControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,6 +88,8 @@
 		10000000000000000000005F /* SettingsSupportController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSupportController.swift; sourceTree = "<group>"; };
 		100000000000000000000060 /* SettingsSupportControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSupportControllerTests.swift; sourceTree = "<group>"; };
 		100000000000000000000062 /* PopupRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupRecoveryTests.swift; sourceTree = "<group>"; };
+		100000000000000000000064 /* ApplicationLifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLifecycleController.swift; sourceTree = "<group>"; };
+		100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLifecycleControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +124,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002B /* AccessibilityPermissionController.swift */,
+				100000000000000000000064 /* ApplicationLifecycleController.swift */,
 				100000000000000000000053 /* ApiKeySettingsController.swift */,
 				100000000000000000000054 /* ApiKeySettingsView.swift */,
 				100000000000000000000044 /* AppleTranslator.swift */,
@@ -168,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */,
+				100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */,
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
 				100000000000000000000062 /* PopupRecoveryTests.swift */,
@@ -304,6 +310,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */,
+				100000000000000000000063 /* ApplicationLifecycleController.swift in Sources */,
 				10000000000000000000004F /* ApiKeySettingsController.swift in Sources */,
 				100000000000000000000050 /* ApiKeySettingsView.swift in Sources */,
 				100000000000000000000041 /* AppleTranslator.swift in Sources */,
@@ -336,6 +343,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */,
+				100000000000000000000065 /* ApplicationLifecycleControllerTests.swift in Sources */,
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
 				100000000000000000000061 /* PopupRecoveryTests.swift in Sources */,
