@@ -95,20 +95,8 @@ final class PopupController {
             return
         }
 
-        if let localMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: Self.clickEventMask,
-            handler: { [weak self] event in
-                guard let self, self.panel.isVisible, event.window !== self.panel else {
-                    return event
-                }
-
-                self.dismiss()
-                return event
-            }
-        ) {
-            clickMonitors.append(localMonitor)
-        }
-
+        // App-local clicks include the menu-bar Settings action and the Settings window itself.
+        // Keep the current result visible there; the global monitor handles other applications.
         if let globalMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: Self.clickEventMask,
             handler: { [weak self] _ in

@@ -8,6 +8,7 @@ struct VerbaApp: App {
     @StateObject private var targetLanguageSettings: TargetLanguageSettingsController
     @StateObject private var apiKeySettings: ApiKeySettingsController
     @StateObject private var shortcutSettings: ShortcutSettingsController
+    @StateObject private var settingsSupport: SettingsSupportController
 
     private let initialState = initialPresentation()
     private let popupController: PopupController
@@ -35,6 +36,9 @@ struct VerbaApp: App {
         _shortcutSettings = StateObject(
             wrappedValue: ShortcutSettingsController(settings: runtime)
         )
+        _settingsSupport = StateObject(
+            wrappedValue: SettingsSupportController(rustCoreVersion: rustCoreVersion())
+        )
         Task {
             await targetLanguageSettings.load()
         }
@@ -57,7 +61,9 @@ struct VerbaApp: App {
             VerbaSettingsView(
                 targetLanguage: targetLanguageSettings,
                 apiKey: apiKeySettings,
-                shortcuts: shortcutSettings
+                shortcuts: shortcutSettings,
+                accessibility: accessibilityPermission,
+                support: settingsSupport
             )
         }
     }

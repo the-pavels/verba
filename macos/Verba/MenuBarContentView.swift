@@ -32,7 +32,7 @@ struct MenuBarContentView: View {
         Divider()
 
         Label(
-            accessibilityPermission.status.menuTitle,
+            "Accessibility: \(accessibilityPermission.status.title)",
             systemImage: accessibilityPermission.status.systemImage
         )
 
@@ -106,30 +106,6 @@ struct MenuBarContentView: View {
             NSApplication.shared.terminate(nil)
         }
         .keyboardShortcut("q")
-    }
-}
-
-private extension AccessibilityPermissionStatus {
-    var menuTitle: String {
-        switch self {
-        case .notRequested:
-            "Accessibility: Not Enabled"
-        case .denied:
-            "Accessibility: Access Needed"
-        case .granted:
-            "Accessibility: Enabled"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .notRequested:
-            "hand.raised"
-        case .denied:
-            "exclamationmark.triangle"
-        case .granted:
-            "checkmark.circle"
-        }
     }
 }
 

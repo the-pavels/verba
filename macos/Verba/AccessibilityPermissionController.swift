@@ -8,6 +8,52 @@ enum AccessibilityPermissionStatus: Equatable {
     case granted
 }
 
+extension AccessibilityPermissionStatus {
+    var title: String {
+        switch self {
+        case .notRequested:
+            "Not Enabled"
+        case .denied:
+            "Access Needed"
+        case .granted:
+            "Enabled"
+        }
+    }
+
+    var diagnosticName: String {
+        switch self {
+        case .notRequested:
+            "not requested"
+        case .denied:
+            "denied"
+        case .granted:
+            "granted"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .notRequested:
+            "hand.raised"
+        case .denied:
+            "exclamationmark.triangle"
+        case .granted:
+            "checkmark.circle"
+        }
+    }
+
+    var explanation: String {
+        switch self {
+        case .notRequested:
+            "Required to copy selected text from other applications."
+        case .denied:
+            "Allow Verba in Privacy & Security to capture selected text."
+        case .granted:
+            "Verba can capture selected text when you use a shortcut."
+        }
+    }
+}
+
 protocol AccessibilityTrustChecking {
     func isTrusted(prompt: Bool) -> Bool
 }
