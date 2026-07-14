@@ -9,7 +9,11 @@ struct ApiKeySettingsView: View {
                 .disabled(controller.isLoading || controller.isTesting)
 
             HStack {
-                Button(controller.isConfigured ? "Replace" : "Save") {
+                Button(
+                    controller.isConfigured
+                        ? LocalizedCopy.text("Replace")
+                        : LocalizedCopy.text("Save")
+                ) {
                     controller.save()
                 }
                 .disabled(!controller.canSave)
@@ -37,15 +41,20 @@ struct ApiKeySettingsView: View {
 
                 Text(
                     controller.isConfigured
-                        ? "••••••••  Stored in Keychain"
-                        : "No API key configured"
+                        ? LocalizedCopy.text("••••••••  Stored in Keychain")
+                        : LocalizedCopy.text("No API key configured")
                 )
                 .foregroundStyle(.secondary)
             }
 
             if let feedback = controller.feedback {
-                Text(feedback.message)
-                    .foregroundStyle(feedback.kind == .success ? .green : .red)
+                Label(
+                    feedback.message,
+                    systemImage: feedback.kind == .success
+                        ? "checkmark.circle"
+                        : "exclamationmark.triangle"
+                )
+                .foregroundStyle(.primary)
             } else {
                 Text("Verba stores the key only in your macOS Keychain.")
                     .foregroundStyle(.secondary)

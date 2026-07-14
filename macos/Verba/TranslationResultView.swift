@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct TranslationResultView: View {
@@ -11,17 +12,22 @@ struct TranslationResultView: View {
             HStack(spacing: 12) {
                 Label("Translation", systemImage: "character.bubble")
                     .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer()
 
-                Text("\(languagePair.source) → \(languagePair.target)")
+                Text("\(localizedSourceLanguage) → \(localizedTargetLanguage)")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .accessibilityLabel(
-                        "From \(languagePair.source) to \(languagePair.target)"
+                        LocalizedCopy.format(
+                            "From %@ to %@",
+                            localizedSourceLanguage,
+                            localizedTargetLanguage
+                        )
                     )
 
-                ResultCopyButton(helpText: "Copy translation") {
+                ResultCopyButton(helpText: LocalizedCopy.text("Copy translation")) {
                     copyText(translatedText)
                 }
             }
@@ -30,12 +36,30 @@ struct TranslationResultView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    textSection(title: "Original", text: originalText, isSecondary: true)
-                    textSection(title: "Translation", text: translatedText, isSecondary: false)
+                    textSection(
+                        title: LocalizedCopy.text("Original"),
+                        text: originalText,
+                        isSecondary: true
+                    )
+                    textSection(
+                        title: LocalizedCopy.text("Translation"),
+                        text: translatedText,
+                        isSecondary: false
+                    )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+    }
+
+    private var localizedSourceLanguage: String {
+        Locale.current.localizedString(forIdentifier: languagePair.source)
+            ?? languagePair.source
+    }
+
+    private var localizedTargetLanguage: String {
+        Locale.current.localizedString(forIdentifier: languagePair.target)
+            ?? languagePair.target
     }
 
     private func textSection(
@@ -47,6 +71,7 @@ struct TranslationResultView: View {
             Text(title.uppercased())
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
 
             Text(text)
                 .font(.body)

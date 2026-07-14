@@ -72,7 +72,7 @@ final class ApiKeySettingsController: ObservableObject {
             if apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 feedback = ApiKeySettingsFeedback(
                     kind: .error,
-                    message: "Enter an OpenAI API key first."
+                    message: LocalizedCopy.text("Enter an OpenAI API key first.")
                 )
             }
             return
@@ -84,7 +84,7 @@ final class ApiKeySettingsController: ObservableObject {
             isConfigured = true
             feedback = ApiKeySettingsFeedback(
                 kind: .success,
-                message: "API key saved in Keychain."
+                message: LocalizedCopy.text("API key saved in Keychain.")
             )
         } catch {
             feedback = feedback(for: error)
@@ -102,7 +102,7 @@ final class ApiKeySettingsController: ObservableObject {
             isConfigured = false
             feedback = ApiKeySettingsFeedback(
                 kind: .success,
-                message: "API key deleted from Keychain."
+                message: LocalizedCopy.text("API key deleted from Keychain.")
             )
         } catch {
             feedback = feedback(for: error)
@@ -123,7 +123,7 @@ final class ApiKeySettingsController: ObservableObject {
             try await settings.testApiKeyConnection()
             feedback = ApiKeySettingsFeedback(
                 kind: .success,
-                message: "Connection to OpenAI succeeded."
+                message: LocalizedCopy.text("Connection to OpenAI succeeded.")
             )
         } catch {
             feedback = feedback(for: error)
@@ -133,27 +133,29 @@ final class ApiKeySettingsController: ObservableObject {
     private func feedback(for error: any Error) -> ApiKeySettingsFeedback {
         let message = switch error as? ApiKeySettingsFailure {
         case .invalidApiKey:
-            "Enter a valid OpenAI API key."
+            LocalizedCopy.text("Enter a valid OpenAI API key.")
         case .notConfigured:
-            "Save an API key before testing the connection."
+            LocalizedCopy.text("Save an API key before testing the connection.")
         case .keychainUnavailable:
-            "Keychain is unavailable. Quit and reopen Verba, then try again."
+            LocalizedCopy.text("Keychain is unavailable. Quit and reopen Verba, then try again.")
         case .authentication:
-            "OpenAI rejected this key. Replace it and try again."
+            LocalizedCopy.text("OpenAI rejected this key. Replace it and try again.")
         case .rateLimited:
-            "OpenAI is rate limiting requests. Wait a moment and try again."
+            LocalizedCopy.text("OpenAI is rate limiting requests. Wait a moment and try again.")
         case .quotaExceeded:
-            "This OpenAI account has no available quota. Check its billing and usage limits."
+            LocalizedCopy.text(
+                "This OpenAI account has no available quota. Check its billing and usage limits."
+            )
         case .offline:
-            "No internet connection is available. Reconnect and try again."
+            LocalizedCopy.text("No internet connection is available. Reconnect and try again.")
         case .timedOut:
-            "The connection to OpenAI timed out. Try again."
+            LocalizedCopy.text("The connection to OpenAI timed out. Try again.")
         case .serviceUnavailable:
-            "OpenAI is temporarily unavailable. Try again later."
+            LocalizedCopy.text("OpenAI is temporarily unavailable. Try again later.")
         case .invalidResponse:
-            "OpenAI returned an unexpected response. Try again."
+            LocalizedCopy.text("OpenAI returned an unexpected response. Try again.")
         case .connectionFailed, .none:
-            "The OpenAI connection couldn’t be tested. Try again."
+            LocalizedCopy.text("The OpenAI connection couldn’t be tested. Try again.")
         }
         return ApiKeySettingsFeedback(kind: .error, message: message)
     }

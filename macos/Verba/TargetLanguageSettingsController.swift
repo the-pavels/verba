@@ -61,7 +61,7 @@ final class TargetLanguageSettingsController: ObservableObject {
             self.options = options
             selectedIdentifier = selected
         } catch {
-            errorMessage = "Target languages are unavailable. Try again."
+            errorMessage = LocalizedCopy.text("Target languages are unavailable. Try again.")
         }
 
         isLoading = false
@@ -77,7 +77,7 @@ final class TargetLanguageSettingsController: ObservableObject {
             selectedIdentifier = identifier
             errorMessage = nil
         } catch {
-            errorMessage = "The target language couldn’t be saved."
+            errorMessage = LocalizedCopy.text("The target language couldn’t be saved.")
         }
     }
 

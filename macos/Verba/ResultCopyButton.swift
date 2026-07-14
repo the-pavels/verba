@@ -11,5 +11,6 @@ struct ResultCopyButton: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .help(helpText)
+        .keyboardShortcut("c", modifiers: EventModifiers.command)
     }
 }

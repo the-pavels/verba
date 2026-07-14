@@ -55,7 +55,7 @@ final class ShortcutSettingsController: ObservableObject {
             apply(try settings.shortcutConfiguration())
             errorMessage = nil
         } catch {
-            errorMessage = "Shortcuts are unavailable. Reopen Verba and try again."
+            errorMessage = LocalizedCopy.text("Shortcuts are unavailable. Reopen Verba and try again.")
         }
     }
 
@@ -66,7 +66,9 @@ final class ShortcutSettingsController: ObservableObject {
         } catch let failure as ShortcutSettingsFailure {
             errorMessage = message(for: failure)
         } catch {
-            errorMessage = "The shortcut couldn’t be changed. Your previous shortcut is still active."
+            errorMessage = LocalizedCopy.text(
+                "The shortcut couldn’t be changed. Your previous shortcut is still active."
+            )
         }
     }
 
@@ -78,48 +80,60 @@ final class ShortcutSettingsController: ObservableObject {
     private func message(for failure: ShortcutSettingsFailure) -> String {
         switch failure {
         case .invalidKey:
-            "Use a letter, number, punctuation key, function key, or navigation key."
+            LocalizedCopy.text(
+                "Use a letter, number, punctuation key, function key, or navigation key."
+            )
         case .missingPrimaryModifier:
-            "Include Command, Control, or Option in the shortcut."
+            LocalizedCopy.text("Include Command, Control, or Option in the shortcut.")
         case .reservedShortcut:
-            "That shortcut is reserved by macOS. Choose another combination."
+            LocalizedCopy.text("That shortcut is reserved by macOS. Choose another combination.")
         case .duplicateShortcut:
-            "That shortcut is already assigned to another Verba action."
+            LocalizedCopy.text("That shortcut is already assigned to another Verba action.")
         case .shortcutUnavailable:
-            "That shortcut is already used by another app. Your previous shortcut is still active."
+            LocalizedCopy.text(
+                "That shortcut is already used by another app. Your previous shortcut is still active."
+            )
         case .registrationFailed:
-            "The shortcut couldn’t be registered. Your previous shortcut is still active."
+            LocalizedCopy.text(
+                "The shortcut couldn’t be registered. Your previous shortcut is still active."
+            )
         case .persistenceFailed:
-            "The shortcut couldn’t be saved. Your previous shortcut is still active."
+            LocalizedCopy.text(
+                "The shortcut couldn’t be saved. Your previous shortcut is still active."
+            )
         case .rollbackFailed:
-            "Shortcut recovery failed. Reopen Verba to restore your saved shortcuts."
+            LocalizedCopy.text(
+                "Shortcut recovery failed. Reopen Verba to restore your saved shortcuts."
+            )
         }
     }
 }
 
 struct ShortcutSettingsView: View {
     @ObservedObject var controller: ShortcutSettingsController
+    @ScaledMetric private var recorderWidth = 140
+    @ScaledMetric private var recorderHeight = 24
 
     var body: some View {
         Section("Shortcuts") {
             LabeledContent("Translate") {
                 ShortcutRecorderView(
                     value: controller.translate,
-                    accessibilityName: "Translate shortcut"
+                    accessibilityName: LocalizedCopy.text("Translate shortcut")
                 ) {
                     controller.record($0, for: .translate)
                 }
-                .frame(width: 140, height: 24)
+                .frame(width: recorderWidth, height: recorderHeight)
             }
 
             LabeledContent("Proofread") {
                 ShortcutRecorderView(
                     value: controller.proofread,
-                    accessibilityName: "Proofread shortcut"
+                    accessibilityName: LocalizedCopy.text("Proofread shortcut")
                 ) {
                     controller.record($0, for: .proofread)
                 }
-                .frame(width: 140, height: 24)
+                .frame(width: recorderWidth, height: recorderHeight)
             }
 
             Text("Click a shortcut, then press the new key combination.")
@@ -127,10 +141,12 @@ struct ShortcutSettingsView: View {
                 .foregroundStyle(.secondary)
 
             if let errorMessage = controller.errorMessage {
-                Text(errorMessage)
+                Label(errorMessage, systemImage: "exclamationmark.triangle")
                     .font(.caption)
-                    .foregroundStyle(.red)
-                    .accessibilityLabel("Shortcut error: \(errorMessage)")
+                    .foregroundStyle(.primary)
+                    .accessibilityLabel(
+                        LocalizedCopy.format("Shortcut error: %@", errorMessage)
+                    )
             }
         }
     }

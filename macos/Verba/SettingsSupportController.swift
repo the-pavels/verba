@@ -31,9 +31,9 @@ final class SettingsSupportController: ObservableObject {
         let bundle = Bundle.main
         self.init(
             appVersion: bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-                ?? "Unknown",
+                ?? LocalizedCopy.text("Unknown"),
             buildVersion: bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String
-                ?? "Unknown",
+                ?? LocalizedCopy.text("Unknown"),
             rustCoreVersion: rustCoreVersion,
             operatingSystem: ProcessInfo.processInfo.operatingSystemVersionString,
             architecture: Self.currentArchitecture,
@@ -88,8 +88,8 @@ final class SettingsSupportController: ObservableObject {
 
     func copyDiagnostics(for snapshot: SupportDiagnosticsSnapshot) {
         feedback = writer.write(diagnostics(for: snapshot))
-            ? "Support diagnostics copied."
-            : "Support diagnostics couldn’t be copied."
+            ? LocalizedCopy.text("Support diagnostics copied.")
+            : LocalizedCopy.text("Support diagnostics couldn’t be copied.")
     }
 
     private static var currentArchitecture: String {

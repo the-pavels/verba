@@ -3,7 +3,6 @@ import SwiftUI
 
 @MainActor
 final class PopupController {
-    private static let compactContentSize = NSSize(width: 380, height: 112)
     private static let clickEventMask: NSEvent.EventTypeMask = [
         .leftMouseDown,
         .rightMouseDown,
@@ -13,6 +12,7 @@ final class PopupController {
     private let hostingController: NSHostingController<TranslationPopupHost>
     private let panel: PopupPanel
     private let pasteboardWriter: PasteboardWriter
+    private let focusRestorer = PopupFocusRestorer<NSWindow>()
     private var clickMonitors: [ClickMonitor] = []
     private var latestRequestID: UInt64 = 0
 
@@ -37,7 +37,10 @@ final class PopupController {
                 translationSessions: translationSessions
             )
         )
-        panel = PopupPanel(contentSize: Self.compactContentSize)
+        panel = PopupPanel(
+            contentSize: PopupSizePolicy.size(for: .idle, textScale: 1)
+        )
+        panel.setAccessibilityLabel(LocalizedCopy.text("Verba result"))
         panel.contentViewController = hostingController
         panel.onDismissRequest = { [weak self] in
             self?.dismiss()
@@ -45,6 +48,7 @@ final class PopupController {
     }
 
     func present(_ presentation: PresentationViewModel) {
+        let presentation = presentation.localizedForDisplay
         guard !presentation.isIdle else {
             hide()
             return
@@ -54,7 +58,10 @@ final class PopupController {
             onDiagnosticCode?(diagnosticCode)
         }
 
-        let contentSize = presentation.contentSize
+        let contentSize = PopupSizePolicy.size(
+            for: presentation,
+            textScale: Self.preferredTextScale
+        )
         hostingController.rootView = TranslationPopupHost(
             presentation: presentation,
             copyText: pasteboardWriter.copy,
@@ -70,6 +77,9 @@ final class PopupController {
             translationSessions: hostingController.rootView.translationSessions
         )
         panel.setContentSize(contentSize)
+        panel.animationBehavior = PopupAnimationPolicy.behavior(
+            reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        )
         panel.setFrameOrigin(
             PopupPositioner.origin(
                 popupSize: contentSize,
@@ -77,8 +87,13 @@ final class PopupController {
                 screens: NSScreen.screens
             )
         )
+        if !panel.isVisible {
+            focusRestorer.capture(NSApplication.shared.keyWindow, excluding: panel)
+        }
         panel.orderFrontRegardless()
         panel.makeKey()
+        panel.makeFirstResponder(hostingController.view)
+        NSAccessibility.post(element: panel, notification: .focusedWindowChanged)
         startClickAwayMonitoring()
     }
 
@@ -111,7 +126,18 @@ final class PopupController {
 
     private func hide() {
         stopClickAwayMonitoring()
+        let shouldRestoreFocus = panel.isKeyWindow
+        let previousKeyWindow = focusRestorer.take()
         panel.orderOut(nil)
+        if shouldRestoreFocus {
+            previousKeyWindow?.makeKey()
+            if let previousKeyWindow {
+                NSAccessibility.post(
+                    element: previousKeyWindow,
+                    notification: .focusedWindowChanged
+                )
+            }
+        }
     }
 
     private func perform(_ command: PopupRecoveryCommand) {
@@ -155,6 +181,11 @@ final class PopupController {
     private func stopClickAwayMonitoring() {
         clickMonitors.removeAll()
     }
+
+    private static var preferredTextScale: CGFloat {
+        let preferredSize = NSFont.preferredFont(forTextStyle: .body).pointSize
+        return preferredSize / NSFont.systemFontSize
+    }
 }
 
 extension PopupController: ApplicationLifecyclePopup {}
@@ -193,9 +224,9 @@ private struct TranslationPopupHost: View {
     }
 }
 
-private extension PresentationViewModel {
-    var contentSize: NSSize {
-        switch self {
+enum PopupSizePolicy {
+    static func size(for presentation: PresentationViewModel, textScale: CGFloat) -> NSSize {
+        let baseSize = switch presentation {
         case .translation:
             NSSize(width: 420, height: 300)
         case .proofreading:
@@ -207,8 +238,34 @@ private extension PresentationViewModel {
         default:
             NSSize(width: 380, height: 112)
         }
+        let scale = min(max(textScale, 1), 1.5)
+        return NSSize(
+            width: (baseSize.width * scale).rounded(),
+            height: (baseSize.height * scale).rounded()
+        )
+    }
+}
+
+enum PopupAnimationPolicy {
+    static func behavior(reduceMotion: Bool) -> NSWindow.AnimationBehavior {
+        reduceMotion ? .none : .utilityWindow
+    }
+}
+
+final class PopupFocusRestorer<Window: AnyObject> {
+    private weak var previous: Window?
+
+    func capture(_ candidate: Window?, excluding current: Window) {
+        previous = candidate === current ? nil : candidate
     }
 
+    func take() -> Window? {
+        defer { previous = nil }
+        return previous
+    }
+}
+
+private extension PresentationViewModel {
     var isIdle: Bool {
         if case .idle = self {
             true

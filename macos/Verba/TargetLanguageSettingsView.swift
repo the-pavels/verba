@@ -12,7 +12,10 @@ struct TargetLanguageSettingsView: View {
                             .controlSize(.small)
                     }
 
-                    Text(controller.errorMessage ?? "Loading supported languages...")
+                    Text(
+                        controller.errorMessage
+                            ?? LocalizedCopy.text("Loading supported languages...")
+                    )
                         .foregroundStyle(.secondary)
 
                     if controller.errorMessage != nil, !controller.isLoading {
@@ -40,8 +43,8 @@ struct TargetLanguageSettingsView: View {
                 }
 
                 if let errorMessage = controller.errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
+                    Label(errorMessage, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.primary)
                 } else {
                     Text("Only languages supported by Apple Translation are shown.")
                         .foregroundStyle(.secondary)

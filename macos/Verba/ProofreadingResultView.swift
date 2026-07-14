@@ -10,10 +10,11 @@ struct ProofreadingResultView: View {
             HStack(spacing: 12) {
                 Label("Proofreading", systemImage: "checkmark.circle")
                     .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
 
                 Spacer()
 
-                ResultCopyButton(helpText: "Copy corrected text") {
+                ResultCopyButton(helpText: LocalizedCopy.text("Copy corrected text")) {
                     copyText(correctedText)
                 }
             }
@@ -26,6 +27,7 @@ struct ProofreadingResultView: View {
                         Text("CORRECTED TEXT")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text(correctedText)
                             .font(.body)
@@ -37,6 +39,7 @@ struct ProofreadingResultView: View {
                         Text("WHAT CHANGED")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.secondary)
+                            .accessibilityAddTraits(.isHeader)
 
                         Text(explanation)
                             .font(.subheadline)

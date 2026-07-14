@@ -41,6 +41,9 @@
 		100000000000000000000061 /* PopupRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000062 /* PopupRecoveryTests.swift */; };
 		100000000000000000000063 /* ApplicationLifecycleController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000064 /* ApplicationLifecycleController.swift */; };
 		100000000000000000000065 /* ApplicationLifecycleControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */; };
+		100000000000000000000067 /* LocalizedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000068 /* LocalizedCopy.swift */; };
+		100000000000000000000069 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000006B /* Localizable.strings */; };
+		10000000000000000000006C /* AccessibilityReadinessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000006D /* AccessibilityReadinessTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -90,6 +93,9 @@
 		100000000000000000000062 /* PopupRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupRecoveryTests.swift; sourceTree = "<group>"; };
 		100000000000000000000064 /* ApplicationLifecycleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLifecycleController.swift; sourceTree = "<group>"; };
 		100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationLifecycleControllerTests.swift; sourceTree = "<group>"; };
+		100000000000000000000068 /* LocalizedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedCopy.swift; sourceTree = "<group>"; };
+		10000000000000000000006A /* English */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = English; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		10000000000000000000006D /* AccessibilityReadinessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityReadinessTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -128,6 +134,8 @@
 				100000000000000000000053 /* ApiKeySettingsController.swift */,
 				100000000000000000000054 /* ApiKeySettingsView.swift */,
 				100000000000000000000044 /* AppleTranslator.swift */,
+				10000000000000000000006B /* Localizable.strings */,
+				100000000000000000000068 /* LocalizedCopy.swift */,
 				100000000000000000000017 /* MenuBarContentView.swift */,
 				100000000000000000000048 /* NativeAppleTranslator.swift */,
 				100000000000000000000027 /* PasteboardWriter.swift */,
@@ -173,6 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */,
+				10000000000000000000006D /* AccessibilityReadinessTests.swift */,
 				100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */,
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
@@ -266,6 +275,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				100000000000000000000069 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -316,6 +326,7 @@
 				100000000000000000000041 /* AppleTranslator.swift in Sources */,
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
 				100000000000000000000047 /* NativeAppleTranslator.swift in Sources */,
+				100000000000000000000067 /* LocalizedCopy.swift in Sources */,
 				100000000000000000000026 /* PasteboardWriter.swift in Sources */,
 				100000000000000000000018 /* PopupContentView.swift in Sources */,
 				10000000000000000000001A /* PopupController.swift in Sources */,
@@ -343,6 +354,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */,
+				10000000000000000000006C /* AccessibilityReadinessTests.swift in Sources */,
 				100000000000000000000065 /* ApplicationLifecycleControllerTests.swift in Sources */,
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
@@ -354,6 +366,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		10000000000000000000006B /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				10000000000000000000006A /* English */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXTargetDependency section */
 		100000000000000000000035 /* PBXTargetDependency */ = {

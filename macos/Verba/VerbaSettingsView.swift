@@ -1,6 +1,11 @@
 import SwiftUI
 
 struct VerbaSettingsView: View {
+    @ScaledMetric private var idealWidth = 520
+    @ScaledMetric private var idealHeight = 680
+    @ScaledMetric private var minimumWidth = 460
+    @ScaledMetric private var minimumHeight = 560
+
     @ObservedObject var targetLanguage: TargetLanguageSettingsController
     @ObservedObject var apiKey: ApiKeySettingsController
     @ObservedObject var shortcuts: ShortcutSettingsController
@@ -21,7 +26,12 @@ struct VerbaSettingsView: View {
             )
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 680)
+        .frame(
+            minWidth: minimumWidth,
+            idealWidth: idealWidth,
+            minHeight: minimumHeight,
+            idealHeight: idealHeight
+        )
         .task {
             await targetLanguage.load()
             await apiKey.load()

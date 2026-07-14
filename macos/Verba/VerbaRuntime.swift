@@ -35,8 +35,8 @@ final class VerbaRuntime {
                 popupController.present(
                     .error(
                         action: nil,
-                        title: "Shortcuts unavailable",
-                        message: "Quit other Verba instances and reopen the app.",
+                        title: LocalizedCopy.text("Shortcuts unavailable"),
+                        message: LocalizedCopy.text("Quit other Verba instances and reopen the app."),
                         recovery: .dismiss,
                         diagnosticCode: "runtime.shortcut-registration"
                     )
@@ -45,8 +45,8 @@ final class VerbaRuntime {
                 popupController.present(
                     .error(
                         action: nil,
-                        title: "Settings unavailable",
-                        message: "Quit and reopen Verba, then try again.",
+                        title: LocalizedCopy.text("Settings unavailable"),
+                        message: LocalizedCopy.text("Quit and reopen Verba, then try again."),
                         recovery: .dismiss,
                         diagnosticCode: "runtime.settings-unavailable"
                     )
@@ -55,8 +55,8 @@ final class VerbaRuntime {
                 popupController.present(
                     .error(
                         action: .proofread,
-                        title: "Proofreading unavailable",
-                        message: "Quit and reopen Verba, then try again.",
+                        title: LocalizedCopy.text("Proofreading unavailable"),
+                        message: LocalizedCopy.text("Quit and reopen Verba, then try again."),
                         recovery: .dismiss,
                         diagnosticCode: "runtime.proofreading-unavailable"
                     )
@@ -67,8 +67,8 @@ final class VerbaRuntime {
             popupController.present(
                 .error(
                     action: nil,
-                    title: "Verba unavailable",
-                    message: "Quit and reopen Verba, then try again.",
+                    title: LocalizedCopy.text("Verba unavailable"),
+                    message: LocalizedCopy.text("Quit and reopen Verba, then try again."),
                     recovery: .dismiss,
                     diagnosticCode: "runtime.unknown"
                 )
@@ -89,8 +89,10 @@ extension VerbaRuntime: ApplicationLifecycleRuntime {
             popupController?.present(
                 .error(
                     action: nil,
-                    title: "Shortcuts unavailable",
-                    message: "Quit and reopen Verba to restore global shortcuts.",
+                    title: LocalizedCopy.text("Shortcuts unavailable"),
+                    message: LocalizedCopy.text(
+                        "Quit and reopen Verba to restore global shortcuts."
+                    ),
                     recovery: .dismiss,
                     diagnosticCode: "runtime.wake-shortcut-registration"
                 )

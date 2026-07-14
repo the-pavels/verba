@@ -12,11 +12,11 @@ extension AccessibilityPermissionStatus {
     var title: String {
         switch self {
         case .notRequested:
-            "Not Enabled"
+            LocalizedCopy.text("Not Enabled")
         case .denied:
-            "Access Needed"
+            LocalizedCopy.text("Access Needed")
         case .granted:
-            "Enabled"
+            LocalizedCopy.text("Enabled")
         }
     }
 
@@ -45,11 +45,11 @@ extension AccessibilityPermissionStatus {
     var explanation: String {
         switch self {
         case .notRequested:
-            "Required to copy selected text from other applications."
+            LocalizedCopy.text("Required to copy selected text from other applications.")
         case .denied:
-            "Allow Verba in Privacy & Security to capture selected text."
+            LocalizedCopy.text("Allow Verba in Privacy & Security to capture selected text.")
         case .granted:
-            "Verba can capture selected text when you use a shortcut."
+            LocalizedCopy.text("Verba can capture selected text when you use a shortcut.")
         }
     }
 }

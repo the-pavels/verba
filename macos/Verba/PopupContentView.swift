@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PopupContentView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let presentation: PresentationViewModel
     let copyText: (String) -> Void
     let continueProofreading: () -> Void
@@ -17,6 +19,13 @@ struct PopupContentView: View {
                     .stroke(.separator.opacity(0.6), lineWidth: 1)
             }
             .padding(1)
+            .focusSection()
+            .accessibilityElement(children: .contain)
+            .transaction { transaction in
+                if reduceMotion {
+                    transaction.animation = nil
+                }
+            }
     }
 
     @ViewBuilder
@@ -28,20 +37,22 @@ struct PopupContentView: View {
             HStack(spacing: 12) {
                 ProgressView()
                     .controlSize(.small)
+                    .accessibilityHidden(true)
 
                 Text(action.loadingTitle)
                     .font(.headline)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(action.loadingTitle)
         case .proofreadingDisclosure:
             VStack(alignment: .leading, spacing: 10) {
                 Label("Send selected text to OpenAI?", systemImage: "hand.raised.fill")
                     .font(.headline)
-                    .foregroundStyle(.orange)
+                    .accessibilityAddTraits(.isHeader)
 
-                Text(
-                    "Proofreading sends the selected text to OpenAI using your API key. "
-                        + "Translation remains on this Mac."
-                )
+                Text(LocalizedCopy.text(
+                    "Proofreading sends the selected text to OpenAI using your API key. Translation remains on this Mac."
+                ))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -73,7 +84,7 @@ struct PopupContentView: View {
             VStack(alignment: .leading, spacing: 7) {
                 Label("No issues found", systemImage: "checkmark.circle.fill")
                     .font(.headline)
-                    .foregroundStyle(.green)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text("The selected text looks good. No corrections are needed.")
                     .font(.subheadline)
@@ -83,10 +94,11 @@ struct PopupContentView: View {
             VStack(alignment: .leading, spacing: 7) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .accessibilityHidden(true)
 
                     Text(title)
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                 }
 
                 Text(message)
@@ -99,6 +111,7 @@ struct PopupContentView: View {
                     Button(recovery.buttonTitle) {
                         recover(recovery, action)
                     }
+                    .keyboardShortcut(.defaultAction)
                 }
             }
         }
@@ -109,15 +122,15 @@ extension RecoveryActionViewModel {
     var buttonTitle: String {
         switch self {
         case .retry:
-            "Retry"
+            LocalizedCopy.text("Retry")
         case .openSettings:
-            "Open Settings"
+            LocalizedCopy.text("Open Settings")
         case .grantAccessibility:
-            "Grant Access"
+            LocalizedCopy.text("Grant Access")
         case .changeLanguage:
-            "Change Language"
+            LocalizedCopy.text("Change Language")
         case .dismiss:
-            "Dismiss"
+            LocalizedCopy.text("Dismiss")
         }
     }
 
@@ -146,9 +159,9 @@ private extension PresentationAction {
     var loadingTitle: String {
         switch self {
         case .translate:
-            "Translating selected text..."
+            LocalizedCopy.text("Translating selected text...")
         case .proofread:
-            "Proofreading selected text..."
+            LocalizedCopy.text("Proofreading selected text...")
         }
     }
 }
