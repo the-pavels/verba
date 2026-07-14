@@ -51,6 +51,9 @@
 		100000000000000000000076 /* PopupVisualRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000077 /* PopupVisualRegressionTests.swift */; };
 		100000000000000000000078 /* __Snapshots__ in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000079 /* __Snapshots__ */; };
 		10000000000000000000007A /* MenuBarContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000007B /* MenuBarContentTests.swift */; };
+		10000000000000000000007C /* FirstRunSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000007D /* FirstRunSetup.swift */; };
+		10000000000000000000007E /* FirstRunSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000007F /* FirstRunSetupTests.swift */; };
+		100000000000000000000080 /* FirstRunSetupPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000081 /* FirstRunSetupPages.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -110,6 +113,9 @@
 		100000000000000000000077 /* PopupVisualRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupVisualRegressionTests.swift; sourceTree = "<group>"; };
 		100000000000000000000079 /* __Snapshots__ */ = {isa = PBXFileReference; lastKnownFileType = folder; path = __Snapshots__; sourceTree = "<group>"; };
 		10000000000000000000007B /* MenuBarContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarContentTests.swift; sourceTree = "<group>"; };
+		10000000000000000000007D /* FirstRunSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetup.swift; sourceTree = "<group>"; };
+		10000000000000000000007F /* FirstRunSetupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetupTests.swift; sourceTree = "<group>"; };
+		100000000000000000000081 /* FirstRunSetupPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetupPages.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -149,6 +155,8 @@
 				100000000000000000000053 /* ApiKeySettingsController.swift */,
 				100000000000000000000054 /* ApiKeySettingsView.swift */,
 				100000000000000000000044 /* AppleTranslator.swift */,
+				10000000000000000000007D /* FirstRunSetup.swift */,
+				100000000000000000000081 /* FirstRunSetupPages.swift */,
 				10000000000000000000006B /* Localizable.strings */,
 				100000000000000000000068 /* LocalizedCopy.swift */,
 				100000000000000000000017 /* MenuBarContentView.swift */,
@@ -203,6 +211,7 @@
 				100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */,
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
+				10000000000000000000007F /* FirstRunSetupTests.swift */,
 				10000000000000000000007B /* MenuBarContentTests.swift */,
 				100000000000000000000062 /* PopupRecoveryTests.swift */,
 				100000000000000000000071 /* PerformanceSignposterTests.swift */,
@@ -348,6 +357,8 @@
 				10000000000000000000004F /* ApiKeySettingsController.swift in Sources */,
 				100000000000000000000050 /* ApiKeySettingsView.swift in Sources */,
 				100000000000000000000041 /* AppleTranslator.swift in Sources */,
+				10000000000000000000007C /* FirstRunSetup.swift in Sources */,
+				100000000000000000000080 /* FirstRunSetupPages.swift in Sources */,
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
 				100000000000000000000047 /* NativeAppleTranslator.swift in Sources */,
 				100000000000000000000067 /* LocalizedCopy.swift in Sources */,
@@ -383,6 +394,7 @@
 				100000000000000000000065 /* ApplicationLifecycleControllerTests.swift in Sources */,
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
+				10000000000000000000007E /* FirstRunSetupTests.swift in Sources */,
 				10000000000000000000007A /* MenuBarContentTests.swift in Sources */,
 				100000000000000000000061 /* PopupRecoveryTests.swift in Sources */,
 				100000000000000000000070 /* PerformanceSignposterTests.swift in Sources */,

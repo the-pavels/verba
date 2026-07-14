@@ -14,6 +14,7 @@ struct VerbaApp: App {
     private let runtime: VerbaRuntime
     private let lifecycle: ApplicationLifecycleController
     private let performance: PerformanceSignposter
+    private let firstRunSetup: FirstRunSetupWindowController
 
     init() {
         let performance = PerformanceSignposter()
@@ -57,15 +58,27 @@ struct VerbaApp: App {
             accessibilityPermission: accessibilityPermission
         )
         let targetLanguageSettings = TargetLanguageSettingsController(preferences: runtime)
+        let apiKeySettings = ApiKeySettingsController(settings: runtime)
+        let shortcutSettings = ShortcutSettingsController(settings: runtime)
         _targetLanguageSettings = StateObject(
             wrappedValue: targetLanguageSettings
         )
         _apiKeySettings = StateObject(
-            wrappedValue: ApiKeySettingsController(settings: runtime)
+            wrappedValue: apiKeySettings
         )
         _shortcutSettings = StateObject(
-            wrappedValue: ShortcutSettingsController(settings: runtime)
+            wrappedValue: shortcutSettings
         )
+        let firstRunSetup = FirstRunSetupWindowController(
+            accessibility: accessibilityPermission,
+            targetLanguage: targetLanguageSettings,
+            apiKey: apiKeySettings,
+            shortcuts: shortcutSettings
+        )
+        self.firstRunSetup = firstRunSetup
+        Task { @MainActor in
+            firstRunSetup.presentIfNeeded()
+        }
         performance.startupReady()
     }
 
