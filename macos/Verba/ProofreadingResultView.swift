@@ -8,47 +8,36 @@ struct ProofreadingResultView: View {
     var body: some View {
         let diff = ProofreadingDiff(original: originalText, corrected: correctedText)
 
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Label("Proofreading", systemImage: "checkmark.circle")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
-
-                Spacer()
-
-                ResultCopyButton(helpText: LocalizedCopy.text("Copy corrected text")) {
+        VStack(alignment: .leading, spacing: 14) {
+            PopupResultHeader(
+                title: LocalizedCopy.text("Proofreading"),
+                systemImage: "checkmark.circle.fill",
+                detail: nil,
+                detailAccessibilityLabel: nil,
+                copyHelpText: LocalizedCopy.text("Copy corrected text"),
+                copyAction: {
                     copyText(correctedText)
                 }
-            }
-
-            Divider()
+            )
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(LocalizedCopy.text("Original").uppercased())
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .accessibilityAddTraits(.isHeader)
-
+                VStack(alignment: .leading, spacing: 10) {
+                    PopupResultSection(title: LocalizedCopy.text("Original")) {
                         ProofreadingDiffText(
                             segments: diff.original,
                             accessibilityLabel: "Original: \(originalText)"
                         )
                     }
 
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("CORRECTED TEXT")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .accessibilityAddTraits(.isHeader)
-
+                    PopupResultSection(
+                        title: LocalizedCopy.text("Corrected text"),
+                        isEmphasized: true
+                    ) {
                         ProofreadingDiffText(
                             segments: diff.corrected,
                             accessibilityLabel: "Corrected text: \(correctedText)"
                         )
                     }
-
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -174,12 +163,12 @@ private struct ProofreadingDiffText: View {
         case .unchanged:
             break
         case .removed:
-            text.foregroundColor = .red
-            text.backgroundColor = Color.red.opacity(0.14)
+            text.foregroundColor = Color(nsColor: .labelColor)
+            text.backgroundColor = Color(nsColor: .systemRed).opacity(0.16)
             text.strikethroughStyle = .single
         case .added:
-            text.foregroundColor = .green
-            text.backgroundColor = Color.green.opacity(0.14)
+            text.foregroundColor = Color(nsColor: .labelColor)
+            text.backgroundColor = Color(nsColor: .systemGreen).opacity(0.18)
             text.font = .body.bold()
         }
 

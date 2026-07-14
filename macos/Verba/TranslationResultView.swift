@@ -8,44 +8,40 @@ struct TranslationResultView: View {
     let copyText: (String) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Label("Translation", systemImage: "character.bubble")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
-
-                Spacer()
-
-                Text("\(localizedSourceLanguage) → \(localizedTargetLanguage)")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .accessibilityLabel(
-                        LocalizedCopy.format(
-                            "From %@ to %@",
-                            localizedSourceLanguage,
-                            localizedTargetLanguage
-                        )
-                    )
-
-                ResultCopyButton(helpText: LocalizedCopy.text("Copy translation")) {
+        VStack(alignment: .leading, spacing: 14) {
+            PopupResultHeader(
+                title: LocalizedCopy.text("Translation"),
+                systemImage: "character.bubble.fill",
+                detail: "\(localizedSourceLanguage)  →  \(localizedTargetLanguage)",
+                detailAccessibilityLabel: LocalizedCopy.format(
+                    "From %@ to %@",
+                    localizedSourceLanguage,
+                    localizedTargetLanguage
+                ),
+                copyHelpText: LocalizedCopy.text("Copy translation"),
+                copyAction: {
                     copyText(translatedText)
                 }
-            }
-
-            Divider()
+            )
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    textSection(
-                        title: LocalizedCopy.text("Original"),
-                        text: originalText,
-                        isSecondary: true
-                    )
-                    textSection(
+                VStack(alignment: .leading, spacing: 10) {
+                    PopupResultSection(title: LocalizedCopy.text("Original")) {
+                        Text(originalText)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
+
+                    PopupResultSection(
                         title: LocalizedCopy.text("Translation"),
-                        text: translatedText,
-                        isSecondary: false
-                    )
+                        isEmphasized: true
+                    ) {
+                        Text(translatedText)
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -62,22 +58,4 @@ struct TranslationResultView: View {
             ?? languagePair.target
     }
 
-    private func textSection(
-        title: String,
-        text: String,
-        isSecondary: Bool
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title.uppercased())
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .accessibilityAddTraits(.isHeader)
-
-            Text(text)
-                .font(.body)
-                .foregroundStyle(isSecondary ? .secondary : .primary)
-                .fixedSize(horizontal: false, vertical: true)
-                .textSelection(.enabled)
-        }
-    }
 }

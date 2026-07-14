@@ -52,6 +52,33 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(PopupAnimationPolicy.behavior(reduceMotion: false), .utilityWindow)
     }
 
+    func testHostingControllerDoesNotOverrideThePopupSize() {
+        XCTAssertTrue(PopupHostingSizingPolicy.options.isEmpty)
+    }
+
+    func testPanelConstrainsEveryPresentationToItsPolicySize() {
+        let panel = PopupPanel(contentSize: NSSize(width: 380, height: 112))
+        let disclosureSize = NSSize(width: 420, height: 190)
+
+        panel.setFixedContentSize(disclosureSize)
+
+        XCTAssertEqual(panel.contentMinSize, disclosureSize)
+        XCTAssertEqual(panel.contentMaxSize, disclosureSize)
+        XCTAssertEqual(panel.contentView?.frame.size, disclosureSize)
+    }
+
+    func testPopupKeyboardCommandsRecognizeEscapeAndCommandC() throws {
+        let escape = try XCTUnwrap(keyEvent(keyCode: 53, characters: "\u{1b}"))
+        let copy = try XCTUnwrap(
+            keyEvent(keyCode: 8, characters: "c", modifiers: .command)
+        )
+        let plainC = try XCTUnwrap(keyEvent(keyCode: 8, characters: "c"))
+
+        XCTAssertEqual(PopupKeyboardCommand.command(for: escape), .dismiss)
+        XCTAssertEqual(PopupKeyboardCommand.command(for: copy), .copy)
+        XCTAssertNil(PopupKeyboardCommand.command(for: plainC))
+    }
+
     func testLoadingPopupPreservesSourceFocusThroughCaptureWindow() {
         let loadingDelay = PopupKeyboardFocusPolicy.delay(
             for: .loading(action: .translate)
@@ -70,6 +97,23 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(errorDelay, 0)
     }
 
+    func testClickAwayDismissesOnlyOutsideThePopupFrame() {
+        let popupFrame = NSRect(x: 100, y: 200, width: 420, height: 300)
+
+        XCTAssertFalse(
+            PopupClickAwayPolicy.shouldDismiss(
+                clickLocation: NSPoint(x: 200, y: 300),
+                popupFrame: popupFrame
+            )
+        )
+        XCTAssertTrue(
+            PopupClickAwayPolicy.shouldDismiss(
+                clickLocation: NSPoint(x: 99, y: 300),
+                popupFrame: popupFrame
+            )
+        )
+    }
+
     func testFocusRestorationIsWeakAndOneShot() {
         let restorer = PopupFocusRestorer<FocusOwner>()
         let popup = FocusOwner()
@@ -85,6 +129,25 @@ final class AccessibilityReadinessTests: XCTestCase {
         previous = nil
         XCTAssertNil(weakPrevious)
         XCTAssertNil(restorer.take())
+    }
+
+    private func keyEvent(
+        keyCode: UInt16,
+        characters: String,
+        modifiers: NSEvent.ModifierFlags = []
+    ) -> NSEvent? {
+        NSEvent.keyEvent(
+            with: .keyDown,
+            location: .zero,
+            modifierFlags: modifiers,
+            timestamp: 0,
+            windowNumber: 0,
+            context: nil,
+            characters: characters,
+            charactersIgnoringModifiers: characters,
+            isARepeat: false,
+            keyCode: keyCode
+        )
     }
 }
 

@@ -12,11 +12,27 @@ struct PopupContentView: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .padding(18)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .padding(20)
+            .background {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.regularMaterial)
+
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.accentColor.opacity(0.075),
+                                Color.clear,
+                                Color.clear,
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
             .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(.separator.opacity(0.6), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(.separator.opacity(0.5), lineWidth: 1)
             }
             .padding(1)
             .focusSection()
@@ -45,10 +61,11 @@ struct PopupContentView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel(action.loadingTitle)
         case .proofreadingDisclosure:
-            VStack(alignment: .leading, spacing: 10) {
-                Label("Send selected text to OpenAI?", systemImage: "hand.raised.fill")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: 12) {
+                PopupStatusHeader(
+                    title: LocalizedCopy.text("Send selected text to OpenAI?"),
+                    systemImage: "hand.raised.fill"
+                )
 
                 Text(LocalizedCopy.text(
                     "Proofreading sends the selected text to OpenAI using your API key. Translation remains on this Mac."
@@ -81,25 +98,22 @@ struct PopupContentView: View {
                 copyText: copyText
             )
         case .noIssues:
-            VStack(alignment: .leading, spacing: 7) {
-                Label("No issues found", systemImage: "checkmark.circle.fill")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
+            VStack(alignment: .leading, spacing: 10) {
+                PopupStatusHeader(
+                    title: LocalizedCopy.text("No issues found"),
+                    systemImage: "checkmark.circle.fill"
+                )
 
                 Text("The selected text looks good. No corrections are needed.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
         case let .error(action, title, message, recovery, _):
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .accessibilityHidden(true)
-
-                    Text(title)
-                        .font(.headline)
-                        .accessibilityAddTraits(.isHeader)
-                }
+            VStack(alignment: .leading, spacing: 10) {
+                PopupStatusHeader(
+                    title: title,
+                    systemImage: "exclamationmark.triangle.fill"
+                )
 
                 Text(message)
                     .font(.subheadline)
@@ -114,6 +128,26 @@ struct PopupContentView: View {
                     .keyboardShortcut(.defaultAction)
                 }
             }
+        }
+    }
+}
+
+private struct PopupStatusHeader: View {
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28, height: 28)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                .accessibilityHidden(true)
+
+            Text(title)
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
         }
     }
 }

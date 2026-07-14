@@ -14,6 +14,7 @@ final class PopupController {
     private let pasteboardWriter: PasteboardWriter
     private let focusRestorer = PopupFocusRestorer<NSWindow>()
     private var clickMonitors: [ClickMonitor] = []
+    private var copyableText: String?
     private var focusGeneration: UInt64 = 0
     private var latestRequestID: UInt64 = 0
 
@@ -27,10 +28,12 @@ final class PopupController {
         translationSessions: SystemTranslationSessionProvider,
         pasteboardWriter: PasteboardWriter = PasteboardWriter()
     ) {
+        let initialContentSize = PopupSizePolicy.size(for: .idle, textScale: 1)
         self.pasteboardWriter = pasteboardWriter
         hostingController = NSHostingController(
             rootView: TranslationPopupHost(
                 presentation: .idle,
+                contentSize: initialContentSize,
                 copyText: pasteboardWriter.copy,
                 continueProofreading: {},
                 cancelProofreading: {},
@@ -38,13 +41,18 @@ final class PopupController {
                 translationSessions: translationSessions
             )
         )
-        panel = PopupPanel(
-            contentSize: PopupSizePolicy.size(for: .idle, textScale: 1)
-        )
+        hostingController.sizingOptions = PopupHostingSizingPolicy.options
+        panel = PopupPanel(contentSize: initialContentSize)
         panel.setAccessibilityLabel(LocalizedCopy.text("Verba result"))
         panel.contentViewController = hostingController
         panel.onDismissRequest = { [weak self] in
             self?.dismiss()
+        }
+        panel.onCopyRequest = { [weak self] in
+            guard let self, let copyableText = self.copyableText else {
+                return
+            }
+            self.copyAndDismiss(copyableText)
         }
     }
 
@@ -63,9 +71,13 @@ final class PopupController {
             for: presentation,
             textScale: Self.preferredTextScale
         )
+        copyableText = presentation.copyableResultText
         hostingController.rootView = TranslationPopupHost(
             presentation: presentation,
-            copyText: pasteboardWriter.copy,
+            contentSize: contentSize,
+            copyText: { [weak self] text in
+                self?.copyAndDismiss(text)
+            },
             continueProofreading: { [weak self] in
                 self?.onProofreadingDisclosureContinue?()
             },
@@ -77,7 +89,7 @@ final class PopupController {
             },
             translationSessions: hostingController.rootView.translationSessions
         )
-        panel.setContentSize(contentSize)
+        panel.setFixedContentSize(contentSize)
         panel.animationBehavior = PopupAnimationPolicy.behavior(
             reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         )
@@ -125,6 +137,7 @@ final class PopupController {
 
     private func hide() {
         focusGeneration &+= 1
+        copyableText = nil
         stopClickAwayMonitoring()
         let shouldRestoreFocus = panel.isKeyWindow
         let previousKeyWindow = focusRestorer.take()
@@ -162,7 +175,9 @@ final class PopupController {
         guard panel.isVisible else {
             return
         }
-        panel.makeKey()
+
+        NSApplication.shared.activate()
+        panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(hostingController.view)
         NSAccessibility.post(element: panel, notification: .focusedWindowChanged)
     }
@@ -186,13 +201,40 @@ final class PopupController {
         }
     }
 
+    private func copyAndDismiss(_ text: String) {
+        pasteboardWriter.copy(text)
+        dismiss()
+    }
+
     private func startClickAwayMonitoring() {
         guard clickMonitors.isEmpty else {
             return
         }
 
-        // App-local clicks include the menu-bar Settings action and the Settings window itself.
-        // Keep the current result visible there; the global monitor handles other applications.
+        if let localMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: Self.clickEventMask,
+            handler: { [weak self] event in
+                let screenLocation = event.window?.convertPoint(
+                    toScreen: event.locationInWindow
+                ) ?? NSEvent.mouseLocation
+
+                Task { @MainActor [weak self] in
+                    guard let self,
+                          PopupClickAwayPolicy.shouldDismiss(
+                              clickLocation: screenLocation,
+                              popupFrame: self.panel.frame
+                          )
+                    else {
+                        return
+                    }
+                    self.dismiss()
+                }
+                return event
+            }
+        ) {
+            clickMonitors.append(ClickMonitor(token: localMonitor))
+        }
+
         if let globalMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: Self.clickEventMask,
             handler: { [weak self] _ in
@@ -231,6 +273,7 @@ private final class ClickMonitor: @unchecked Sendable {
 
 private struct TranslationPopupHost: View {
     let presentation: PresentationViewModel
+    let contentSize: NSSize
     let copyText: (String) -> Void
     let continueProofreading: () -> Void
     let cancelProofreading: () -> Void
@@ -245,6 +288,7 @@ private struct TranslationPopupHost: View {
             cancelProofreading: cancelProofreading,
             recover: recover
         )
+        .frame(width: contentSize.width, height: contentSize.height)
         .translationTask(translationSessions.configuration) { session in
             await translationSessions.run(session)
         }
@@ -279,6 +323,10 @@ enum PopupAnimationPolicy {
     }
 }
 
+enum PopupHostingSizingPolicy {
+    static let options: NSHostingSizingOptions = []
+}
+
 enum PopupKeyboardFocusPolicy {
     private static let captureWindow: TimeInterval = 0.65
 
@@ -289,6 +337,12 @@ enum PopupKeyboardFocusPolicy {
         } else {
             0
         }
+    }
+}
+
+enum PopupClickAwayPolicy {
+    static func shouldDismiss(clickLocation: NSPoint, popupFrame: NSRect) -> Bool {
+        !popupFrame.contains(clickLocation)
     }
 }
 
@@ -311,6 +365,17 @@ private extension PresentationViewModel {
             true
         } else {
             false
+        }
+    }
+
+    var copyableResultText: String? {
+        switch self {
+        case let .translation(_, _, translatedText):
+            translatedText
+        case let .proofreading(_, correctedText):
+            correctedText
+        default:
+            nil
         }
     }
 }
