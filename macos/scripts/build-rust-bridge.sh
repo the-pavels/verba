@@ -10,16 +10,19 @@ if [[ "${RUST_PROFILE}" == "release" ]]; then
     cargo build \
         --manifest-path "${repo_root}/Cargo.toml" \
         --package verba-ffi \
+        --locked \
         --release
 else
     cargo build \
         --manifest-path "${repo_root}/Cargo.toml" \
-        --package verba-ffi
+        --package verba-ffi \
+        --locked
 fi
 
 cargo build \
     --manifest-path "${repo_root}/Cargo.toml" \
-    --package uniffi-bindgen-swift
+    --package uniffi-bindgen-swift \
+    --locked
 
 mkdir -p "${generated_dir}"
 

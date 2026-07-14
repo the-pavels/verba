@@ -412,6 +412,7 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -453,8 +454,14 @@
 		100000000000000000000011 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_COVERAGE_MAPPING = NO;
+				CLANG_ENABLE_CODE_COVERAGE = NO;
 				CODE_SIGNING_ALLOWED = NO;
+				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_CODE_COVERAGE = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Verba;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -477,6 +484,8 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Generated";
 				SWIFT_VERSION = 6.0;
+				STRIP_INSTALLED_PRODUCT = YES;
+				STRIP_STYLE = all;
 			};
 			name = Release;
 		};

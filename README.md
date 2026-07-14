@@ -12,6 +12,16 @@ Run the complete local check before each commit:
 
 The check verifies Rust formatting, runs Clippy and the Rust test suite, then builds and tests the unsigned arm64 macOS Debug app. It writes Xcode DerivedData under the system temporary directory by default; set `VERBA_DERIVED_DATA_PATH` to override it.
 
+Run the dependency security and license audit before a release:
+
+```sh
+cargo install cargo-audit --locked
+cargo install cargo-deny --locked
+./scripts/security-check.sh
+```
+
+The security audit uses the current RustSec advisory database and the repository policy in `deny.toml`; unlike the normal local check, it requires network access to refresh advisory data.
+
 ## Performance budgets
 
 Verba emits local Points of Interest signposts under the app bundle identifier in the `Performance` category. The signposts contain request IDs, action names, presentation-state names, and budgets only. They never contain selected text, results, prompts, credentials, or error messages, and they are not sent to an analytics service.

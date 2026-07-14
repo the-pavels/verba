@@ -1,5 +1,6 @@
 [package]
 name = "verba-ffi"
+publish = false
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,11 +12,11 @@ crate-type = ["rlib", "staticlib"]
 async-trait = "0.1.89"
 futures = "0.3.32"
 uniffi = "0.31.0"
-verba-core = { path = "../verba-core" }
+verba-core = { path = "../verba-core", version = "=0.1.0" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-verba-macos = { path = "../verba-macos" }
-verba-openai = { path = "../verba-openai" }
+verba-macos = { path = "../verba-macos", version = "=0.1.0" }
+verba-openai = { path = "../verba-openai", version = "=0.1.0" }
 
 [lints]
 workspace = true

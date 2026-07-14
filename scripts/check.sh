@@ -11,10 +11,10 @@ echo "Checking Rust formatting"
 cargo fmt --all -- --check
 
 echo "Linting Rust"
-cargo clippy --workspace --all-targets -- -D warnings
+cargo clippy --locked --workspace --all-targets -- -D warnings
 
 echo "Testing Rust"
-cargo test --workspace
+cargo test --locked --workspace
 
 echo "Testing the macOS host"
 xcodebuild \

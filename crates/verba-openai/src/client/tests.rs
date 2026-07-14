@@ -72,6 +72,31 @@ fn rejects_invalid_configuration_before_building_the_transport() {
 }
 
 #[test]
+fn requires_https_except_for_literal_loopback_test_servers() {
+    for base_url in [
+        "http://example.test",
+        "http://localhost",
+        "ftp://example.test",
+        "https://user:password@example.test",
+    ] {
+        assert_eq!(
+            OpenAiClient::with_executor(
+                OpenAiConfig::new(base_url, "model"),
+                Arc::new(FakeExecutor::new(Ok(success_response(json!({}))))),
+            )
+            .err(),
+            Some(OpenAiClientBuildError::InvalidBaseUrl)
+        );
+    }
+
+    let client = OpenAiClient::with_executor(
+        OpenAiConfig::new("http://127.0.0.1:8080", "model"),
+        Arc::new(FakeExecutor::new(Ok(success_response(json!({}))))),
+    );
+    assert!(client.is_ok());
+}
+
+#[test]
 fn rejects_missing_credentials_without_executing_a_request() {
     let executor = Arc::new(FakeExecutor::new(Ok(success_response(json!({})))));
     let client = test_client(executor.clone());

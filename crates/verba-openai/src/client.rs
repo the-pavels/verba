@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration};
 use futures::future::{Either, select};
 use serde::Serialize;
 use serde_json::Value;
-use url::Url;
+use url::{Host, Url};
 use verba_core::{coordinator::CancellationToken, proofreading::ProofreaderError};
 
 use crate::transport::{HttpExecutor, HttpRequest, HttpResponse, ReqwestExecutor, TransportError};
@@ -247,7 +247,9 @@ struct CreateResponseBody<'a> {
 
 fn responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
     let mut base_url = Url::parse(base_url).map_err(|_| OpenAiClientBuildError::InvalidBaseUrl)?;
-    if !matches!(base_url.scheme(), "http" | "https")
+    if !has_allowed_transport(&base_url)
+        || !base_url.username().is_empty()
+        || base_url.password().is_some()
         || base_url.query().is_some()
         || base_url.fragment().is_some()
     {
@@ -260,6 +262,21 @@ fn responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
     base_url
         .join("v1/responses")
         .map_err(|_| OpenAiClientBuildError::InvalidBaseUrl)
+}
+
+fn has_allowed_transport(url: &Url) -> bool {
+    if url.scheme() == "https" {
+        return true;
+    }
+    if url.scheme() != "http" {
+        return false;
+    }
+
+    match url.host() {
+        Some(Host::Ipv4(address)) => address.is_loopback(),
+        Some(Host::Ipv6(address)) => address.is_loopback(),
+        Some(Host::Domain(_)) | None => false,
+    }
 }
 
 fn decode_response(response: HttpResponse) -> Result<ResponsesApiResponse, ProofreaderError> {
