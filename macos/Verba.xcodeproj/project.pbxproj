@@ -33,6 +33,9 @@
 		100000000000000000000050 /* ApiKeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000054 /* ApiKeySettingsView.swift */; };
 		100000000000000000000051 /* VerbaSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000055 /* VerbaSettingsView.swift */; };
 		100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000056 /* ApiKeySettingsControllerTests.swift */; };
+		100000000000000000000057 /* ShortcutSettingsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000005A /* ShortcutSettingsController.swift */; };
+		100000000000000000000058 /* ShortcutRecorderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000005B /* ShortcutRecorderView.swift */; };
+		100000000000000000000059 /* ShortcutSettingsControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000005C /* ShortcutSettingsControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +77,9 @@
 		100000000000000000000054 /* ApiKeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeySettingsView.swift; sourceTree = "<group>"; };
 		100000000000000000000055 /* VerbaSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerbaSettingsView.swift; sourceTree = "<group>"; };
 		100000000000000000000056 /* ApiKeySettingsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiKeySettingsControllerTests.swift; sourceTree = "<group>"; };
+		10000000000000000000005A /* ShortcutSettingsController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSettingsController.swift; sourceTree = "<group>"; };
+		10000000000000000000005B /* ShortcutRecorderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutRecorderView.swift; sourceTree = "<group>"; };
+		10000000000000000000005C /* ShortcutSettingsControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSettingsControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +127,8 @@
 				10000000000000000000001F /* PopupPositioner.swift */,
 				100000000000000000000025 /* ProofreadingResultView.swift */,
 				100000000000000000000029 /* ResultCopyButton.swift */,
+				10000000000000000000005B /* ShortcutRecorderView.swift */,
+				10000000000000000000005A /* ShortcutSettingsController.swift */,
 				100000000000000000000021 /* TranslationResultView.swift */,
 				100000000000000000000045 /* TranslationSessionProvider.swift */,
 				10000000000000000000004C /* TargetLanguageSettingsController.swift */,
@@ -156,6 +164,7 @@
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
 				10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */,
+				10000000000000000000005C /* ShortcutSettingsControllerTests.swift */,
 			);
 			path = VerbaTests;
 			sourceTree = "<group>";
@@ -299,6 +308,8 @@
 				100000000000000000000022 /* PopupPreviewFixtures.swift in Sources */,
 				100000000000000000000024 /* ProofreadingResultView.swift in Sources */,
 				100000000000000000000028 /* ResultCopyButton.swift in Sources */,
+				100000000000000000000058 /* ShortcutRecorderView.swift in Sources */,
+				100000000000000000000057 /* ShortcutSettingsController.swift in Sources */,
 				100000000000000000000020 /* TranslationResultView.swift in Sources */,
 				100000000000000000000042 /* TranslationSessionProvider.swift in Sources */,
 				100000000000000000000049 /* TargetLanguageSettingsController.swift in Sources */,
@@ -318,6 +329,7 @@
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
 				10000000000000000000004B /* TargetLanguageSettingsControllerTests.swift in Sources */,
+				100000000000000000000059 /* ShortcutSettingsControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

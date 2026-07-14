@@ -126,6 +126,64 @@ extension VerbaRuntime: ApiKeySettingsManaging {
     }
 }
 
+extension VerbaRuntime: ShortcutSettingsManaging {
+    func shortcutConfiguration() throws -> ShortcutDisplayConfiguration {
+        guard let application else {
+            throw VerbaRuntimeError.unavailable
+        }
+        return displayConfiguration(application.shortcutConfiguration())
+    }
+
+    func setShortcut(
+        _ shortcut: RecordedShortcut,
+        for action: ShortcutPreferenceAction
+    ) throws -> ShortcutDisplayConfiguration {
+        guard let application else {
+            throw VerbaRuntimeError.unavailable
+        }
+        do {
+            let configuration = try application.setShortcut(
+                action: action == .translate ? .translate : .proofread,
+                input: ShortcutInput(
+                    key: shortcut.key,
+                    command: shortcut.command,
+                    control: shortcut.control,
+                    option: shortcut.option,
+                    shift: shortcut.shift
+                )
+            )
+            return displayConfiguration(configuration)
+        } catch {
+            throw mapShortcutSettingsError(error)
+        }
+    }
+}
+
+private func displayConfiguration(
+    _ configuration: ShortcutConfigurationViewModel
+) -> ShortcutDisplayConfiguration {
+    ShortcutDisplayConfiguration(
+        translate: configuration.translate,
+        proofread: configuration.proofread
+    )
+}
+
+private func mapShortcutSettingsError(_ error: any Error) -> ShortcutSettingsFailure {
+    guard let error = error as? ShortcutSettingsError else {
+        return .registrationFailed
+    }
+    return switch error {
+    case .InvalidKey: .invalidKey
+    case .MissingPrimaryModifier: .missingPrimaryModifier
+    case .ReservedShortcut: .reservedShortcut
+    case .DuplicateShortcut: .duplicateShortcut
+    case .ShortcutUnavailable: .shortcutUnavailable
+    case .RegistrationFailed: .registrationFailed
+    case .PersistenceFailed: .persistenceFailed
+    case .RollbackFailed: .rollbackFailed
+    }
+}
+
 private func mapApiKeySettingsError(_ error: any Error) -> ApiKeySettingsFailure {
     guard let error = error as? OpenAiApiKeyError else {
         return .connectionFailed

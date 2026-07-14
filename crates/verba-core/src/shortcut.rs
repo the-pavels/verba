@@ -151,6 +151,10 @@ impl Shortcut {
             return Err(ShortcutValidationError::MissingPrimaryModifier);
         }
 
+        if is_reserved(key, modifiers) {
+            return Err(ShortcutValidationError::ReservedShortcut);
+        }
+
         Ok(Self { key, modifiers })
     }
 
@@ -184,6 +188,33 @@ pub enum ShortcutValidationError {
     InvalidCharacter,
     InvalidFunctionKey,
     MissingPrimaryModifier,
+    ReservedShortcut,
+}
+
+fn is_reserved(key: ShortcutKey, modifiers: ShortcutModifiers) -> bool {
+    let command_without_control_or_option =
+        modifiers.command() && !modifiers.control() && !modifiers.option();
+    if command_without_control_or_option {
+        return matches!(
+            key.0,
+            ShortcutKeyKind::Character('Q' | 'W' | 'H' | 'M')
+                | ShortcutKeyKind::Named(NamedShortcutKey::Space | NamedShortcutKey::Tab)
+        );
+    }
+
+    let control_without_command_or_option =
+        modifiers.control() && !modifiers.command() && !modifiers.option();
+    control_without_command_or_option
+        && matches!(
+            key.0,
+            ShortcutKeyKind::Named(
+                NamedShortcutKey::Space
+                    | NamedShortcutKey::ArrowUp
+                    | NamedShortcutKey::ArrowDown
+                    | NamedShortcutKey::ArrowLeft
+                    | NamedShortcutKey::ArrowRight
+            )
+        )
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -241,6 +272,16 @@ impl Default for ShortcutConfiguration {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ShortcutConfigurationError {
     Collision { shortcut: Shortcut },
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ShortcutSettingsStoreError;
+
+pub trait ShortcutSettingsStore: Send + Sync {
+    fn load(&self) -> Result<Option<ShortcutConfiguration>, ShortcutSettingsStoreError>;
+
+    fn save(&self, configuration: &ShortcutConfiguration)
+    -> Result<(), ShortcutSettingsStoreError>;
 }
 
 pub trait ShortcutEventHandler: Send + Sync {
@@ -333,7 +374,7 @@ mod tests {
         assert!(
             Shortcut::new(
                 ShortcutKey::named(NamedShortcutKey::Space),
-                ShortcutModifiers::new(true, false, false, false)
+                ShortcutModifiers::new(false, true, true, false)
             )
             .is_ok()
         );
@@ -341,6 +382,35 @@ mod tests {
             Shortcut::new(
                 ShortcutKey::function(8).expect("F8 should be valid"),
                 ShortcutModifiers::default()
+            )
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn reserved_macos_shortcuts_are_rejected() {
+        let command = ShortcutModifiers::new(true, false, false, false);
+        let control = ShortcutModifiers::new(false, true, false, false);
+
+        for key in [
+            ShortcutKey::character('Q').unwrap(),
+            ShortcutKey::character('W').unwrap(),
+            ShortcutKey::named(NamedShortcutKey::Space),
+            ShortcutKey::named(NamedShortcutKey::Tab),
+        ] {
+            assert_eq!(
+                Shortcut::new(key, command),
+                Err(ShortcutValidationError::ReservedShortcut)
+            );
+        }
+        assert_eq!(
+            Shortcut::new(ShortcutKey::named(NamedShortcutKey::ArrowUp), control),
+            Err(ShortcutValidationError::ReservedShortcut)
+        );
+        assert!(
+            Shortcut::new(
+                ShortcutKey::character('Q').unwrap(),
+                ShortcutModifiers::new(true, true, false, false)
             )
             .is_ok()
         );

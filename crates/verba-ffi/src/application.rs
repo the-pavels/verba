@@ -7,12 +7,14 @@ use std::{
 use verba_core::{
     coordinator::{PresentationUpdate, ResultPresenter, ShortcutCoordinator},
     proofreading::ProofreadingConsentPreferences,
-    shortcut::{ShortcutConfiguration, ShortcutRegistry},
+    shortcut::{
+        ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutSettingsStore,
+    },
     translation::{LanguageIdentifier, TranslationPreferenceFailure, TranslationPreferences},
 };
 use verba_macos::{
-    MacOsProofreadingConsentStore, MacOsShortcutRegistry, MacOsTextCapture,
-    MacOsTranslationSettingsStore,
+    MacOsProofreadingConsentStore, MacOsShortcutRegistry, MacOsShortcutSettingsStore,
+    MacOsTextCapture, MacOsTranslationSettingsStore,
 };
 use verba_openai::{OpenAiClient, OpenAiConfig, OpenAiProofreader};
 
@@ -20,6 +22,10 @@ use crate::{
     PresentationViewModel,
     api_key_settings::{SecretStoreApiKeyProvider, openai_secret_store},
     processor::ApplicationProcessor,
+    shortcut_settings::{
+        ShortcutConfigurationViewModel, ShortcutInput, ShortcutSettingsAction,
+        ShortcutSettingsError, register_and_save, replacement_configuration,
+    },
     translation::NativeTranslator,
 };
 
@@ -32,6 +38,8 @@ pub trait PresentationObserver: Send + Sync {
 pub struct ApplicationRuntime {
     coordinator: Arc<ShortcutCoordinator>,
     shortcut_registry: Mutex<MacOsShortcutRegistry>,
+    shortcut_configuration: Mutex<ShortcutConfiguration>,
+    shortcut_settings_store: Arc<dyn ShortcutSettingsStore>,
     translation_preferences: Arc<TranslationPreferences>,
 }
 
@@ -69,14 +77,22 @@ impl ApplicationRuntime {
             presenter,
             proofreading_consent,
         ));
+        let shortcut_settings_store: Arc<dyn ShortcutSettingsStore> =
+            Arc::new(MacOsShortcutSettingsStore::new());
+        let shortcut_configuration = shortcut_settings_store
+            .load()
+            .map_err(|_| ApplicationRuntimeError::SettingsUnavailable)?
+            .unwrap_or_default();
         let mut shortcut_registry = MacOsShortcutRegistry::new();
         coordinator
-            .register_shortcuts(&mut shortcut_registry, &ShortcutConfiguration::default())
+            .register_shortcuts(&mut shortcut_registry, &shortcut_configuration)
             .map_err(|_| ApplicationRuntimeError::ShortcutRegistrationFailed)?;
 
         Ok(Arc::new(Self {
             coordinator,
             shortcut_registry: Mutex::new(shortcut_registry),
+            shortcut_configuration: Mutex::new(shortcut_configuration),
+            shortcut_settings_store,
             translation_preferences,
         }))
     }
@@ -117,6 +133,40 @@ impl ApplicationRuntime {
         self.translation_preferences
             .set_target_language(identifier)
             .map_err(Into::into)
+    }
+
+    pub fn shortcut_configuration(&self) -> ShortcutConfigurationViewModel {
+        (*self
+            .shortcut_configuration
+            .lock()
+            .expect("shortcut configuration lock poisoned"))
+        .into()
+    }
+
+    pub fn set_shortcut(
+        &self,
+        action: ShortcutSettingsAction,
+        input: ShortcutInput,
+    ) -> Result<ShortcutConfigurationViewModel, ShortcutSettingsError> {
+        let mut configuration = self
+            .shortcut_configuration
+            .lock()
+            .expect("shortcut configuration lock poisoned");
+        let replacement = replacement_configuration(*configuration, action, input)?;
+        let mut registry = self
+            .shortcut_registry
+            .lock()
+            .expect("shortcut registry lock poisoned");
+        let event_handler: Arc<dyn ShortcutEventHandler> = self.coordinator.clone();
+        register_and_save(
+            &mut *registry,
+            event_handler,
+            self.shortcut_settings_store.as_ref(),
+            *configuration,
+            replacement,
+        )?;
+        *configuration = replacement;
+        Ok(replacement.into())
     }
 }
 

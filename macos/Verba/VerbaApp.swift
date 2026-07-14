@@ -7,6 +7,7 @@ struct VerbaApp: App {
     @StateObject private var accessibilityPermission = AccessibilityPermissionController()
     @StateObject private var targetLanguageSettings: TargetLanguageSettingsController
     @StateObject private var apiKeySettings: ApiKeySettingsController
+    @StateObject private var shortcutSettings: ShortcutSettingsController
 
     private let initialState = initialPresentation()
     private let popupController: PopupController
@@ -31,6 +32,9 @@ struct VerbaApp: App {
         _apiKeySettings = StateObject(
             wrappedValue: ApiKeySettingsController(settings: runtime)
         )
+        _shortcutSettings = StateObject(
+            wrappedValue: ShortcutSettingsController(settings: runtime)
+        )
         Task {
             await targetLanguageSettings.load()
         }
@@ -52,7 +56,8 @@ struct VerbaApp: App {
         Settings {
             VerbaSettingsView(
                 targetLanguage: targetLanguageSettings,
-                apiKey: apiKeySettings
+                apiKey: apiKeySettings,
+                shortcuts: shortcutSettings
             )
         }
     }

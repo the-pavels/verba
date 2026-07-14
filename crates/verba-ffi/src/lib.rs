@@ -7,6 +7,8 @@ mod application;
 mod presentation;
 #[cfg(target_os = "macos")]
 mod processor;
+#[cfg(target_os = "macos")]
+mod shortcut_settings;
 mod translation;
 
 #[cfg(target_os = "macos")]
@@ -18,6 +20,10 @@ pub use application::{
 };
 pub use presentation::{
     LanguagePairViewModel, PresentationAction, PresentationViewModel, initial_presentation,
+};
+#[cfg(target_os = "macos")]
+pub use shortcut_settings::{
+    ShortcutConfigurationViewModel, ShortcutInput, ShortcutSettingsAction, ShortcutSettingsError,
 };
 pub use translation::{
     NativeTranslationError, NativeTranslationRequest, NativeTranslationResponse, NativeTranslator,
