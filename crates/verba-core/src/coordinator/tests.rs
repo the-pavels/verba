@@ -62,6 +62,38 @@ fn registered_shortcut_captures_processes_and_presents_a_result() {
 }
 
 #[test]
+fn workflow_metrics_report_ordered_metadata_without_selected_text() {
+    let selected_text = "private selected text";
+    let capture = Arc::new(FakeTextCapture::new(captured(selected_text)));
+    let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let metrics = Arc::new(RecordingMetrics::default());
+    let coordinator =
+        ShortcutCoordinator::with_metrics(capture, processor, presenter.clone(), metrics.clone());
+
+    coordinator.on_shortcut(TextAction::Translate);
+    presenter.wait_for(2);
+
+    let milestones = metrics.milestones();
+    assert_eq!(
+        milestones,
+        vec![
+            WorkflowMilestone::RequestStarted {
+                request_id: RequestId(1),
+                action: TextAction::Translate,
+            },
+            WorkflowMilestone::CaptureCompleted {
+                request_id: RequestId(1),
+            },
+            WorkflowMilestone::ProcessingCompleted {
+                request_id: RequestId(1),
+            },
+        ]
+    );
+    assert!(!format!("{milestones:?}").contains(selected_text));
+}
+
+#[test]
 fn capture_failures_become_actionable_presentations_without_processing() {
     let cases = [
         (
@@ -398,7 +430,13 @@ fn explicit_cancellation_hides_loading_and_ignores_late_work() {
     let capture = Arc::new(BlockingCapture::new());
     let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
     let presenter = Arc::new(RecordingPresenter::default());
-    let coordinator = ShortcutCoordinator::new(capture.clone(), processor, presenter.clone());
+    let metrics = Arc::new(RecordingMetrics::default());
+    let coordinator = ShortcutCoordinator::with_metrics(
+        capture.clone(),
+        processor,
+        presenter.clone(),
+        metrics.clone(),
+    );
 
     coordinator.on_shortcut(TextAction::Translate);
     capture.wait_until_started();
@@ -423,6 +461,18 @@ fn explicit_cancellation_hides_loading_and_ignores_late_work() {
     );
     coordinator.inner.complete(&request, translation_state());
     assert_eq!(presenter.updates().len(), 2);
+    assert_eq!(
+        metrics.milestones(),
+        vec![
+            WorkflowMilestone::RequestStarted {
+                request_id: RequestId(1),
+                action: TextAction::Translate,
+            },
+            WorkflowMilestone::RequestCancelled {
+                request_id: RequestId(1),
+            },
+        ]
+    );
 
     capture.release();
 }
@@ -662,6 +712,23 @@ impl ResultPresenter for RecordingPresenter {
     fn present(&self, update: PresentationUpdate) {
         self.updates.lock().unwrap().push(update);
         self.updated.notify_all();
+    }
+}
+
+#[derive(Default)]
+struct RecordingMetrics {
+    milestones: Mutex<Vec<WorkflowMilestone>>,
+}
+
+impl RecordingMetrics {
+    fn milestones(&self) -> Vec<WorkflowMilestone> {
+        self.milestones.lock().unwrap().clone()
+    }
+}
+
+impl WorkflowMetrics for RecordingMetrics {
+    fn record(&self, milestone: WorkflowMilestone) {
+        self.milestones.lock().unwrap().push(milestone);
     }
 }
 

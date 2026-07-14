@@ -4,6 +4,8 @@
 mod api_key_settings;
 #[cfg(target_os = "macos")]
 mod application;
+#[cfg(target_os = "macos")]
+mod performance;
 mod presentation;
 #[cfg(target_os = "macos")]
 mod processor;
@@ -20,6 +22,8 @@ pub use application::{
     ApplicationRuntime, ApplicationRuntimeError, PresentationObserver, ProofreadingDisclosureError,
     RuntimeLifecycleError, TargetLanguagePreferenceError,
 };
+#[cfg(target_os = "macos")]
+pub use performance::PerformanceObserver;
 pub use presentation::{
     LanguagePairViewModel, PresentationAction, PresentationViewModel, RecoveryActionViewModel,
     initial_presentation,

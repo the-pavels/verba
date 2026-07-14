@@ -90,6 +90,27 @@ pub trait ResultPresenter: Send + Sync {
     fn present(&self, update: PresentationUpdate);
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum WorkflowMilestone {
+    RequestStarted {
+        request_id: RequestId,
+        action: TextAction,
+    },
+    CaptureCompleted {
+        request_id: RequestId,
+    },
+    ProcessingCompleted {
+        request_id: RequestId,
+    },
+    RequestCancelled {
+        request_id: RequestId,
+    },
+}
+
+pub trait WorkflowMetrics: Send + Sync {
+    fn record(&self, milestone: WorkflowMilestone);
+}
+
 #[derive(Clone)]
 pub struct CancellationToken {
     state: Arc<CancellationState>,
@@ -196,12 +217,46 @@ impl ShortcutCoordinator {
         presenter: Arc<dyn ResultPresenter>,
         proofreading_consent: Arc<dyn ProofreadingConsentGate>,
     ) -> Self {
+        Self::with_proofreading_consent_and_metrics(
+            capture,
+            processor,
+            presenter,
+            proofreading_consent,
+            Arc::new(NoopWorkflowMetrics),
+        )
+    }
+
+    #[must_use]
+    pub fn with_metrics(
+        capture: Arc<dyn TextCapture>,
+        processor: Arc<dyn TextActionProcessor>,
+        presenter: Arc<dyn ResultPresenter>,
+        metrics: Arc<dyn WorkflowMetrics>,
+    ) -> Self {
+        Self::with_proofreading_consent_and_metrics(
+            capture,
+            processor,
+            presenter,
+            Arc::new(AlwaysGrantedProofreadingConsent),
+            metrics,
+        )
+    }
+
+    #[must_use]
+    pub fn with_proofreading_consent_and_metrics(
+        capture: Arc<dyn TextCapture>,
+        processor: Arc<dyn TextActionProcessor>,
+        presenter: Arc<dyn ResultPresenter>,
+        proofreading_consent: Arc<dyn ProofreadingConsentGate>,
+        metrics: Arc<dyn WorkflowMetrics>,
+    ) -> Self {
         Self {
             inner: Arc::new(CoordinatorInner {
                 capture,
                 processor,
                 presenter,
                 proofreading_consent,
+                metrics,
                 next_request_id: AtomicU64::new(1),
                 active: Mutex::new(None),
                 capture_order: Mutex::new(()),
@@ -246,6 +301,7 @@ struct CoordinatorInner {
     processor: Arc<dyn TextActionProcessor>,
     presenter: Arc<dyn ResultPresenter>,
     proofreading_consent: Arc<dyn ProofreadingConsentGate>,
+    metrics: Arc<dyn WorkflowMetrics>,
     next_request_id: AtomicU64,
     active: Mutex<Option<ActiveRequest>>,
     capture_order: Mutex<()>,
@@ -270,6 +326,9 @@ impl CoordinatorInner {
 
             if let Some(request) = active.take() {
                 request.cancellation.cancel();
+                self.metrics.record(WorkflowMilestone::RequestCancelled {
+                    request_id: request.id,
+                });
             }
 
             let request = ActiveRequest {
@@ -280,6 +339,11 @@ impl CoordinatorInner {
             };
             *active = Some(request.clone());
             drop(active);
+
+            self.metrics.record(WorkflowMilestone::RequestStarted {
+                request_id: request.id,
+                action,
+            });
 
             self.presenter.present(PresentationUpdate {
                 request_id: request.id,
@@ -313,6 +377,9 @@ impl CoordinatorInner {
             }
             self.capture.capture()
         };
+        self.metrics.record(WorkflowMilestone::CaptureCompleted {
+            request_id: request.id,
+        });
         let captured = match capture_result {
             Ok(text) => text,
             Err(failure) => {
@@ -346,10 +413,13 @@ impl CoordinatorInner {
             action: request.action,
             text: captured,
         };
-        let state = match self
+        let processing_result = self
             .processor
-            .process(processing_request, &request.cancellation)
-        {
+            .process(processing_request, &request.cancellation);
+        self.metrics.record(WorkflowMilestone::ProcessingCompleted {
+            request_id: request.id,
+        });
+        let state = match processing_result {
             Ok(outcome) => outcome
                 .into_presentation(request.action)
                 .unwrap_or_else(|failure| processing_failure_presentation(request.action, failure)),
@@ -504,6 +574,9 @@ impl CoordinatorInner {
         };
 
         request.cancellation.cancel();
+        self.metrics.record(WorkflowMilestone::RequestCancelled {
+            request_id: request.id,
+        });
         if present_idle {
             self.presenter.present(PresentationUpdate {
                 request_id: request.id,
@@ -523,6 +596,12 @@ struct ActiveRequest {
 }
 
 struct AlwaysGrantedProofreadingConsent;
+
+struct NoopWorkflowMetrics;
+
+impl WorkflowMetrics for NoopWorkflowMetrics {
+    fn record(&self, _milestone: WorkflowMilestone) {}
+}
 
 impl ProofreadingConsentGate for AlwaysGrantedProofreadingConsent {
     fn is_granted(&self) -> bool {

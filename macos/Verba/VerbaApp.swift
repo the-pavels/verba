@@ -14,8 +14,11 @@ struct VerbaApp: App {
     private let popupController: PopupController
     private let runtime: VerbaRuntime
     private let lifecycle: ApplicationLifecycleController
+    private let performance: PerformanceSignposter
 
     init() {
+        let performance = PerformanceSignposter()
+        self.performance = performance
         let accessibilityPermission = AccessibilityPermissionController()
         let settingsSupport = SettingsSupportController(rustCoreVersion: rustCoreVersion())
         _accessibilityPermission = StateObject(wrappedValue: accessibilityPermission)
@@ -45,7 +48,8 @@ struct VerbaApp: App {
         self.popupController = popupController
         let runtime = VerbaRuntime(
             popupController: popupController,
-            translator: translator
+            translator: translator,
+            performance: performance
         )
         self.runtime = runtime
         lifecycle = ApplicationLifecycleController(
@@ -63,9 +67,7 @@ struct VerbaApp: App {
         _shortcutSettings = StateObject(
             wrappedValue: ShortcutSettingsController(settings: runtime)
         )
-        Task {
-            await targetLanguageSettings.load()
-        }
+        performance.startupReady()
     }
 
     var body: some Scene {

@@ -19,8 +19,9 @@ use verba_macos::{
 use verba_openai::{OpenAiClient, OpenAiConfig, OpenAiProofreader};
 
 use crate::{
-    PresentationAction, PresentationViewModel,
+    PerformanceObserver, PresentationAction, PresentationViewModel,
     api_key_settings::{SecretStoreApiKeyProvider, openai_secret_store},
+    performance::ForeignWorkflowMetrics,
     processor::ApplicationProcessor,
     shortcut_settings::{
         ShortcutConfigurationViewModel, ShortcutInput, ShortcutSettingsAction,
@@ -57,6 +58,7 @@ impl ApplicationRuntime {
     pub fn new(
         observer: Arc<dyn PresentationObserver>,
         translator: Arc<dyn NativeTranslator>,
+        performance_observer: Arc<dyn PerformanceObserver>,
     ) -> Result<Arc<Self>, ApplicationRuntimeError> {
         let translation_preferences = Arc::new(
             TranslationPreferences::load(Arc::new(MacOsTranslationSettingsStore::new()))
@@ -75,7 +77,7 @@ impl ApplicationRuntime {
                 .map_err(|_| ApplicationRuntimeError::ProofreadingUnavailable)?,
         );
         let proofreader = Arc::new(OpenAiProofreader::new(openai_client, api_key_provider));
-        let coordinator = Arc::new(ShortcutCoordinator::with_proofreading_consent(
+        let coordinator = Arc::new(ShortcutCoordinator::with_proofreading_consent_and_metrics(
             Arc::new(MacOsTextCapture::new()),
             Arc::new(ApplicationProcessor::new(
                 translator,
@@ -84,6 +86,7 @@ impl ApplicationRuntime {
             )),
             presenter,
             proofreading_consent,
+            Arc::new(ForeignWorkflowMetrics::new(performance_observer)),
         ));
         let shortcut_settings_store: Arc<dyn ShortcutSettingsStore> =
             Arc::new(MacOsShortcutSettingsStore::new());

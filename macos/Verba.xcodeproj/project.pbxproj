@@ -44,6 +44,8 @@
 		100000000000000000000067 /* LocalizedCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000068 /* LocalizedCopy.swift */; };
 		100000000000000000000069 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000006B /* Localizable.strings */; };
 		10000000000000000000006C /* AccessibilityReadinessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000006D /* AccessibilityReadinessTests.swift */; };
+		10000000000000000000006E /* PerformanceSignposter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000006F /* PerformanceSignposter.swift */; };
+		100000000000000000000070 /* PerformanceSignposterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000071 /* PerformanceSignposterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +98,8 @@
 		100000000000000000000068 /* LocalizedCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizedCopy.swift; sourceTree = "<group>"; };
 		10000000000000000000006A /* English */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = English; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		10000000000000000000006D /* AccessibilityReadinessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityReadinessTests.swift; sourceTree = "<group>"; };
+		10000000000000000000006F /* PerformanceSignposter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceSignposter.swift; sourceTree = "<group>"; };
+		100000000000000000000071 /* PerformanceSignposterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceSignposterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,6 +143,7 @@
 				100000000000000000000017 /* MenuBarContentView.swift */,
 				100000000000000000000048 /* NativeAppleTranslator.swift */,
 				100000000000000000000027 /* PasteboardWriter.swift */,
+				10000000000000000000006F /* PerformanceSignposter.swift */,
 				100000000000000000000019 /* PopupContentView.swift */,
 				100000000000000000000023 /* PopupPreviewFixtures.swift */,
 				10000000000000000000001B /* PopupController.swift */,
@@ -186,6 +191,7 @@
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
 				100000000000000000000062 /* PopupRecoveryTests.swift */,
+				100000000000000000000071 /* PerformanceSignposterTests.swift */,
 				10000000000000000000004E /* TargetLanguageSettingsControllerTests.swift */,
 				10000000000000000000005C /* ShortcutSettingsControllerTests.swift */,
 				100000000000000000000060 /* SettingsSupportControllerTests.swift */,
@@ -328,6 +334,7 @@
 				100000000000000000000047 /* NativeAppleTranslator.swift in Sources */,
 				100000000000000000000067 /* LocalizedCopy.swift in Sources */,
 				100000000000000000000026 /* PasteboardWriter.swift in Sources */,
+				10000000000000000000006E /* PerformanceSignposter.swift in Sources */,
 				100000000000000000000018 /* PopupContentView.swift in Sources */,
 				10000000000000000000001A /* PopupController.swift in Sources */,
 				10000000000000000000001C /* PopupPanel.swift in Sources */,
@@ -359,6 +366,7 @@
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
 				100000000000000000000061 /* PopupRecoveryTests.swift in Sources */,
+				100000000000000000000070 /* PerformanceSignposterTests.swift in Sources */,
 				10000000000000000000004B /* TargetLanguageSettingsControllerTests.swift in Sources */,
 				100000000000000000000059 /* ShortcutSettingsControllerTests.swift in Sources */,
 				10000000000000000000005E /* SettingsSupportControllerTests.swift in Sources */,

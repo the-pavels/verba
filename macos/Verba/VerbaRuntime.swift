@@ -7,8 +7,15 @@ final class VerbaRuntime {
     private let apiKeySettings: OpenAiApiKeySettings?
     private weak var popupController: PopupController?
 
-    init(popupController: PopupController, translator: NativeTranslator) {
-        let observer = PopupPresentationObserver(popupController: popupController)
+    init(
+        popupController: PopupController,
+        translator: NativeTranslator,
+        performance: PerformanceSignposter
+    ) {
+        let observer = PopupPresentationObserver(
+            popupController: popupController,
+            performance: performance
+        )
         self.observer = observer
         self.popupController = popupController
         apiKeySettings = try? OpenAiApiKeySettings()
@@ -16,7 +23,8 @@ final class VerbaRuntime {
         do {
             let application = try ApplicationRuntime(
                 observer: observer,
-                translator: translator
+                translator: translator,
+                performanceObserver: performance
             )
             self.application = application
             popupController.onDismiss = { [weak application] in
@@ -251,14 +259,23 @@ private enum VerbaRuntimeError: Error {
 
 private final class PopupPresentationObserver: PresentationObserver, @unchecked Sendable {
     private weak var popupController: PopupController?
+    private let performance: PerformanceSignposter
 
-    init(popupController: PopupController) {
+    init(popupController: PopupController, performance: PerformanceSignposter) {
         self.popupController = popupController
+        self.performance = performance
     }
 
     func present(requestId: UInt64, presentation: PresentationViewModel) {
-        Task { @MainActor [weak popupController] in
-            popupController?.present(requestID: requestId, presentation: presentation)
+        Task { @MainActor [weak popupController, performance] in
+            guard let popupController else {
+                return
+            }
+            popupController.present(requestID: requestId, presentation: presentation)
+            performance.presentationDidPresent(
+                requestID: requestId,
+                presentation: presentation
+            )
         }
     }
 }
