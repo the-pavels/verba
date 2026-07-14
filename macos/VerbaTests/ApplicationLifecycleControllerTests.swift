@@ -50,6 +50,38 @@ final class ApplicationLifecycleControllerTests: XCTestCase {
         XCTAssertEqual(accessibility.refreshCount, 3)
     }
 
+    func testOpeningTheMenuRefreshesPermissionState() {
+        let accessibility = FakeAccessibilityRefresher()
+        let events = FakeLifecycleEventSource()
+        let controller = ApplicationLifecycleController(
+            runtime: FakeLifecycleRuntime(),
+            popup: FakeLifecyclePopup(),
+            accessibilityPermission: accessibility,
+            events: events
+        )
+
+        events.onMenuDidBeginTracking?()
+
+        XCTAssertNotNil(controller)
+        XCTAssertEqual(accessibility.refreshCount, 1)
+    }
+
+    func testSystemEventSourcePublishesMenuTrackingEvents() {
+        let events = SystemApplicationLifecycleEventSource()
+        var menuTrackingCount = 0
+        events.onMenuDidBeginTracking = {
+            menuTrackingCount += 1
+        }
+        events.start()
+
+        NotificationCenter.default.post(
+            name: NSMenu.didBeginTrackingNotification,
+            object: nil
+        )
+
+        XCTAssertEqual(menuTrackingCount, 1)
+    }
+
     func testEventCallbacksDoNotRetainTheControllerOrItsOwners() {
         let events = FakeLifecycleEventSource()
         weak var controller: ApplicationLifecycleController?
@@ -113,6 +145,7 @@ private final class FakeAccessibilityRefresher: AccessibilityPermissionRefreshin
 @MainActor
 private final class FakeLifecycleEventSource: ApplicationLifecycleEventSource {
     var onApplicationDidBecomeActive: (@MainActor @Sendable () -> Void)?
+    var onMenuDidBeginTracking: (@MainActor @Sendable () -> Void)?
     var onApplicationWillTerminate: (@MainActor @Sendable () -> Void)?
     var onScreensDidChange: (@MainActor @Sendable () -> Void)?
     var onSystemWillSleep: (@MainActor @Sendable () -> Void)?

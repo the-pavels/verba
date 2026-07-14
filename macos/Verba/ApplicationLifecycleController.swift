@@ -24,6 +24,7 @@ protocol AccessibilityPermissionRefreshing: AnyObject {
 @MainActor
 protocol ApplicationLifecycleEventSource: AnyObject {
     var onApplicationDidBecomeActive: (@MainActor @Sendable () -> Void)? { get set }
+    var onMenuDidBeginTracking: (@MainActor @Sendable () -> Void)? { get set }
     var onApplicationWillTerminate: (@MainActor @Sendable () -> Void)? { get set }
     var onScreensDidChange: (@MainActor @Sendable () -> Void)? { get set }
     var onSystemWillSleep: (@MainActor @Sendable () -> Void)? { get set }
@@ -55,6 +56,9 @@ final class ApplicationLifecycleController {
         events.onApplicationDidBecomeActive = { [weak self] in
             self?.accessibilityPermission.refresh()
         }
+        events.onMenuDidBeginTracking = { [weak self] in
+            self?.accessibilityPermission.refresh()
+        }
         events.onApplicationWillTerminate = { [weak self] in
             self?.runtime.shutdown()
         }
@@ -73,8 +77,9 @@ final class ApplicationLifecycleController {
 }
 
 @MainActor
-private final class SystemApplicationLifecycleEventSource: ApplicationLifecycleEventSource {
+final class SystemApplicationLifecycleEventSource: ApplicationLifecycleEventSource {
     var onApplicationDidBecomeActive: (@MainActor @Sendable () -> Void)?
+    var onMenuDidBeginTracking: (@MainActor @Sendable () -> Void)?
     var onApplicationWillTerminate: (@MainActor @Sendable () -> Void)?
     var onScreensDidChange: (@MainActor @Sendable () -> Void)?
     var onSystemWillSleep: (@MainActor @Sendable () -> Void)?
@@ -91,6 +96,11 @@ private final class SystemApplicationLifecycleEventSource: ApplicationLifecycleE
             center: .default,
             name: NSApplication.didBecomeActiveNotification,
             handler: { [weak self] in self?.onApplicationDidBecomeActive?() }
+        )
+        observe(
+            center: .default,
+            name: NSMenu.didBeginTrackingNotification,
+            handler: { [weak self] in self?.onMenuDidBeginTracking?() }
         )
         observe(
             center: .default,

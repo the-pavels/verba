@@ -8,7 +8,7 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | Pending |
+| Artifact | `Verba-1.0.0-3-arm64-notarized.zip` |
 | SHA-256 | Pending |
 | Source revision | Pending |
 | Source state in manifest | Must be `clean` |
@@ -22,15 +22,32 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | Display arrangement | Pending |
 | OpenAI API project | Personal test project; never record the key |
 
+## Rejected candidate history
+
+| Build | SHA-256 | Notarization | Rejection reason |
+| --- | --- | --- | --- |
+| 1.0.0 (2) | `2fc531cd8e4ddefb746db0c2582b447b4ef7a1dea586a3114b2e6caef53c82be` | Accepted, submission `08560573-446e-4ede-8988-94d08f23ce6a` | Rejected during manual permission testing: the menu did not refresh after macOS granted Accessibility access, leaving both actions disabled until another lifecycle refresh. |
+
+## Automated candidate verification
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pending | |
+| RustSec, dependency licenses, sources, and notices | Pending | |
+| Developer ID signing | Pending | |
+| Apple notarization | Pending | |
+| Stapling and Gatekeeper | Pending | |
+| Final artifact checksum | Pending | |
+
 ## Artifact and clean installation
 
 Run these rows using only the candidate ZIP and checksum copied to an Apple-silicon Mac user account that has never run bundle identifier `io.github.the-pavels.verba`.
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-2-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-3-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 2, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 3, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
