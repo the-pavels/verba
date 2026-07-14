@@ -47,6 +47,96 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(capped, NSSize(width: 630, height: 285))
     }
 
+    func testResultPopupHeightTracksContentWithinBounds() {
+        let languagePair = LanguagePairViewModel(source: "German", target: "English")
+        let short = PopupSizePolicy.size(
+            for: .translation(
+                originalText: "Guten Morgen.",
+                languagePair: languagePair,
+                translatedText: "Good morning."
+            ),
+            textScale: 1
+        )
+        let medium = PopupSizePolicy.size(
+            for: .translation(
+                originalText: String(repeating: "Ausgangstext ", count: 16),
+                languagePair: languagePair,
+                translatedText: String(repeating: "Translated text ", count: 16)
+            ),
+            textScale: 1
+        )
+        let long = PopupSizePolicy.size(
+            for: .translation(
+                originalText: String(repeating: "Ausgangstext ", count: 100),
+                languagePair: languagePair,
+                translatedText: String(repeating: "Translated text ", count: 100)
+            ),
+            textScale: 1
+        )
+
+        XCTAssertEqual(short, NSSize(width: 420, height: 250))
+        XCTAssertGreaterThan(medium.height, short.height)
+        XCTAssertLessThan(medium.height, long.height)
+        XCTAssertEqual(long, NSSize(width: 420, height: 480))
+    }
+
+    func testResultPopupRespectsAbsoluteHeightCapAtLargeTextSizes() {
+        let presentation = PresentationViewModel.proofreading(
+            originalText: String(repeating: "Original text ", count: 100),
+            correctedText: String(repeating: "Corrected text ", count: 100)
+        )
+
+        XCTAssertEqual(
+            PopupSizePolicy.size(for: presentation, textScale: 4),
+            NSSize(width: 630, height: 560)
+        )
+    }
+
+    func testExplicitLineBreaksContributeToPopupHeight() {
+        let languagePair = LanguagePairViewModel(source: "German", target: "English")
+        let singleLine = PresentationViewModel.translation(
+            originalText: "One line",
+            languagePair: languagePair,
+            translatedText: "One line"
+        )
+        let multipleLines = PresentationViewModel.translation(
+            originalText: "One\nTwo\nThree",
+            languagePair: languagePair,
+            translatedText: "One\nTwo\nThree"
+        )
+
+        XCTAssertGreaterThan(
+            PopupSizePolicy.size(for: multipleLines, textScale: 1).height,
+            PopupSizePolicy.size(for: singleLine, textScale: 1).height
+        )
+    }
+
+    func testErrorPopupGrowsForLongRecoveryCopyAndStopsAtItsBound() {
+        let short = PresentationViewModel.error(
+            action: .translate,
+            title: "Translation failed",
+            message: "Try again.",
+            recovery: .retry,
+            diagnosticCode: "translation.failed"
+        )
+        let long = PresentationViewModel.error(
+            action: .translate,
+            title: String(repeating: "Translation failed ", count: 30),
+            message: String(repeating: "Check the connection and try again. ", count: 50),
+            recovery: .retry,
+            diagnosticCode: "translation.failed"
+        )
+
+        XCTAssertEqual(
+            PopupSizePolicy.size(for: short, textScale: 1),
+            NSSize(width: 380, height: 170)
+        )
+        XCTAssertEqual(
+            PopupSizePolicy.size(for: long, textScale: 1),
+            NSSize(width: 380, height: 280)
+        )
+    }
+
     func testReducedMotionDisablesPanelAnimation() {
         XCTAssertEqual(PopupAnimationPolicy.behavior(reduceMotion: true), .none)
         XCTAssertEqual(PopupAnimationPolicy.behavior(reduceMotion: false), .utilityWindow)

@@ -142,7 +142,7 @@ struct ProofreadingDiff: Equatable {
     }
 }
 
-private struct ProofreadingDiffText: View {
+struct ProofreadingDiffText: View {
     let segments: [ProofreadingDiff.Segment]
     let accessibilityLabel: String
 

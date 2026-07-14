@@ -321,22 +321,60 @@ private struct TranslationPopupHost: View {
 enum PopupSizePolicy {
     static func size(for presentation: PresentationViewModel, textScale: CGFloat) -> NSSize {
         let baseSize = switch presentation {
-        case .translation:
-            NSSize(width: 420, height: 300)
-        case .proofreading:
-            NSSize(width: 420, height: 260)
+        case let .translation(originalText, _, translatedText):
+            resultSize(originalText: originalText, resultText: translatedText)
+        case let .proofreading(originalText, correctedText):
+            resultSize(originalText: originalText, resultText: correctedText)
         case .proofreadingDisclosure:
             NSSize(width: 420, height: 190)
-        case .error:
-            NSSize(width: 380, height: 170)
+        case let .error(_, title, message, _, _):
+            errorSize(title: title, message: message)
+        case .noIssues:
+            NSSize(width: 380, height: 140)
         default:
             NSSize(width: 380, height: 112)
         }
         let scale = min(max(textScale, 1), 1.5)
         return NSSize(
             width: (baseSize.width * scale).rounded(),
-            height: (baseSize.height * scale).rounded()
+            height: min((baseSize.height * scale).rounded(), maximumHeight)
         )
+    }
+
+    private static let resultMinimumHeight: CGFloat = 250
+    private static let resultMaximumHeight: CGFloat = 480
+    private static let errorMinimumHeight: CGFloat = 170
+    private static let errorMaximumHeight: CGFloat = 280
+    private static let maximumHeight: CGFloat = 560
+    private static let resultColumns = 46
+
+    private static func resultSize(originalText: String, resultText: String) -> NSSize {
+        let lineCount = estimatedLineCount(in: originalText, columns: resultColumns)
+            + estimatedLineCount(in: resultText, columns: resultColumns)
+        let height = 210 + CGFloat(max(0, lineCount - 2)) * 20
+
+        return NSSize(
+            width: 420,
+            height: min(max(height, resultMinimumHeight), resultMaximumHeight)
+        )
+    }
+
+    private static func errorSize(title: String, message: String) -> NSSize {
+        let lineCount = estimatedLineCount(in: title, columns: 32)
+            + estimatedLineCount(in: message, columns: 42)
+        let height = errorMinimumHeight + CGFloat(max(0, lineCount - 2)) * 20
+
+        return NSSize(
+            width: 380,
+            height: min(height, errorMaximumHeight)
+        )
+    }
+
+    private static func estimatedLineCount(in text: String, columns: Int) -> Int {
+        text.split(separator: "\n", omittingEmptySubsequences: false).reduce(0) {
+            lineCount, paragraph in
+            lineCount + max(1, Int(ceil(Double(paragraph.count) / Double(columns))))
+        }
     }
 }
 
