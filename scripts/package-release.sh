@@ -143,7 +143,9 @@ if [[ ! "${source_date_epoch}" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 normalized_timestamp="$(/bin/date -u -r "${source_date_epoch}" '+%Y%m%d%H%M.%S')"
-/usr/bin/find "${app_path}" -exec /usr/bin/touch -h -t "${normalized_timestamp}" {} +
+if [[ "${signing_mode}" == "unsigned" ]]; then
+    /usr/bin/find "${app_path}" -exec /usr/bin/touch -h -t "${normalized_timestamp}" {} +
+fi
 
 temporary_manifest="${work_dir}/${artifact_basename}.manifest.txt"
 {
@@ -179,6 +181,16 @@ COPYFILE_DISABLE=1 /usr/bin/ditto \
     --zlibCompressionLevel 9 \
     "${app_path}" \
     "${temporary_artifact}"
+
+extracted_artifact_dir="${work_dir}/extracted-artifact"
+/bin/mkdir -p "${extracted_artifact_dir}"
+/usr/bin/ditto -x -k "${temporary_artifact}" "${extracted_artifact_dir}"
+"${repo_root}/scripts/verify-release.sh" \
+    "${extracted_artifact_dir}/Verba.app" \
+    "${version}" \
+    "${build_number}" \
+    "${signing_mode}" \
+    "${expected_team_id}"
 
 /usr/bin/install -m 0644 "${temporary_artifact}" "${artifact_path}"
 /usr/bin/install -m 0644 "${temporary_manifest}" "${manifest_path}"

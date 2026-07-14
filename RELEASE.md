@@ -34,7 +34,7 @@ The requested marketing version must match the Rust workspace version. The workf
 
 The manifest records the source revision and clean/dirty state plus the SHA-256 of every file in the app bundle. The archive checksum is the value to publish after signing and notarization are added; item 42 will need to regenerate it after those operations change the bundle.
 
-Bundle timestamps are normalized to `SOURCE_DATE_EPOCH`, which defaults to the current Git commit time. Set that variable explicitly when reproducing an artifact from exported sources that do not include Git metadata.
+Unsigned bundle timestamps are normalized to `SOURCE_DATE_EPOCH`, which defaults to the current Git commit time. Set that variable explicitly when reproducing an unsigned artifact from exported sources that do not include Git metadata. Developer ID bundles are not modified after signing because changing signed bundle metadata invalidates the signature; Apple's secure timestamp also means signed archive bytes are not expected to be reproducible.
 
 ## Verification performed
 
@@ -46,7 +46,9 @@ Bundle timestamps are normalized to `SOURCE_DATE_EPOCH`, which defaults to the c
 - the privacy manifest declares no tracking and records the app-only UserDefaults reason `CA92.1`;
 - the bundle contains exactly the executable, metadata, localization, compiled asset catalog, icon, and privacy manifest expected for item 40;
 - linked libraries do not reference a developer home or Cargo target directory;
-- the item 40 artifact remains unsigned.
+- the unsigned workflow contains no bundle signature, while the Developer ID workflow has the expected authority, team, secure timestamp, hardened-runtime flag, and no entitlement keys.
+
+The workflow runs this verification against the archived app and again after extracting the final ZIP. The artifact is copied into `dist/` only after both checks pass.
 
 The app uses Accessibility APIs, but macOS does not define an Info.plist usage-description key for Accessibility trust. The user-facing explanation and permission route live in Verba's localized UI. Do not add an unrelated Apple Events, Input Monitoring, or Automation usage string unless the implementation starts using the corresponding protected API.
 
