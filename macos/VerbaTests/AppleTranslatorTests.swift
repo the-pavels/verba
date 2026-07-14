@@ -215,6 +215,30 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertNil(sessions.configuration)
     }
 
+    func testSessionBrokerActivatesAndPreparesBeforeDownloadingLanguages() async throws {
+        var activationCount = 0
+        let sessions = SystemTranslationSessionProvider {
+            activationCount += 1
+        }
+        let task = Task { @MainActor in
+            try await sessions.translate(
+                "Hallo",
+                source: Locale.Language(identifier: "de"),
+                target: Locale.Language(identifier: "en"),
+                preparation: .required
+            )
+        }
+        await Task.yield()
+        let executor = FakeTranslationSessionExecutor()
+
+        await sessions.run(executor)
+        let result = try await task.value
+
+        XCTAssertEqual(activationCount, 1)
+        XCTAssertEqual(executor.calls, ["prepare", "translate"])
+        XCTAssertEqual(result.translatedText, "Hello")
+    }
+
     func testNativeAdapterConvertsTheTranslationResult() async throws {
         let adapter = NativeAppleTranslator(
             translator: AppleTranslator(
@@ -369,6 +393,25 @@ private final class FakeTranslationSessions: TranslationSessionProviding {
             results.removeFirst()
         }
         return try result.get()
+    }
+}
+
+@MainActor
+private final class FakeTranslationSessionExecutor: TranslationSessionExecuting {
+    private(set) var calls: [String] = []
+
+    func prepareTranslation() async throws {
+        calls.append("prepare")
+    }
+
+    func translate(_ text: String) async throws -> TranslationSession.Response {
+        calls.append("translate")
+        return TranslationSession.Response(
+            sourceLanguage: Locale.Language(identifier: "de"),
+            targetLanguage: Locale.Language(identifier: "en"),
+            sourceText: text,
+            targetText: "Hello"
+        )
     }
 }
 

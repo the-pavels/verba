@@ -245,8 +245,8 @@ private struct TranslationPopupHost: View {
             cancelProofreading: cancelProofreading,
             recover: recover
         )
-        .background {
-            TranslationSessionHost(sessions: translationSessions)
+        .translationTask(translationSessions.configuration) { session in
+            await translationSessions.run(session)
         }
     }
 }

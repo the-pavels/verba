@@ -1,5 +1,14 @@
+import AppKit
 import SwiftUI
 @preconcurrency import Translation
+
+@MainActor
+protocol TranslationSessionExecuting {
+    func prepareTranslation() async throws
+    func translate(_ text: String) async throws -> TranslationSession.Response
+}
+
+extension TranslationSession: TranslationSessionExecuting {}
 
 @MainActor
 final class SystemTranslationSessionProvider: ObservableObject, TranslationSessionProviding {
@@ -18,7 +27,14 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
         let preparation: TranslationPreparation
     }
 
+    private let downloadPromptActivator: () -> Void
     private var pendingRequest: PendingRequest?
+
+    init(downloadPromptActivator: @escaping () -> Void = {
+        NSApplication.shared.activate()
+    }) {
+        self.downloadPromptActivator = downloadPromptActivator
+    }
 
     func translate(
         _ text: String,
@@ -55,21 +71,22 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
         }
     }
 
-    nonisolated func run(_ session: TranslationSession) async {
-        guard let request = await requestSnapshot() else {
+    func run(_ session: any TranslationSessionExecuting) async {
+        guard let request = requestSnapshot() else {
             return
         }
 
         do {
             if request.preparation == .required {
+                activateForDownloadPrompt()
                 try await session.prepareTranslation()
-                guard await hasPendingRequest(request.id) else {
+                guard hasPendingRequest(request.id) else {
                     return
                 }
             }
 
             let response = try await session.translate(request.text)
-            await complete(
+            complete(
                 request.id,
                 with: .success(
                     AppleTranslationResult(
@@ -80,7 +97,7 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
                 )
             )
         } catch {
-            await complete(request.id, with: .failure(error))
+            complete(request.id, with: .failure(error))
         }
     }
 
@@ -96,6 +113,10 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
 
     private func hasPendingRequest(_ requestID: UUID) -> Bool {
         pendingRequest?.id == requestID
+    }
+
+    private func activateForDownloadPrompt() {
+        downloadPromptActivator()
     }
 
     private func cancelPendingRequest() {
@@ -119,17 +140,5 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
         pendingRequest = nil
         configuration = nil
         request.continuation.resume(with: result)
-    }
-}
-
-struct TranslationSessionHost: View {
-    @ObservedObject var sessions: SystemTranslationSessionProvider
-
-    var body: some View {
-        Color.clear
-            .frame(width: 0, height: 0)
-            .translationTask(sessions.configuration) { session in
-                await sessions.run(session)
-            }
     }
 }
