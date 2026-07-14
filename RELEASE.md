@@ -1,6 +1,6 @@
 # Release packaging
 
-The release workflow produces either an unsigned inspection archive or a Developer ID-signed arm64 archive. Notarization and stapling remain a separate roadmap item, so neither artifact is ready for end-user distribution yet.
+The release workflow produces an unsigned inspection archive, a Developer ID-signed arm64 archive, or a notarized and stapled arm64 archive. Only the final notarized artifact is intended to pass Gatekeeper without a bypass.
 
 ## Requirements
 
@@ -88,4 +88,37 @@ The workflow refuses Apple Development, Mac Distribution, ad-hoc, missing, and a
 
 Verba needs no hardened-runtime exception or restricted-resource entitlement. Its Rust static library is linked into the single app executable, and the bundle contains no nested framework, helper, plug-in, XPC service, or other Mach-O object. The verifier therefore requires exactly one Mach-O, verifies the app recursively with `codesign --deep --strict=all`, and checks the Developer ID authority, team, secure timestamp, hardened-runtime flag, and absence of entitlement keys.
 
-Do not submit or distribute this signed ZIP yet. Item 42 will notarize the exact signed artifact, staple the accepted ticket, validate it with Gatekeeper, and publish a new checksum.
+Do not distribute the signed-only ZIP. The notarization workflow submits that exact artifact, then publishes a separately named archive after stapling changes the app bundle.
+
+## Notarization and stapling
+
+Create a `notarytool` Keychain profile once. Running the command without credential options keeps the Apple ID or API-key secret out of shell history and prompts for it interactively:
+
+```sh
+xcrun notarytool store-credentials verba-notary
+```
+
+The profile name is not a credential. Override the default with `VERBA_NOTARY_KEYCHAIN_PROFILE` when using another local profile or a CI Keychain. Run the complete workflow with the same external signing values used above:
+
+```sh
+VERBA_DEVELOPMENT_TEAM=YOURTEAMID \
+VERBA_SIGNING_IDENTITY='Developer ID Application: Your Name (YOURTEAMID)' \
+VERBA_NOTARY_KEYCHAIN_PROFILE=verba-notary \
+./scripts/notarize-release.sh
+```
+
+The default service wait is 30 minutes. Set `VERBA_NOTARY_TIMEOUT` to an integer with an optional `s`, `m`, or `h` suffix when a different bound is required.
+
+If a local interruption happens after Apple creates a submission, rerun with `VERBA_NOTARY_SUBMISSION_ID=UUID`. Recovery mode reuses the existing signed ZIP, retrieves that submission with `notarytool info`, and still requires Apple's logged SHA-256 to match the local artifact before stapling.
+
+The workflow validates the Keychain profile before building, creates and verifies a fresh Developer ID ZIP, submits that exact ZIP with `notarytool --wait`, and retrieves the completed submission log. It rejects the result unless the submission and log are both accepted, their IDs match, and the SHA-256 in Apple's log matches the submitted ZIP. Every submission result and available log is retained under `dist/` with the submission ID, including rejected attempts.
+
+After acceptance, the workflow extracts the submitted app, staples and validates the ticket, verifies the Developer ID signature again, and requires `spctl` to report `Notarized Developer ID`. It then creates these ignored outputs and repeats the same checks after extracting the final ZIP:
+
+- `Verba-VERSION-BUILD-arm64-notarized.zip`
+- `Verba-VERSION-BUILD-arm64-notarized.zip.sha256`
+- `Verba-VERSION-BUILD-arm64-notarized.manifest.txt`
+- `Verba-VERSION-BUILD-arm64-developer-id.notary-SUBMISSION_ID.result.json`
+- `Verba-VERSION-BUILD-arm64-developer-id.notary-SUBMISSION_ID.log.json`
+
+The notarized manifest records the accepted submission ID, submitted archive hash, notarization-log hash, source state, and hashes of the final stapled bundle files. Publish only the checksum generated for the notarized ZIP.

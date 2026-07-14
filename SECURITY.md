@@ -14,6 +14,7 @@ This document records the release security review completed on 2026-07-14. Rerun
 | Generated bindings | Swift/header/module-map files are regenerated from the locked local Rust workspace on every Xcode build. The checked patch must apply cleanly or the build fails. Generated output is ignored so stale bindings cannot be treated as source of truth. |
 | Entitlements | Release builds enable Hardened Runtime and request no runtime-exception entitlements. App Sandbox is not enabled; Accessibility remains protected by the user-controlled macOS TCC permission. |
 | Release symbols | Release builds disable code-coverage instrumentation. Release archives generate a dSYM while installed products enable dead-code stripping and full symbol stripping. Treat dSYMs as private release artifacts and never include them in the public application package. |
+| Notarization | `notarytool` reads credentials only from a named Keychain profile. Submission results and logs are retained for audit, Apple's submitted-archive hash must match locally, and the final extracted ZIP must pass stapler, signature, and Gatekeeper validation. |
 
 ## Audit result
 
@@ -27,4 +28,4 @@ Static review found no known path that writes an API key or selected text to log
 - The app is not sandboxed because its global shortcut and cross-application selected-text workflow still require release-distribution validation under the intended signing model. Hardened Runtime remains enabled without exception entitlements. Reassess sandbox feasibility before broad distribution.
 - Rust mutex poisoning and internal invariant failures can terminate the process. Their messages are redacted, but OS crash artifacts may contain transient process data and remain sensitive.
 - UniFFI currently brings two transitive `winnow` versions through its generator/parser graph. The duplicate is reported by `cargo deny`, carries no advisory, and is accepted until the upstream dependency graph converges.
-- dSYMs and notarization/signing credentials are intentionally outside the app bundle. The Developer ID workflow, extracted-artifact signature, and entitlement set have been verified with an installed Developer ID Application certificate. Notarization, third-party notice packaging, and artifact retention policy remain in roadmap items 42-43.
+- dSYMs and notarization/signing credentials are intentionally outside the app bundle. The Developer ID workflow, notarization-log integrity, stapled ticket, extracted-artifact signature, entitlement set, and Gatekeeper result have been verified with real Developer ID and Keychain-profile credentials. Third-party notice packaging and artifact retention policy remain in item 43.

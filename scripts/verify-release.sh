@@ -28,7 +28,7 @@ case "${signing_mode}" in
     unsigned)
         [[ -z "${expected_team_id}" ]] || fail "unsigned verification must not specify a team ID"
         ;;
-    developer-id)
+    developer-id | notarized)
         [[ "${expected_team_id}" =~ ^[A-Z0-9]{10}$ ]] || fail "Developer ID verification requires a valid team ID"
         ;;
     *)
@@ -85,7 +85,10 @@ while IFS= read -r bundle_file; do
         Contents/Resources/en.lproj/Localizable.strings)
             ;;
         Contents/_CodeSignature/CodeResources)
-            [[ "${signing_mode}" == "developer-id" ]] || fail "unsigned bundle contains code-signing resources"
+            [[ "${signing_mode}" != "unsigned" ]] || fail "unsigned bundle contains code-signing resources"
+            ;;
+        Contents/CodeResources)
+            [[ "${signing_mode}" == "notarized" ]] || fail "unstapled bundle contains notarization ticket resources"
             ;;
         *)
             fail "unexpected bundle file ${relative_path}"
@@ -108,6 +111,11 @@ if [[ "${signing_mode}" == "unsigned" ]]; then
     [[ ! -e "${app_path}/Contents/_CodeSignature" ]] || fail "unsigned package contains a bundle signature"
 else
     [[ -f "${app_path}/Contents/_CodeSignature/CodeResources" ]] || fail "Developer ID bundle signature resources are missing"
+    if [[ "${signing_mode}" == "notarized" ]]; then
+        [[ -f "${app_path}/Contents/CodeResources" ]] || fail "stapled notarization ticket resources are missing"
+    else
+        [[ ! -e "${app_path}/Contents/CodeResources" ]] || fail "unstapled bundle contains notarization ticket resources"
+    fi
     /usr/bin/codesign --verify --deep --strict=all --verbose=2 "${app_path}" || fail "Developer ID signature verification failed"
 
     signing_info="$(/usr/bin/codesign -dvvv "${app_path}" 2>&1)"
