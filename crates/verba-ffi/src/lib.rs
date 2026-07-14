@@ -10,6 +10,8 @@ mod processor;
 #[cfg(target_os = "macos")]
 mod shortcut_settings;
 mod translation;
+#[cfg(all(test, target_os = "macos"))]
+mod workflow_smoke_tests;
 
 #[cfg(target_os = "macos")]
 pub use api_key_settings::{OpenAiApiKeyError, OpenAiApiKeySettings};
