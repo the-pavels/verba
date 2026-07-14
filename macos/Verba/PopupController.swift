@@ -18,6 +18,9 @@ final class PopupController {
 
     var onDismiss: (() -> Void)?
     var onProofreadingDisclosureContinue: (() -> Void)?
+    var onRetry: ((PresentationAction) -> Void)?
+    var onGrantAccessibility: (() -> Void)?
+    var onDiagnosticCode: ((String) -> Void)?
 
     init(
         translationSessions: SystemTranslationSessionProvider,
@@ -30,6 +33,7 @@ final class PopupController {
                 copyText: pasteboardWriter.copy,
                 continueProofreading: {},
                 cancelProofreading: {},
+                recover: { _, _ in },
                 translationSessions: translationSessions
             )
         )
@@ -46,6 +50,10 @@ final class PopupController {
             return
         }
 
+        if case let .error(_, _, _, _, diagnosticCode) = presentation {
+            onDiagnosticCode?(diagnosticCode)
+        }
+
         let contentSize = presentation.contentSize
         hostingController.rootView = TranslationPopupHost(
             presentation: presentation,
@@ -55,6 +63,9 @@ final class PopupController {
             },
             cancelProofreading: { [weak self] in
                 self?.dismiss()
+            },
+            recover: { [weak self] recovery, action in
+                self?.perform(recovery.command(for: action))
             },
             translationSessions: hostingController.rootView.translationSessions
         )
@@ -90,6 +101,25 @@ final class PopupController {
         panel.orderOut(nil)
     }
 
+    private func perform(_ command: PopupRecoveryCommand) {
+        switch command {
+        case let .retry(action):
+            hide()
+            onRetry?(action)
+        case .openSettings:
+            NSApplication.shared.activate()
+            NSApplication.shared.sendAction(
+                Selector(("showSettingsWindow:")),
+                to: nil,
+                from: nil
+            )
+        case .grantAccessibility:
+            onGrantAccessibility?()
+        case .dismiss:
+            dismiss()
+        }
+    }
+
     private func startClickAwayMonitoring() {
         guard clickMonitors.isEmpty else {
             return
@@ -120,6 +150,7 @@ private struct TranslationPopupHost: View {
     let copyText: (String) -> Void
     let continueProofreading: () -> Void
     let cancelProofreading: () -> Void
+    let recover: (RecoveryActionViewModel, PresentationAction?) -> Void
     @ObservedObject var translationSessions: SystemTranslationSessionProvider
 
     var body: some View {
@@ -127,7 +158,8 @@ private struct TranslationPopupHost: View {
             presentation: presentation,
             copyText: copyText,
             continueProofreading: continueProofreading,
-            cancelProofreading: cancelProofreading
+            cancelProofreading: cancelProofreading,
+            recover: recover
         )
         .background {
             TranslationSessionHost(sessions: translationSessions)
@@ -145,7 +177,7 @@ private extension PresentationViewModel {
         case .proofreadingDisclosure:
             NSSize(width: 420, height: 190)
         case .error:
-            NSSize(width: 380, height: 136)
+            NSSize(width: 380, height: 170)
         default:
             NSSize(width: 380, height: 112)
         }

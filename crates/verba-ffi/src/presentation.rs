@@ -7,6 +7,16 @@ pub enum PresentationAction {
     Proofread,
 }
 
+/// The recovery control rendered for a Swift-facing error state.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, uniffi::Enum)]
+pub enum RecoveryActionViewModel {
+    Retry,
+    OpenSettings,
+    GrantAccessibility,
+    ChangeLanguage,
+    Dismiss,
+}
+
 /// An immutable source and target language pair for Swift.
 #[derive(Clone, Debug, Eq, PartialEq, uniffi::Record)]
 pub struct LanguagePairViewModel {
@@ -36,6 +46,8 @@ pub enum PresentationViewModel {
         action: Option<PresentationAction>,
         title: String,
         message: String,
+        recovery: RecoveryActionViewModel,
+        diagnostic_code: String,
     },
 }
 
@@ -50,6 +62,27 @@ impl From<core::TextAction> for PresentationAction {
         match action {
             core::TextAction::Translate => Self::Translate,
             core::TextAction::Proofread => Self::Proofread,
+        }
+    }
+}
+
+impl From<PresentationAction> for core::TextAction {
+    fn from(action: PresentationAction) -> Self {
+        match action {
+            PresentationAction::Translate => Self::Translate,
+            PresentationAction::Proofread => Self::Proofread,
+        }
+    }
+}
+
+impl From<core::RecoveryAction> for RecoveryActionViewModel {
+    fn from(action: core::RecoveryAction) -> Self {
+        match action {
+            core::RecoveryAction::Retry => Self::Retry,
+            core::RecoveryAction::OpenSettings => Self::OpenSettings,
+            core::RecoveryAction::GrantAccessibility => Self::GrantAccessibility,
+            core::RecoveryAction::ChangeLanguage => Self::ChangeLanguage,
+            core::RecoveryAction::Dismiss => Self::Dismiss,
         }
     }
 }
@@ -85,6 +118,8 @@ impl From<core::PresentationState> for PresentationViewModel {
                 action: error.action.map(Into::into),
                 title: error.title,
                 message: error.message,
+                recovery: error.recovery.into(),
+                diagnostic_code: error.diagnostic_code,
             },
         }
     }
@@ -92,10 +127,12 @@ impl From<core::PresentationState> for PresentationViewModel {
 
 #[cfg(test)]
 mod tests {
-    use super::{LanguagePairViewModel, PresentationAction, PresentationViewModel};
+    use super::{
+        LanguagePairViewModel, PresentationAction, PresentationViewModel, RecoveryActionViewModel,
+    };
     use verba_core::presentation::{
-        ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation, TextAction,
-        TranslationPresentation,
+        ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation,
+        RecoveryAction, TextAction, TranslationPresentation,
     };
 
     #[test]
@@ -148,11 +185,15 @@ mod tests {
                     action: Some(TextAction::Proofread),
                     title: "Proofreading failed".to_owned(),
                     message: "Try again.".to_owned(),
+                    recovery: RecoveryAction::Retry,
+                    diagnostic_code: "proofreading.failed".to_owned(),
                 }),
                 PresentationViewModel::Error {
                     action: Some(PresentationAction::Proofread),
                     title: "Proofreading failed".to_owned(),
                     message: "Try again.".to_owned(),
+                    recovery: RecoveryActionViewModel::Retry,
+                    diagnostic_code: "proofreading.failed".to_owned(),
                 },
             ),
         ];

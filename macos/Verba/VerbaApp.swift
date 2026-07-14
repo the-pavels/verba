@@ -4,7 +4,7 @@ import SwiftUI
 @main
 @MainActor
 struct VerbaApp: App {
-    @StateObject private var accessibilityPermission = AccessibilityPermissionController()
+    @StateObject private var accessibilityPermission: AccessibilityPermissionController
     @StateObject private var targetLanguageSettings: TargetLanguageSettingsController
     @StateObject private var apiKeySettings: ApiKeySettingsController
     @StateObject private var shortcutSettings: ShortcutSettingsController
@@ -15,8 +15,29 @@ struct VerbaApp: App {
     private let runtime: VerbaRuntime
 
     init() {
+        let accessibilityPermission = AccessibilityPermissionController()
+        let settingsSupport = SettingsSupportController(rustCoreVersion: rustCoreVersion())
+        _accessibilityPermission = StateObject(wrappedValue: accessibilityPermission)
+        _settingsSupport = StateObject(wrappedValue: settingsSupport)
+
         let translationSessions = SystemTranslationSessionProvider()
         let popupController = PopupController(translationSessions: translationSessions)
+        popupController.onGrantAccessibility = { [weak accessibilityPermission] in
+            guard let accessibilityPermission else {
+                return
+            }
+            switch accessibilityPermission.status {
+            case .notRequested:
+                accessibilityPermission.requestPermission()
+            case .denied:
+                accessibilityPermission.openSystemSettings()
+            case .granted:
+                break
+            }
+        }
+        popupController.onDiagnosticCode = { [weak settingsSupport] code in
+            settingsSupport?.recordDiagnosticCode(code)
+        }
         let translator = NativeAppleTranslator(
             translator: AppleTranslator(sessions: translationSessions)
         )
@@ -35,9 +56,6 @@ struct VerbaApp: App {
         )
         _shortcutSettings = StateObject(
             wrappedValue: ShortcutSettingsController(settings: runtime)
-        )
-        _settingsSupport = StateObject(
-            wrappedValue: SettingsSupportController(rustCoreVersion: rustCoreVersion())
         )
         Task {
             await targetLanguageSettings.load()

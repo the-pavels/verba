@@ -12,7 +12,7 @@ use std::{
 use crate::{
     capture::{CaptureFailure, CapturedText, TextCapture},
     presentation::{
-        ErrorPresentation, PresentationState, ProofreadingPresentation, TextAction,
+        ErrorPresentation, PresentationState, ProofreadingPresentation, RecoveryAction, TextAction,
         TranslationPresentation,
     },
     proofreading::{ProofreaderError, ProofreadingConsentGate, ProofreadingConsentStoreError},
@@ -64,9 +64,11 @@ impl ProcessingOutcome {
 pub enum ProcessingFailure {
     Failed,
     Cancelled,
+    EmptyInput,
+    InputTooLong,
+    SameLanguage,
     InvalidOutput,
     UnsupportedConfiguration,
-    ProofreadingInputTooLong,
     ProofreadingProvider(ProofreaderError),
 }
 
@@ -414,6 +416,8 @@ impl CoordinatorInner {
                     action: Some(TextAction::Proofread),
                     title: "Privacy setting unavailable".to_owned(),
                     message: "Verba couldn’t save your acknowledgement. Try again.".to_owned(),
+                    recovery: RecoveryAction::Retry,
+                    diagnostic_code: "proofreading.consent-persistence".to_owned(),
                 }),
             );
             return Err(error);
@@ -531,31 +535,48 @@ impl ProofreadingConsentGate for AlwaysGrantedProofreadingConsent {
 }
 
 fn capture_failure_presentation(action: TextAction, failure: CaptureFailure) -> PresentationState {
-    let (title, message) = match failure {
-        CaptureFailure::NoSelection => ("No text selected", "Select some text and try again."),
+    let (title, message, recovery, diagnostic_code) = match failure {
+        CaptureFailure::NoSelection => (
+            "No text selected",
+            "Select some text, then invoke the action again.",
+            RecoveryAction::Dismiss,
+            "capture.no-selection",
+        ),
         CaptureFailure::TimedOut => (
             "Selection timed out",
             "Keep the source app active and try again.",
+            RecoveryAction::Retry,
+            "capture.timed-out",
         ),
         CaptureFailure::PermissionDenied => (
             "Accessibility access required",
-            "Enable Verba in System Settings and try again.",
+            "Allow Verba to capture selected text, then try again.",
+            RecoveryAction::GrantAccessibility,
+            "capture.permission-denied",
         ),
         CaptureFailure::SecureField => (
             "Secure text can’t be captured",
-            "Select text outside the secure field and try again.",
+            "Select text outside the secure field, then invoke the action again.",
+            RecoveryAction::Dismiss,
+            "capture.secure-field",
         ),
         CaptureFailure::UnsupportedContent => (
             "Text selection required",
             "The selected content does not contain readable text.",
+            RecoveryAction::Dismiss,
+            "capture.unsupported-content",
         ),
         CaptureFailure::ClipboardUnavailable => (
             "Clipboard unavailable",
             "Verba could not safely capture the selection. Try again.",
+            RecoveryAction::Retry,
+            "capture.clipboard-unavailable",
         ),
         CaptureFailure::Cancelled => (
             "Capture cancelled",
             "The clipboard changed before capture finished. Try again.",
+            RecoveryAction::Retry,
+            "capture.cancelled",
         ),
     };
 
@@ -563,6 +584,8 @@ fn capture_failure_presentation(action: TextAction, failure: CaptureFailure) -> 
         action: Some(action),
         title: title.to_owned(),
         message: message.to_owned(),
+        recovery,
+        diagnostic_code: diagnostic_code.to_owned(),
     })
 }
 
@@ -570,89 +593,174 @@ fn processing_failure_presentation(
     action: TextAction,
     failure: ProcessingFailure,
 ) -> PresentationState {
-    let (title, message) = match (action, failure) {
-        (_, ProcessingFailure::Cancelled) => ("Request cancelled", "Try again."),
+    let (title, message, recovery, diagnostic_code) = match (action, failure) {
+        (_, ProcessingFailure::Cancelled) => (
+            "Request cancelled",
+            "Invoke the action again when you’re ready.",
+            RecoveryAction::Dismiss,
+            "processing.cancelled",
+        ),
         (TextAction::Translate, ProcessingFailure::InvalidOutput) => (
             "Translation unavailable",
-            "The translation result was invalid. Try again.",
+            "Verba couldn’t use the translation result. Try again.",
+            RecoveryAction::Retry,
+            "translation.invalid-output",
         ),
         (TextAction::Proofread, ProcessingFailure::InvalidOutput) => (
             "Proofreading unavailable",
-            "The proofreading result was invalid. Try again.",
+            "Verba couldn’t use the proofreading result. Try again.",
+            RecoveryAction::Retry,
+            "proofreading.invalid-output",
         ),
         (TextAction::Translate, ProcessingFailure::UnsupportedConfiguration) => (
             "Language pair unavailable",
-            "Choose a different target language in Settings and try again.",
+            "Choose a different target language, then try again.",
+            RecoveryAction::ChangeLanguage,
+            "translation.unsupported-configuration",
         ),
         (TextAction::Proofread, ProcessingFailure::UnsupportedConfiguration) => (
-            "Proofreading unavailable",
-            "Check your settings and try again.",
+            "Proofreading setup required",
+            "Review the proofreading settings, then try again.",
+            RecoveryAction::OpenSettings,
+            "proofreading.unsupported-configuration",
         ),
-        (TextAction::Proofread, ProcessingFailure::ProofreadingInputTooLong) => (
+        (_, ProcessingFailure::EmptyInput) => (
+            "No text to process",
+            "Select some text, then invoke the action again.",
+            RecoveryAction::Dismiss,
+            "processing.empty-input",
+        ),
+        (TextAction::Translate, ProcessingFailure::InputTooLong) => (
+            "Selection too long",
+            "Select at most 10,000 characters and invoke Translate again.",
+            RecoveryAction::Dismiss,
+            "translation.input-too-long",
+        ),
+        (TextAction::Proofread, ProcessingFailure::InputTooLong) => (
             "Selection too long",
             "Select at most 10,000 characters and invoke Proofread again.",
+            RecoveryAction::Dismiss,
+            "proofreading.input-too-long",
+        ),
+        (TextAction::Translate, ProcessingFailure::SameLanguage) => (
+            "Text is already in the target language",
+            "Choose a different target language or select different text.",
+            RecoveryAction::ChangeLanguage,
+            "translation.same-language",
+        ),
+        (TextAction::Proofread, ProcessingFailure::SameLanguage) => (
+            "Proofreading failed",
+            "Try proofreading the selection again.",
+            RecoveryAction::Retry,
+            "proofreading.unexpected-same-language",
         ),
         (TextAction::Proofread, ProcessingFailure::ProofreadingProvider(error)) => {
             proofreading_provider_failure(error)
         }
-        (
-            TextAction::Translate,
-            ProcessingFailure::ProofreadingInputTooLong
-            | ProcessingFailure::ProofreadingProvider(_),
-        ) => ("Translation failed", "Invoke Translate again."),
-        (TextAction::Translate, ProcessingFailure::Failed) => ("Translation failed", "Try again."),
-        (TextAction::Proofread, ProcessingFailure::Failed) => ("Proofreading failed", "Try again."),
+        (TextAction::Translate, ProcessingFailure::ProofreadingProvider(_)) => (
+            "Translation failed",
+            "Try translating the selection again.",
+            RecoveryAction::Retry,
+            "translation.unexpected-failure-kind",
+        ),
+        (TextAction::Translate, ProcessingFailure::Failed) => (
+            "Translation failed",
+            "Try translating the selection again.",
+            RecoveryAction::Retry,
+            "translation.failed",
+        ),
+        (TextAction::Proofread, ProcessingFailure::Failed) => (
+            "Proofreading failed",
+            "Try proofreading the selection again.",
+            RecoveryAction::Retry,
+            "proofreading.failed",
+        ),
     };
 
     PresentationState::Error(ErrorPresentation {
         action: Some(action),
         title: title.to_owned(),
         message: message.to_owned(),
+        recovery,
+        diagnostic_code: diagnostic_code.to_owned(),
     })
 }
 
-fn proofreading_provider_failure(error: ProofreaderError) -> (&'static str, &'static str) {
+fn proofreading_provider_failure(
+    error: ProofreaderError,
+) -> (&'static str, &'static str, RecoveryAction, &'static str) {
     match error {
         ProofreaderError::MissingCredential => (
             "OpenAI API key required",
-            "Add your API key in Settings, then invoke Proofread again.",
+            "Add your API key, then invoke Proofread again.",
+            RecoveryAction::OpenSettings,
+            "proofreading.provider.missing-credential",
         ),
         ProofreaderError::Authentication => (
             "OpenAI API key rejected",
-            "Replace the key in Settings before invoking Proofread again.",
+            "Replace the key before invoking Proofread again.",
+            RecoveryAction::OpenSettings,
+            "proofreading.provider.authentication",
         ),
         ProofreaderError::RateLimited => (
             "OpenAI rate limit reached",
             "Wait a moment, then invoke Proofread again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.rate-limited",
         ),
         ProofreaderError::QuotaExceeded => (
             "OpenAI quota unavailable",
-            "Check your OpenAI billing and usage limits before trying again.",
+            "Check your OpenAI account limits or replace the API key.",
+            RecoveryAction::OpenSettings,
+            "proofreading.provider.quota-exceeded",
         ),
         ProofreaderError::Offline => (
             "No internet connection",
             "Reconnect to the internet, then invoke Proofread again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.offline",
         ),
         ProofreaderError::TimedOut => (
             "OpenAI request timed out",
             "Check your connection, then invoke Proofread again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.timed-out",
         ),
         ProofreaderError::Refused => (
             "Proofreading refused",
-            "Select different text before trying again.",
+            "Select different text, then invoke Proofread again.",
+            RecoveryAction::Dismiss,
+            "proofreading.provider.refused",
         ),
-        ProofreaderError::Incomplete | ProofreaderError::MalformedResponse => (
+        ProofreaderError::Incomplete => (
             "Invalid proofreading response",
-            "OpenAI returned an unusable result. Invoke Proofread again.",
+            "Verba couldn’t use the response. Try again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.incomplete",
+        ),
+        ProofreaderError::MalformedResponse => (
+            "Invalid proofreading response",
+            "Verba couldn’t use the response. Try again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.malformed-response",
         ),
         ProofreaderError::ServiceUnavailable => (
             "OpenAI unavailable",
             "Wait a moment, then invoke Proofread again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.service-unavailable",
         ),
-        ProofreaderError::Cancelled => ("Request cancelled", "Invoke Proofread to try again."),
+        ProofreaderError::Cancelled => (
+            "Request cancelled",
+            "Invoke Proofread again when you’re ready.",
+            RecoveryAction::Dismiss,
+            "proofreading.provider.cancelled",
+        ),
         ProofreaderError::Failed => (
             "Proofreading failed",
-            "Check your connection and settings, then invoke Proofread again.",
+            "Check your connection, then try again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.failed",
         ),
     }
 }

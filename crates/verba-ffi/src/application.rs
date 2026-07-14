@@ -19,7 +19,7 @@ use verba_macos::{
 use verba_openai::{OpenAiClient, OpenAiConfig, OpenAiProofreader};
 
 use crate::{
-    PresentationViewModel,
+    PresentationAction, PresentationViewModel,
     api_key_settings::{SecretStoreApiKeyProvider, openai_secret_store},
     processor::ApplicationProcessor,
     shortcut_settings::{
@@ -99,6 +99,10 @@ impl ApplicationRuntime {
 
     pub fn cancel_active(&self) -> bool {
         self.coordinator.cancel_active()
+    }
+
+    pub fn retry(&self, action: PresentationAction) {
+        self.coordinator.on_shortcut(action.into());
     }
 
     pub fn acknowledge_proofreading_disclosure(&self) -> Result<bool, ProofreadingDisclosureError> {

@@ -27,12 +27,24 @@ pub struct ProofreadingPresentation {
     pub explanation: String,
 }
 
+/// The single next step offered for a failed operation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RecoveryAction {
+    Retry,
+    OpenSettings,
+    GrantAccessibility,
+    ChangeLanguage,
+    Dismiss,
+}
+
 /// User-facing information for a failed operation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ErrorPresentation {
     pub action: Option<TextAction>,
     pub title: String,
     pub message: String,
+    pub recovery: RecoveryAction,
+    pub diagnostic_code: String,
 }
 
 /// The complete presentation state owned by the Rust application layer.
@@ -72,8 +84,8 @@ impl PresentationState {
 #[cfg(test)]
 mod tests {
     use super::{
-        ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation, TextAction,
-        TranslationPresentation,
+        ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation,
+        RecoveryAction, TextAction, TranslationPresentation,
     };
 
     #[test]
@@ -92,6 +104,8 @@ mod tests {
                 action: None,
                 title: "Something went wrong".to_owned(),
                 message: "Try again.".to_owned(),
+                recovery: RecoveryAction::Retry,
+                diagnostic_code: "test.failure".to_owned(),
             }),
         ];
 
@@ -120,6 +134,8 @@ mod tests {
                     action: Some(TextAction::Translate),
                     title: "Translation failed".to_owned(),
                     message: "Try again.".to_owned(),
+                    recovery: RecoveryAction::Retry,
+                    diagnostic_code: "test.translation".to_owned(),
                 }),
                 Some(TextAction::Translate),
             ),

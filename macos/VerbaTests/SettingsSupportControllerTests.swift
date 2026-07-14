@@ -13,6 +13,7 @@ final class SettingsSupportControllerTests: XCTestCase {
             proofreadShortcut: "⌃⌥P",
             isApiKeyConfigured: true
         )
+        controller.recordDiagnosticCode("proofreading.provider.authentication")
 
         let diagnostics = controller.diagnostics(for: snapshot)
 
@@ -29,6 +30,7 @@ final class SettingsSupportControllerTests: XCTestCase {
             Translate shortcut: ⌃⌥T
             Proofread shortcut: ⌃⌥P
             OpenAI API key configured: yes
+            Latest error: proofreading.provider.authentication
             Privacy: no API key, selected text, or document content included
             """
         )
@@ -50,11 +52,31 @@ final class SettingsSupportControllerTests: XCTestCase {
         XCTAssertEqual(writer.values.count, 1)
         XCTAssertTrue(writer.values[0].contains("Target language: unavailable"))
         XCTAssertTrue(writer.values[0].contains("OpenAI API key configured: no"))
+        XCTAssertTrue(writer.values[0].contains("Latest error: none"))
         XCTAssertEqual(controller.feedback, "Support diagnostics copied.")
 
         writer.succeeds = false
         controller.copyDiagnostics(for: snapshot)
         XCTAssertEqual(controller.feedback, "Support diagnostics couldn’t be copied.")
+    }
+
+    func testUnsafeDiagnosticDetailsAreReplacedBeforeTheyReachSupportOutput() {
+        let controller = makeController(writer: RecordingDiagnosticsWriter())
+        let snapshot = SupportDiagnosticsSnapshot(
+            accessibility: .granted,
+            targetLanguage: "en",
+            translateShortcut: "⌃⌥T",
+            proofreadShortcut: "⌃⌥P",
+            isApiKeyConfigured: true
+        )
+
+        controller.recordDiagnosticCode("provider body: selected private text")
+
+        XCTAssertTrue(
+            controller.diagnostics(for: snapshot)
+                .contains("Latest error: redacted.invalid-diagnostic-code")
+        )
+        XCTAssertFalse(controller.diagnostics(for: snapshot).contains("private text"))
     }
 
     private func makeController(

@@ -5,6 +5,7 @@ struct PopupContentView: View {
     let copyText: (String) -> Void
     let continueProofreading: () -> Void
     let cancelProofreading: () -> Void
+    let recover: (RecoveryActionViewModel, PresentationAction?) -> Void
 
     var body: some View {
         content
@@ -78,7 +79,7 @@ struct PopupContentView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-        case let .error(_, title, message):
+        case let .error(action, title, message, recovery, _):
             VStack(alignment: .leading, spacing: 7) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -92,9 +93,53 @@ struct PopupContentView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                HStack {
+                    Spacer()
+                    Button(recovery.buttonTitle) {
+                        recover(recovery, action)
+                    }
+                }
             }
         }
     }
+}
+
+extension RecoveryActionViewModel {
+    var buttonTitle: String {
+        switch self {
+        case .retry:
+            "Retry"
+        case .openSettings:
+            "Open Settings"
+        case .grantAccessibility:
+            "Grant Access"
+        case .changeLanguage:
+            "Change Language"
+        case .dismiss:
+            "Dismiss"
+        }
+    }
+
+    func command(for action: PresentationAction?) -> PopupRecoveryCommand {
+        switch self {
+        case .retry:
+            action.map(PopupRecoveryCommand.retry) ?? .dismiss
+        case .openSettings, .changeLanguage:
+            .openSettings
+        case .grantAccessibility:
+            .grantAccessibility
+        case .dismiss:
+            .dismiss
+        }
+    }
+}
+
+enum PopupRecoveryCommand: Equatable {
+    case retry(PresentationAction)
+    case openSettings
+    case grantAccessibility
+    case dismiss
 }
 
 private extension PresentationAction {

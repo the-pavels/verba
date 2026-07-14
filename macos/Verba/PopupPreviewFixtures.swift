@@ -14,7 +14,9 @@ extension PresentationViewModel {
     static let errorPreview = Self.error(
         action: .translate,
         title: "Translation failed",
-        message: "Check your internet connection and try again."
+        message: "Check your internet connection and try again.",
+        recovery: .retry,
+        diagnosticCode: "translation.preview"
     )
 }
 #endif

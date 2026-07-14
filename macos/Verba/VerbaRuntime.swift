@@ -23,6 +23,9 @@ final class VerbaRuntime {
             popupController.onProofreadingDisclosureContinue = { [weak application] in
                 _ = try? application?.acknowledgeProofreadingDisclosure()
             }
+            popupController.onRetry = { [weak application] action in
+                application?.retry(action: action)
+            }
         } catch let error as ApplicationRuntimeError {
             application = nil
             switch error {
@@ -31,7 +34,9 @@ final class VerbaRuntime {
                     .error(
                         action: nil,
                         title: "Shortcuts unavailable",
-                        message: "Quit other Verba instances and reopen the app."
+                        message: "Quit other Verba instances and reopen the app.",
+                        recovery: .dismiss,
+                        diagnosticCode: "runtime.shortcut-registration"
                     )
                 )
             case .SettingsUnavailable:
@@ -39,7 +44,9 @@ final class VerbaRuntime {
                     .error(
                         action: nil,
                         title: "Settings unavailable",
-                        message: "Quit and reopen Verba, then try again."
+                        message: "Quit and reopen Verba, then try again.",
+                        recovery: .dismiss,
+                        diagnosticCode: "runtime.settings-unavailable"
                     )
                 )
             case .ProofreadingUnavailable:
@@ -47,7 +54,9 @@ final class VerbaRuntime {
                     .error(
                         action: .proofread,
                         title: "Proofreading unavailable",
-                        message: "Quit and reopen Verba, then try again."
+                        message: "Quit and reopen Verba, then try again.",
+                        recovery: .dismiss,
+                        diagnosticCode: "runtime.proofreading-unavailable"
                     )
                 )
             }
@@ -57,7 +66,9 @@ final class VerbaRuntime {
                 .error(
                     action: nil,
                     title: "Verba unavailable",
-                    message: "Quit and reopen Verba, then try again."
+                    message: "Quit and reopen Verba, then try again.",
+                    recovery: .dismiss,
+                    diagnosticCode: "runtime.unknown"
                 )
             )
         }

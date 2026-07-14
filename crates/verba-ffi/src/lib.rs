@@ -19,7 +19,8 @@ pub use application::{
     TargetLanguagePreferenceError,
 };
 pub use presentation::{
-    LanguagePairViewModel, PresentationAction, PresentationViewModel, initial_presentation,
+    LanguagePairViewModel, PresentationAction, PresentationViewModel, RecoveryActionViewModel,
+    initial_presentation,
 };
 #[cfg(target_os = "macos")]
 pub use shortcut_settings::{

@@ -64,25 +64,51 @@ fn registered_shortcut_captures_processes_and_presents_a_result() {
 #[test]
 fn capture_failures_become_actionable_presentations_without_processing() {
     let cases = [
-        (CaptureFailure::NoSelection, "No text selected"),
-        (CaptureFailure::TimedOut, "Selection timed out"),
+        (
+            CaptureFailure::NoSelection,
+            "No text selected",
+            RecoveryAction::Dismiss,
+            "capture.no-selection",
+        ),
+        (
+            CaptureFailure::TimedOut,
+            "Selection timed out",
+            RecoveryAction::Retry,
+            "capture.timed-out",
+        ),
         (
             CaptureFailure::PermissionDenied,
             "Accessibility access required",
+            RecoveryAction::GrantAccessibility,
+            "capture.permission-denied",
         ),
-        (CaptureFailure::SecureField, "Secure text can’t be captured"),
+        (
+            CaptureFailure::SecureField,
+            "Secure text can’t be captured",
+            RecoveryAction::Dismiss,
+            "capture.secure-field",
+        ),
         (
             CaptureFailure::UnsupportedContent,
             "Text selection required",
+            RecoveryAction::Dismiss,
+            "capture.unsupported-content",
         ),
         (
             CaptureFailure::ClipboardUnavailable,
             "Clipboard unavailable",
+            RecoveryAction::Retry,
+            "capture.clipboard-unavailable",
         ),
-        (CaptureFailure::Cancelled, "Capture cancelled"),
+        (
+            CaptureFailure::Cancelled,
+            "Capture cancelled",
+            RecoveryAction::Retry,
+            "capture.cancelled",
+        ),
     ];
 
-    for (failure, expected_title) in cases {
+    for (failure, expected_title, expected_recovery, expected_code) in cases {
         let state = capture_failure_presentation(TextAction::Proofread, failure);
         let PresentationState::Error(error) = state else {
             panic!("capture failure should produce an error presentation");
@@ -90,6 +116,8 @@ fn capture_failures_become_actionable_presentations_without_processing() {
         assert_eq!(error.action, Some(TextAction::Proofread));
         assert_eq!(error.title, expected_title);
         assert!(!error.message.is_empty());
+        assert_eq!(error.recovery, expected_recovery);
+        assert_eq!(error.diagnostic_code, expected_code);
     }
 
     let capture = Arc::new(FakeTextCapture::new(Err(CaptureFailure::PermissionDenied)));
@@ -110,46 +138,78 @@ fn proofreading_provider_failures_require_an_explicit_user_recovery_action() {
         (
             ProofreaderError::MissingCredential,
             "OpenAI API key required",
-            "Settings",
+            RecoveryAction::OpenSettings,
+            "proofreading.provider.missing-credential",
         ),
         (
             ProofreaderError::Authentication,
             "OpenAI API key rejected",
-            "Replace",
+            RecoveryAction::OpenSettings,
+            "proofreading.provider.authentication",
         ),
         (
             ProofreaderError::RateLimited,
             "OpenAI rate limit reached",
-            "invoke Proofread again",
+            RecoveryAction::Retry,
+            "proofreading.provider.rate-limited",
         ),
         (
             ProofreaderError::QuotaExceeded,
             "OpenAI quota unavailable",
-            "billing and usage limits",
+            RecoveryAction::OpenSettings,
+            "proofreading.provider.quota-exceeded",
         ),
         (
             ProofreaderError::Offline,
             "No internet connection",
-            "Reconnect",
+            RecoveryAction::Retry,
+            "proofreading.provider.offline",
         ),
         (
             ProofreaderError::TimedOut,
             "OpenAI request timed out",
-            "invoke Proofread again",
+            RecoveryAction::Retry,
+            "proofreading.provider.timed-out",
+        ),
+        (
+            ProofreaderError::Refused,
+            "Proofreading refused",
+            RecoveryAction::Dismiss,
+            "proofreading.provider.refused",
+        ),
+        (
+            ProofreaderError::Incomplete,
+            "Invalid proofreading response",
+            RecoveryAction::Retry,
+            "proofreading.provider.incomplete",
         ),
         (
             ProofreaderError::MalformedResponse,
             "Invalid proofreading response",
-            "Invoke Proofread again",
+            RecoveryAction::Retry,
+            "proofreading.provider.malformed-response",
         ),
         (
             ProofreaderError::ServiceUnavailable,
             "OpenAI unavailable",
-            "invoke Proofread again",
+            RecoveryAction::Retry,
+            "proofreading.provider.service-unavailable",
+        ),
+        (
+            ProofreaderError::Cancelled,
+            "Request cancelled",
+            RecoveryAction::Dismiss,
+            "proofreading.provider.cancelled",
+        ),
+        (
+            ProofreaderError::Failed,
+            "Proofreading failed",
+            RecoveryAction::Retry,
+            "proofreading.provider.failed",
         ),
     ];
 
-    for (error, expected_title, expected_recovery) in cases {
+    for (error, expected_title, expected_recovery, expected_code) in cases {
         let PresentationState::Error(presentation) = processing_failure_presentation(
             TextAction::Proofread,
             ProcessingFailure::ProofreadingProvider(error),
@@ -158,7 +218,9 @@ fn proofreading_provider_failures_require_an_explicit_user_recovery_action() {
         };
         assert_eq!(presentation.action, Some(TextAction::Proofread));
         assert_eq!(presentation.title, expected_title);
-        assert!(presentation.message.contains(expected_recovery));
+        assert!(!presentation.message.is_empty());
+        assert_eq!(presentation.recovery, expected_recovery);
+        assert_eq!(presentation.diagnostic_code, expected_code);
     }
 }
 
@@ -268,7 +330,11 @@ fn failed_disclosure_persistence_prevents_processing() {
     );
 
     let updates = presenter.wait_for(3);
-    assert!(matches!(updates[2].state, PresentationState::Error(_)));
+    let PresentationState::Error(error) = &updates[2].state else {
+        panic!("persistence failure should produce an error presentation");
+    };
+    assert_eq!(error.recovery, RecoveryAction::Retry);
+    assert_eq!(error.diagnostic_code, "proofreading.consent-persistence");
     assert!(processor.requests().is_empty());
 }
 
@@ -397,16 +463,110 @@ fn rejects_processor_output_for_the_wrong_action() {
 }
 
 #[test]
-fn unsupported_translation_points_to_the_target_language_setting() {
-    let PresentationState::Error(error) = processing_failure_presentation(
-        TextAction::Translate,
-        ProcessingFailure::UnsupportedConfiguration,
-    ) else {
-        panic!("processing failure should produce an error presentation");
-    };
+fn non_provider_processing_failures_have_exhaustive_recovery_actions() {
+    let cases = [
+        (
+            TextAction::Translate,
+            ProcessingFailure::Cancelled,
+            RecoveryAction::Dismiss,
+            "processing.cancelled",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::Cancelled,
+            RecoveryAction::Dismiss,
+            "processing.cancelled",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::EmptyInput,
+            RecoveryAction::Dismiss,
+            "processing.empty-input",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::EmptyInput,
+            RecoveryAction::Dismiss,
+            "processing.empty-input",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::InputTooLong,
+            RecoveryAction::Dismiss,
+            "translation.input-too-long",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::InputTooLong,
+            RecoveryAction::Dismiss,
+            "proofreading.input-too-long",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::SameLanguage,
+            RecoveryAction::ChangeLanguage,
+            "translation.same-language",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::SameLanguage,
+            RecoveryAction::Retry,
+            "proofreading.unexpected-same-language",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::InvalidOutput,
+            RecoveryAction::Retry,
+            "translation.invalid-output",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::InvalidOutput,
+            RecoveryAction::Retry,
+            "proofreading.invalid-output",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::UnsupportedConfiguration,
+            RecoveryAction::ChangeLanguage,
+            "translation.unsupported-configuration",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::UnsupportedConfiguration,
+            RecoveryAction::OpenSettings,
+            "proofreading.unsupported-configuration",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::Failed,
+            RecoveryAction::Retry,
+            "translation.failed",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::Failed,
+            RecoveryAction::Retry,
+            "proofreading.failed",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::ProofreadingProvider(ProofreaderError::Failed),
+            RecoveryAction::Retry,
+            "translation.unexpected-failure-kind",
+        ),
+    ];
 
-    assert_eq!(error.title, "Language pair unavailable");
-    assert!(error.message.contains("Settings"));
+    for (action, failure, expected_recovery, expected_code) in cases {
+        let PresentationState::Error(error) = processing_failure_presentation(action, failure)
+        else {
+            panic!("processing failure should produce an error presentation");
+        };
+        assert!(!error.title.is_empty());
+        assert!(!error.message.is_empty());
+        assert_eq!(error.recovery, expected_recovery);
+        assert_eq!(error.diagnostic_code, expected_code);
+    }
 }
 
 fn captured(text: &str) -> Result<CapturedText, CaptureFailure> {

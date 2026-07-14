@@ -118,10 +118,10 @@ fn translation_processing_failure(failure: TranslationFailure) -> ProcessingFail
     match failure {
         TranslationFailure::Cancelled => ProcessingFailure::Cancelled,
         TranslationFailure::InvalidResult => ProcessingFailure::InvalidOutput,
-        TranslationFailure::EmptyInput
-        | TranslationFailure::InputTooLong { .. }
-        | TranslationFailure::SameLanguage { .. }
-        | TranslationFailure::Failed => ProcessingFailure::Failed,
+        TranslationFailure::EmptyInput => ProcessingFailure::EmptyInput,
+        TranslationFailure::InputTooLong { .. } => ProcessingFailure::InputTooLong,
+        TranslationFailure::SameLanguage { .. } => ProcessingFailure::SameLanguage,
+        TranslationFailure::Failed => ProcessingFailure::Failed,
         TranslationFailure::UnsupportedPair { .. } => ProcessingFailure::UnsupportedConfiguration,
     }
 }
@@ -131,9 +131,9 @@ fn proofreading_processing_failure(failure: ProofreadingFailure) -> ProcessingFa
         ProofreadingFailure::Cancelled => ProcessingFailure::Cancelled,
         ProofreadingFailure::InvalidResult => ProcessingFailure::InvalidOutput,
         ProofreadingFailure::ConsentRequired => ProcessingFailure::UnsupportedConfiguration,
-        ProofreadingFailure::InputTooLong { .. } => ProcessingFailure::ProofreadingInputTooLong,
+        ProofreadingFailure::InputTooLong { .. } => ProcessingFailure::InputTooLong,
         ProofreadingFailure::Provider(error) => ProcessingFailure::ProofreadingProvider(error),
-        ProofreadingFailure::EmptyInput => ProcessingFailure::Failed,
+        ProofreadingFailure::EmptyInput => ProcessingFailure::EmptyInput,
     }
 }
 
@@ -341,6 +341,69 @@ mod tests {
             }),
             ProcessingFailure::UnsupportedConfiguration
         );
+    }
+
+    #[test]
+    fn preserves_recoverable_translation_failure_categories() {
+        let cases = [
+            (
+                TranslationFailure::EmptyInput,
+                ProcessingFailure::EmptyInput,
+            ),
+            (
+                TranslationFailure::InputTooLong {
+                    maximum_characters: 10_000,
+                    actual_characters: 10_001,
+                },
+                ProcessingFailure::InputTooLong,
+            ),
+            (
+                TranslationFailure::SameLanguage {
+                    language: language("de"),
+                },
+                ProcessingFailure::SameLanguage,
+            ),
+            (
+                TranslationFailure::InvalidResult,
+                ProcessingFailure::InvalidOutput,
+            ),
+            (TranslationFailure::Failed, ProcessingFailure::Failed),
+            (TranslationFailure::Cancelled, ProcessingFailure::Cancelled),
+        ];
+
+        for (failure, expected) in cases {
+            assert_eq!(translation_processing_failure(failure), expected);
+        }
+    }
+
+    #[test]
+    fn preserves_recoverable_proofreading_failure_categories() {
+        let cases = [
+            (
+                ProofreadingFailure::EmptyInput,
+                ProcessingFailure::EmptyInput,
+            ),
+            (
+                ProofreadingFailure::InputTooLong {
+                    maximum_characters: 10_000,
+                    actual_characters: 10_001,
+                },
+                ProcessingFailure::InputTooLong,
+            ),
+            (
+                ProofreadingFailure::InvalidResult,
+                ProcessingFailure::InvalidOutput,
+            ),
+            (
+                ProofreadingFailure::ConsentRequired,
+                ProcessingFailure::UnsupportedConfiguration,
+            ),
+            (ProofreadingFailure::Cancelled, ProcessingFailure::Cancelled),
+        ];
+
+        for (failure, expected) in cases {
+            assert_eq!(proofreading_processing_failure(failure), expected);
+        }
     }
 
     fn language(identifier: &str) -> LanguageIdentifier {

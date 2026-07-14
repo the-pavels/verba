@@ -17,6 +17,7 @@ protocol SupportDiagnosticsWriting {
 @MainActor
 final class SettingsSupportController: ObservableObject {
     @Published private(set) var feedback: String?
+    @Published private(set) var latestErrorCode: String?
 
     let appVersion: String
     let buildVersion: String
@@ -72,8 +73,17 @@ final class SettingsSupportController: ObservableObject {
         Translate shortcut: \(snapshot.translateShortcut.isEmpty ? "unavailable" : snapshot.translateShortcut)
         Proofread shortcut: \(snapshot.proofreadShortcut.isEmpty ? "unavailable" : snapshot.proofreadShortcut)
         OpenAI API key configured: \(snapshot.isApiKeyConfigured ? "yes" : "no")
+        Latest error: \(latestErrorCode ?? "none")
         Privacy: no API key, selected text, or document content included
         """
+    }
+
+    func recordDiagnosticCode(_ code: String) {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789.-")
+        let isSafe = !code.isEmpty
+            && code.utf8.count <= 80
+            && code.unicodeScalars.allSatisfy(allowed.contains)
+        latestErrorCode = isSafe ? code : "redacted.invalid-diagnostic-code"
     }
 
     func copyDiagnostics(for snapshot: SupportDiagnosticsSnapshot) {
