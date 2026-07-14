@@ -22,6 +22,14 @@ cargo install cargo-deny --locked
 
 The security audit uses the current RustSec advisory database and the repository policy in `deny.toml`; unlike the normal local check, it requires network access to refresh advisory data.
 
+Build and inspect the unsigned arm64 release package with:
+
+```sh
+./scripts/package-release.sh
+```
+
+The workflow, outputs, and verification contract are documented in [Release packaging](RELEASE.md). Signing and notarization are intentionally handled by later roadmap items.
+
 ## Performance budgets
 
 Verba emits local Points of Interest signposts under the app bundle identifier in the `Performance` category. The signposts contain request IDs, action names, presentation-state names, and budgets only. They never contain selected text, results, prompts, credentials, or error messages, and they are not sent to an analytics service.

@@ -18,6 +18,7 @@ xcuserdata/
 *.xcscmblueprint
 
 # Archives, symbols, and release packages
+/dist/
 *.xcarchive
 *.dSYM
 *.dSYM.zip
