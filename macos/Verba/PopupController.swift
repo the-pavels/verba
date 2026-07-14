@@ -12,11 +12,12 @@ final class PopupController {
     private let hostingController: NSHostingController<TranslationPopupHost>
     private let panel: PopupPanel
     private let pasteboardWriter: PasteboardWriter
-    private let focusRestorer = PopupFocusRestorer<NSWindow>()
+    private let windowFocusRestorer = PopupFocusRestorer<NSWindow>()
     private var clickMonitors: [ClickMonitor] = []
     private var copyableText: String?
     private var focusGeneration: UInt64 = 0
     private var latestRequestID: UInt64 = 0
+    private var sourceApplication: NSRunningApplication?
 
     var onDismiss: (() -> Void)?
     var onProofreadingDisclosureContinue: (() -> Void)?
@@ -101,7 +102,14 @@ final class PopupController {
             )
         )
         if !panel.isVisible {
-            focusRestorer.capture(NSApplication.shared.keyWindow, excluding: panel)
+            windowFocusRestorer.capture(NSApplication.shared.keyWindow, excluding: panel)
+            let frontmostApplication = NSWorkspace.shared.frontmostApplication
+            sourceApplication = PopupSourceApplicationPolicy.shouldCapture(
+                candidateProcessIdentifier: frontmostApplication?.processIdentifier,
+                currentProcessIdentifier: NSRunningApplication.current.processIdentifier
+            )
+                ? frontmostApplication
+                : nil
         }
         panel.orderFrontRegardless()
         scheduleKeyboardFocus(for: presentation)
@@ -118,7 +126,11 @@ final class PopupController {
     }
 
     func dismiss() {
-        hide()
+        dismiss(focusDisposition: .restoreSource)
+    }
+
+    private func dismiss(focusDisposition: PopupFocusDisposition) {
+        hide(focusDisposition: focusDisposition)
         onDismiss?()
     }
 
@@ -135,22 +147,33 @@ final class PopupController {
         )
     }
 
-    private func hide() {
+    private func hide(focusDisposition: PopupFocusDisposition = .restoreSource) {
         focusGeneration &+= 1
         copyableText = nil
         stopClickAwayMonitoring()
-        let shouldRestoreFocus = panel.isKeyWindow
-        let previousKeyWindow = focusRestorer.take()
+        let shouldRestoreFocus = focusDisposition.shouldRestoreSource(
+            panelWasKey: panel.isKeyWindow
+        )
+        let previousKeyWindow = windowFocusRestorer.take()
+        let sourceApplication = sourceApplication
+        self.sourceApplication = nil
         panel.orderOut(nil)
         if shouldRestoreFocus {
-            previousKeyWindow?.makeKey()
             if let previousKeyWindow {
+                previousKeyWindow.makeKey()
                 NSAccessibility.post(
                     element: previousKeyWindow,
                     notification: .focusedWindowChanged
                 )
+            } else if let sourceApplication {
+                restoreFocus(to: sourceApplication)
             }
         }
+    }
+
+    private func restoreFocus(to application: NSRunningApplication) {
+        NSApplication.shared.yieldActivation(to: application)
+        application.activate(from: NSRunningApplication.current, options: [])
     }
 
     private func scheduleKeyboardFocus(for presentation: PresentationViewModel) {
@@ -227,7 +250,7 @@ final class PopupController {
                     else {
                         return
                     }
-                    self.dismiss()
+                    self.dismiss(focusDisposition: .preserveCurrent)
                 }
                 return event
             }
@@ -239,7 +262,7 @@ final class PopupController {
             matching: Self.clickEventMask,
             handler: { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    self?.dismiss()
+                    self?.dismiss(focusDisposition: .preserveCurrent)
                 }
             }
         ) {
@@ -343,6 +366,24 @@ enum PopupKeyboardFocusPolicy {
 enum PopupClickAwayPolicy {
     static func shouldDismiss(clickLocation: NSPoint, popupFrame: NSRect) -> Bool {
         !popupFrame.contains(clickLocation)
+    }
+}
+
+enum PopupFocusDisposition: Equatable {
+    case restoreSource
+    case preserveCurrent
+
+    func shouldRestoreSource(panelWasKey: Bool) -> Bool {
+        self == .restoreSource && panelWasKey
+    }
+}
+
+enum PopupSourceApplicationPolicy {
+    static func shouldCapture(
+        candidateProcessIdentifier: pid_t?,
+        currentProcessIdentifier: pid_t
+    ) -> Bool {
+        candidateProcessIdentifier.map { $0 != currentProcessIdentifier } ?? false
     }
 }
 

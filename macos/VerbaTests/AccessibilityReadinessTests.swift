@@ -131,6 +131,39 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertNil(restorer.take())
     }
 
+    func testOnlyExplicitKeyWindowDismissalRestoresSourceFocus() {
+        XCTAssertTrue(
+            PopupFocusDisposition.restoreSource.shouldRestoreSource(panelWasKey: true)
+        )
+        XCTAssertFalse(
+            PopupFocusDisposition.restoreSource.shouldRestoreSource(panelWasKey: false)
+        )
+        XCTAssertFalse(
+            PopupFocusDisposition.preserveCurrent.shouldRestoreSource(panelWasKey: true)
+        )
+    }
+
+    func testSourceApplicationCaptureExcludesTheCurrentProcess() {
+        XCTAssertFalse(
+            PopupSourceApplicationPolicy.shouldCapture(
+                candidateProcessIdentifier: nil,
+                currentProcessIdentifier: 42
+            )
+        )
+        XCTAssertFalse(
+            PopupSourceApplicationPolicy.shouldCapture(
+                candidateProcessIdentifier: 42,
+                currentProcessIdentifier: 42
+            )
+        )
+        XCTAssertTrue(
+            PopupSourceApplicationPolicy.shouldCapture(
+                candidateProcessIdentifier: 7,
+                currentProcessIdentifier: 42
+            )
+        )
+    }
+
     private func keyEvent(
         keyCode: UInt16,
         characters: String,
