@@ -9,7 +9,7 @@ workspace_version="$(/usr/bin/awk '
     in_package && /^version = / { gsub(/[\" ]/, "", $3); print $3; exit }
 ' "${repo_root}/Cargo.toml")"
 version="${1:-${workspace_version}}"
-build_number="${2:-6}"
+build_number="${2:-7}"
 release_arch="arm64"
 signing_mode="${VERBA_SIGNING_MODE:-unsigned}"
 dist_dir="${VERBA_DIST_DIR:-${repo_root}/dist}"

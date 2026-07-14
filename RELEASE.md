@@ -20,10 +20,10 @@ From the repository root, run:
 ./scripts/package-release.sh
 ```
 
-The version defaults to `[workspace.package].version` in `Cargo.toml` and the build number defaults to the current release build, `6`. Pass both explicitly when preparing a later build:
+The version defaults to `[workspace.package].version` in `Cargo.toml` and the build number defaults to the current release build, `7`. Pass both explicitly when preparing a later build:
 
 ```sh
-./scripts/package-release.sh 1.0.0 7
+./scripts/package-release.sh 1.0.0 8
 ```
 
 The requested marketing version must match the Rust workspace version. The workflow performs a Release `xcodebuild archive`, regenerates the UniFFI Swift bridge from the locked Rust build, and writes these ignored outputs under `dist/`:

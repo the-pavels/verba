@@ -8,7 +8,7 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.0-6-arm64-notarized.zip` |
+| Artifact | `Verba-1.0.0-7-arm64-notarized.zip` |
 | SHA-256 | Pending |
 | Source revision | Pending |
 | Source state in manifest | Must be `clean` |
@@ -30,12 +30,13 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.0 (3) | `37a5492d00494b7612b28c06f5df7f79c6e9625e091bc6fa2ddf8d8e58e60202` | Accepted, submission `80809719-6038-4385-a878-289f8550c5e2` | Rejected during manual translation testing: preparing missing language assets with automatic source detection failed before macOS received source text. |
 | 1.0.0 (4) | `e4b9899fa123d5241d24c6c7b9eb9e7f3a27252caf81127f93a873f5cc36d6ae` | Accepted, submission `9a58936d-ac47-4ee8-88e3-ab99dd3fbf63` | Rejected during manual capture testing: the loading popup could take keyboard focus before synthetic Copy reached the source app, intermittently producing `Selection timed out`. |
 | 1.0.0 (5) | `325a7fed5b7f50f5221dfee4e9f02860ee2e18caee78184d69a26e8c80507ac6` | Accepted, submission `04a5a54e-48bc-471d-9f05-7b27f8eacc06` | Rejected during manual translation testing: the view-bound Translation session was attached to a zero-size background view, so Apple’s language-download approval UI was interrupted and installed-language requests could stall before translation began. |
+| 1.0.0 (6) | `7ff55a538ba976d51a1b1076e372e6097f8da04bbc52f60637d7e070731fb628` | Accepted, submission `4be7764a-c6f5-42f1-a1c4-ad0fd469f7ac` | Rejected during manual capture and repeated-translation testing: a transient empty synthetic Copy could be treated as no selection, and an equivalent source/target configuration did not restart SwiftUI’s Translation task for later text. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh`; includes the view-bound Translation task, automatic download preparation, and source-focus regressions. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh`; includes consecutive same-pair Translation invalidation and bounded transient-empty capture retry regressions. |
 | RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh`; advisories, bans, licenses, sources, and notices passed. The accepted transitive `winnow` duplicate remains. |
 | Developer ID signing | Pending | |
 | Apple notarization | Pending | |
@@ -48,9 +49,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-6-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-7-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 6, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 7, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
