@@ -1,6 +1,6 @@
 # Privacy and data handling
 
-This document describes Verba 0.1.0. Verba has no accounts, analytics, advertising, telemetry, or cloud synchronization operated by the Verba project.
+This document describes Verba 1.0.0. Verba has no accounts, analytics, advertising, telemetry, or cloud synchronization operated by the Verba project.
 
 ## What each action does
 

@@ -21,8 +21,8 @@ final class SettingsSupportControllerTests: XCTestCase {
             diagnostics,
             """
             Verba support diagnostics
-            App: 0.1.0 (7)
-            Rust core: 0.1.0
+            App: 1.0.0 (7)
+            Rust core: 1.0.0
             macOS: macOS 15.5
             Architecture: arm64
             Accessibility: granted
@@ -83,9 +83,9 @@ final class SettingsSupportControllerTests: XCTestCase {
         writer: RecordingDiagnosticsWriter
     ) -> SettingsSupportController {
         SettingsSupportController(
-            appVersion: "0.1.0",
+            appVersion: "1.0.0",
             buildVersion: "7",
-            rustCoreVersion: "0.1.0",
+            rustCoreVersion: "1.0.0",
             operatingSystem: "macOS 15.5",
             architecture: "arm64",
             writer: writer

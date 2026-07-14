@@ -16,7 +16,7 @@ Use this checklist for every direct-distribution Verba release. The authoritativ
 - [ ] Install `cargo-audit` and `cargo-deny` if needed, then run `./scripts/security-check.sh` with current network access.
 - [ ] Review all dependency advisories, license obligations, duplicate-version warnings, and source-policy output. Do not waive a new result silently.
 - [ ] Measure the release build against the performance budgets in [README.md](README.md) on the oldest supported Mac.
-- [ ] Complete the manual application matrix in the development plan, including TextEdit, Notes, Safari, Mail, a Chromium/Electron app, secure fields, clipboard races, denied Accessibility, offline OpenAI, invalid credentials, oversized input, and repeated shortcut invocation.
+- [ ] Complete [RELEASE_TEST_MATRIX.md](RELEASE_TEST_MATRIX.md) against the exact notarized artifact, including TextEdit, Notes, Safari, Mail, a Chromium/Electron app, secure fields, clipboard races, denied Accessibility, offline OpenAI, invalid credentials, oversized input, and repeated shortcut invocation.
 
 ## 3. Build, sign, and notarize
 
