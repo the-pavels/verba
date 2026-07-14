@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::VecDeque,
+    sync::{Arc, Mutex},
+};
 
 use super::*;
 
@@ -28,6 +31,23 @@ fn restores_after_empty_selected_text() {
     assert_eq!(fixture.capture.capture(), Err(CaptureFailure::NoSelection));
     assert_eq!(fixture.clipboard_text(), Some("original".to_owned()));
     assert_eq!(fixture.restore_calls(), 1);
+    assert_eq!(fixture.post_calls(), 2);
+}
+
+#[test]
+fn retries_a_transient_empty_copy_without_extending_the_capture_deadline() {
+    let fixture = Fixture::with_copy_results(
+        Some("original"),
+        [Some("  \n".to_owned()), Some("selected".to_owned())],
+    );
+
+    let captured = fixture.capture.capture().unwrap();
+
+    assert_eq!(captured.as_str(), "selected");
+    assert_eq!(fixture.clipboard_text(), Some("original".to_owned()));
+    assert_eq!(fixture.restore_calls(), 1);
+    assert_eq!(fixture.post_calls(), 2);
+    assert_eq!(fixture.elapsed(), EMPTY_COPY_RETRY_DELAY);
 }
 
 #[test]
@@ -117,14 +137,21 @@ struct Fixture {
 
 impl Fixture {
     fn new(original: Option<&str>, copied: Option<&str>) -> Self {
-        Self::build(original, Some(copied.map(str::to_owned)))
+        Self::build(original, [copied.map(str::to_owned)])
     }
 
     fn without_copy_change(original: Option<&str>) -> Self {
-        Self::build(original, None)
+        Self::build(original, [])
     }
 
-    fn build(original: Option<&str>, copied: Option<Option<String>>) -> Self {
+    fn with_copy_results(
+        original: Option<&str>,
+        copied: impl IntoIterator<Item = Option<String>>,
+    ) -> Self {
+        Self::build(original, copied)
+    }
+
+    fn build(original: Option<&str>, copied: impl IntoIterator<Item = Option<String>>) -> Self {
         let state = Arc::new(Mutex::new(FakePasteboardState {
             text: original.map(str::to_owned),
             change_count: 1,
@@ -140,7 +167,7 @@ impl Fixture {
         };
         let copy = FakeCopy {
             state: Arc::clone(&state),
-            copied,
+            copied: Mutex::new(copied.into_iter().collect()),
             post_calls: Arc::new(Mutex::new(0)),
         };
         let capture = SelectionCapture::new(
@@ -280,16 +307,16 @@ impl AccessibilityStatus for FakeAccessibility {
 
 struct FakeCopy {
     state: Arc<Mutex<FakePasteboardState>>,
-    copied: Option<Option<String>>,
+    copied: Mutex<VecDeque<Option<String>>>,
     post_calls: Arc<Mutex<usize>>,
 }
 
 impl CopyPoster for FakeCopy {
     fn post_copy(&self) -> Result<(), CaptureFailure> {
         *self.post_calls.lock().unwrap() += 1;
-        if let Some(copied) = &self.copied {
+        if let Some(copied) = self.copied.lock().unwrap().pop_front() {
             let mut state = self.state.lock().unwrap();
-            state.text.clone_from(copied);
+            state.text = copied;
             state.change_count += 1;
         }
         Ok(())

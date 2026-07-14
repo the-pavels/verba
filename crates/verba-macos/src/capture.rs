@@ -12,6 +12,7 @@ use accessibility::{AccessibilityStatus, SystemAccessibility};
 use synthetic_copy::{CopyPoster, CoreGraphicsCopy};
 
 const COPY_TIMEOUT: Duration = Duration::from_millis(500);
+const EMPTY_COPY_RETRY_DELAY: Duration = Duration::from_millis(50);
 const POLL_INTERVAL: Duration = Duration::from_millis(10);
 
 pub struct MacOsTextCapture {
@@ -95,18 +96,41 @@ where
             .snapshot()
             .map_err(|_| CaptureFailure::ClipboardUnavailable)?;
         let initial_change_count = snapshot.change_count();
+        let started = self.clock.now();
 
         self.copy.post_copy()?;
 
-        let Some(copy_change_count) = self.wait_for_change(initial_change_count) else {
+        let Some(mut copy_change_count) = self.wait_for_change(initial_change_count, started)
+        else {
             return Err(CaptureFailure::TimedOut);
         };
 
-        let result = self
-            .pasteboard
-            .plain_text()
-            .ok_or(CaptureFailure::UnsupportedContent)
-            .and_then(CapturedText::new);
+        let mut result = self.read_selection();
+        if matches!(result, Err(CaptureFailure::NoSelection)) {
+            let elapsed = self.clock.elapsed_since(started);
+            if elapsed < self.timeout {
+                self.clock
+                    .sleep(EMPTY_COPY_RETRY_DELAY.min(self.timeout - elapsed));
+
+                if self.pasteboard.change_count() != copy_change_count {
+                    return Err(CaptureFailure::Cancelled);
+                }
+
+                if self.clock.elapsed_since(started) < self.timeout {
+                    match self.copy.post_copy() {
+                        Ok(()) => {
+                            if let Some(retry_change_count) =
+                                self.wait_for_change(copy_change_count, started)
+                            {
+                                copy_change_count = retry_change_count;
+                                result = self.read_selection();
+                            }
+                        }
+                        Err(error) => result = Err(error),
+                    }
+                }
+            }
+        }
 
         if self.pasteboard.change_count() != copy_change_count {
             return Err(CaptureFailure::Cancelled);
@@ -119,9 +143,7 @@ where
         result
     }
 
-    fn wait_for_change(&self, initial_change_count: i64) -> Option<i64> {
-        let started = self.clock.now();
-
+    fn wait_for_change(&self, initial_change_count: i64, started: K::Instant) -> Option<i64> {
         loop {
             let change_count = self.pasteboard.change_count();
             if change_count != initial_change_count {
@@ -136,6 +158,13 @@ where
             self.clock
                 .sleep(self.poll_interval.min(self.timeout - elapsed));
         }
+    }
+
+    fn read_selection(&self) -> Result<CapturedText, CaptureFailure> {
+        self.pasteboard
+            .plain_text()
+            .ok_or(CaptureFailure::UnsupportedContent)
+            .and_then(CapturedText::new)
     }
 }
 
