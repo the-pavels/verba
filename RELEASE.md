@@ -1,13 +1,14 @@
 # Release packaging
 
-Item 40 produces an unsigned, hardened-runtime-ready arm64 archive. Developer ID signing and notarization are separate roadmap items, so this artifact is for release inspection and as the input to the later signing workflow; it is not ready for end-user distribution.
+The release workflow produces either an unsigned inspection archive or a Developer ID-signed arm64 archive. Notarization and stapling remain a separate roadmap item, so neither artifact is ready for end-user distribution yet.
 
 ## Requirements
 
 - macOS 15 or later on Apple silicon
 - Xcode 16 or later with the macOS SDK selected by `xcode-select`
 - the Rust toolchain from `rust-toolchain.toml`, including `aarch64-apple-darwin`
-- no signing identity or notarization credential
+
+The unsigned workflow requires no signing identity or notarization credential.
 
 The supported architecture follows `docs/adr/0002-platform-and-distribution.md`: the initial release is arm64-only. Do not add Intel output by merely changing the script. Revise the ADR and validate on an x86_64 test environment first.
 
@@ -58,3 +59,31 @@ Edit `macos/Assets/generate-app-icon.swift`, then regenerate the checked-in rast
 ```
 
 Run the package workflow afterward to verify that Xcode compiled `AppIcon.icns` into the bundle.
+
+## Developer ID signing
+
+The permanent app and Keychain service identifier is `io.github.the-pavels.verba`. Changing it after release would create a new code-signing identity, Keychain scope, and macOS privacy-permission identity.
+
+Install a valid Developer ID Application certificate in the login Keychain, then copy its full identity and ten-character team ID from:
+
+```sh
+security find-identity -v -p codesigning
+```
+
+Supply both values for the signed workflow without writing them to the repository:
+
+```sh
+VERBA_DEVELOPMENT_TEAM=YOURTEAMID \
+VERBA_SIGNING_IDENTITY='Developer ID Application: Your Name (YOURTEAMID)' \
+./scripts/package-signed-release.sh
+```
+
+The workflow refuses Apple Development, Mac Distribution, ad-hoc, missing, and ambiguous identity inputs. It asks Xcode to archive with a secure timestamp, hardened runtime, and no injected base entitlements, then produces:
+
+- `Verba-VERSION-BUILD-arm64-developer-id.zip`
+- `Verba-VERSION-BUILD-arm64-developer-id.zip.sha256`
+- `Verba-VERSION-BUILD-arm64-developer-id.manifest.txt`
+
+Verba needs no hardened-runtime exception or restricted-resource entitlement. Its Rust static library is linked into the single app executable, and the bundle contains no nested framework, helper, plug-in, XPC service, or other Mach-O object. The verifier therefore requires exactly one Mach-O, verifies the app recursively with `codesign --deep --strict=all`, and checks the Developer ID authority, team, secure timestamp, hardened-runtime flag, and absence of entitlement keys.
+
+Do not submit or distribute this signed ZIP yet. Item 42 will notarize the exact signed artifact, staple the accepted ticket, validate it with Gatekeeper, and publish a new checksum.

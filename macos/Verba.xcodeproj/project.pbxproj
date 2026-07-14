@@ -451,7 +451,7 @@
 					"-framework",
 					CoreGraphics,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Verba;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.the-pavels.verba";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUST_PROFILE = debug;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -468,6 +468,9 @@
 				CLANG_COVERAGE_MAPPING = NO;
 				CLANG_ENABLE_CODE_COVERAGE = NO;
 				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
@@ -489,7 +492,7 @@
 					"-framework",
 					CoreGraphics,
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.Verba;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.the-pavels.verba";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUST_PROFILE = release;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -508,7 +511,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.VerbaTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.the-pavels.verba.tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Generated";
 				SWIFT_VERSION = 6.0;
@@ -524,7 +527,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.VerbaTests;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.github.the-pavels.verba.tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Generated";
 				SWIFT_VERSION = 6.0;

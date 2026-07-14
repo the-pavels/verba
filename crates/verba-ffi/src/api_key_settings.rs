@@ -10,7 +10,7 @@ use verba_openai::{
     ApiKeyProvider, ApiKeyProviderError, OpenAiClient, OpenAiConfig, OpenAiConnectionTester,
 };
 
-const KEYCHAIN_SERVICE: &str = "com.example.Verba";
+const KEYCHAIN_SERVICE: &str = "io.github.the-pavels.verba";
 const KEYCHAIN_ACCOUNT: &str = "openai-api-key";
 
 pub(crate) fn openai_secret_store() -> Result<Arc<MacOsSecretStore>, MacOsSecretStoreBuildError> {
@@ -185,6 +185,11 @@ mod tests {
     use futures::executor::block_on;
 
     use super::*;
+
+    #[test]
+    fn production_keychain_scope_matches_the_permanent_bundle_identifier() {
+        assert_eq!(KEYCHAIN_SERVICE, "io.github.the-pavels.verba");
+    }
 
     #[test]
     fn exposes_only_configuration_state_and_normalizes_saved_keys() {

@@ -30,6 +30,16 @@ Build and inspect the unsigned arm64 release package with:
 
 The workflow, outputs, and verification contract are documented in [Release packaging](RELEASE.md). Signing and notarization are intentionally handled by later roadmap items.
 
+When a Developer ID Application certificate is installed, build the signed archive with:
+
+```sh
+VERBA_DEVELOPMENT_TEAM=YOURTEAMID \
+VERBA_SIGNING_IDENTITY='Developer ID Application: Your Name (YOURTEAMID)' \
+./scripts/package-signed-release.sh
+```
+
+The team ID and signing identity stay outside source control. The signed artifact is not ready to distribute until the notarization and stapling workflow is completed.
+
 ## Performance budgets
 
 Verba emits local Points of Interest signposts under the app bundle identifier in the `Performance` category. The signposts contain request IDs, action names, presentation-state names, and budgets only. They never contain selected text, results, prompts, credentials, or error messages, and they are not sent to an analytics service.

@@ -2,10 +2,13 @@
 
 set -euo pipefail
 
-app_path="${1:?usage: verify-release.sh APP_PATH VERSION BUILD_NUMBER}"
-expected_version="${2:?usage: verify-release.sh APP_PATH VERSION BUILD_NUMBER}"
-expected_build="${3:?usage: verify-release.sh APP_PATH VERSION BUILD_NUMBER}"
+app_path="${1:?usage: verify-release.sh APP_PATH VERSION BUILD_NUMBER [SIGNING_MODE] [TEAM_ID]}"
+expected_version="${2:?usage: verify-release.sh APP_PATH VERSION BUILD_NUMBER [SIGNING_MODE] [TEAM_ID]}"
+expected_build="${3:?usage: verify-release.sh APP_PATH VERSION BUILD_NUMBER [SIGNING_MODE] [TEAM_ID]}"
+signing_mode="${4:-unsigned}"
+expected_team_id="${5:-}"
 expected_arch="arm64"
+expected_bundle_id="io.github.the-pavels.verba"
 info_plist="${app_path}/Contents/Info.plist"
 executable="${app_path}/Contents/MacOS/Verba"
 resources="${app_path}/Contents/Resources"
@@ -21,6 +24,18 @@ plist_value() {
     /usr/libexec/PlistBuddy -c "Print :$2" "$1" 2>/dev/null
 }
 
+case "${signing_mode}" in
+    unsigned)
+        [[ -z "${expected_team_id}" ]] || fail "unsigned verification must not specify a team ID"
+        ;;
+    developer-id)
+        [[ "${expected_team_id}" =~ ^[A-Z0-9]{10}$ ]] || fail "Developer ID verification requires a valid team ID"
+        ;;
+    *)
+        fail "unsupported signing mode ${signing_mode}"
+        ;;
+esac
+
 [[ -d "${app_path}" ]] || fail "missing app bundle at ${app_path}"
 [[ -f "${info_plist}" ]] || fail "missing Contents/Info.plist"
 [[ -x "${executable}" ]] || fail "missing executable Contents/MacOS/Verba"
@@ -33,7 +48,7 @@ plist_value() {
 [[ "$(plist_value "${info_plist}" LSUIElement)" == "true" ]] || fail "app is not configured as a menu-bar-only UI element"
 
 bundle_id="$(plist_value "${info_plist}" CFBundleIdentifier)"
-[[ -n "${bundle_id}" ]] || fail "bundle identifier is empty"
+[[ "${bundle_id}" == "${expected_bundle_id}" ]] || fail "bundle identifier is not ${expected_bundle_id}"
 
 icon_file="$(plist_value "${info_plist}" CFBundleIconFile)"
 [[ -n "${icon_file}" ]] || fail "CFBundleIconFile is missing"
@@ -57,6 +72,7 @@ for unexpected_dir in Frameworks PlugIns XPCServices Helpers; do
     [[ ! -e "${app_path}/Contents/${unexpected_dir}" ]] || fail "unexpected embedded code directory Contents/${unexpected_dir}"
 done
 
+mach_o_count=0
 while IFS= read -r bundle_file; do
     relative_path="${bundle_file#"${app_path}/"}"
     case "${relative_path}" in
@@ -68,24 +84,48 @@ while IFS= read -r bundle_file; do
         Contents/Resources/PrivacyInfo.xcprivacy | \
         Contents/Resources/en.lproj/Localizable.strings)
             ;;
+        Contents/_CodeSignature/CodeResources)
+            [[ "${signing_mode}" == "developer-id" ]] || fail "unsigned bundle contains code-signing resources"
+            ;;
         *)
             fail "unexpected bundle file ${relative_path}"
             ;;
     esac
 
-    if [[ "${bundle_file}" != "${executable}" ]] && /usr/bin/file -b "${bundle_file}" | /usr/bin/grep -q 'Mach-O'; then
-        fail "unexpected embedded Mach-O code at ${relative_path}"
+    if /usr/bin/file -b "${bundle_file}" | /usr/bin/grep -q 'Mach-O'; then
+        ((mach_o_count += 1))
+        [[ "${bundle_file}" == "${executable}" ]] || fail "unexpected embedded Mach-O code at ${relative_path}"
     fi
 done < <(/usr/bin/find "${app_path}" -type f -print | LC_ALL=C /usr/bin/sort)
+
+[[ "${mach_o_count}" -eq 1 ]] || fail "expected one embedded Mach-O executable, found ${mach_o_count}"
 
 if /usr/bin/otool -L "${executable}" | /usr/bin/grep -E '/Users/|/target/' >/dev/null; then
     fail "executable contains a non-system development library path"
 fi
 
-[[ ! -e "${app_path}/Contents/_CodeSignature" ]] || fail "item 40 package must remain unsigned"
+if [[ "${signing_mode}" == "unsigned" ]]; then
+    [[ ! -e "${app_path}/Contents/_CodeSignature" ]] || fail "unsigned package contains a bundle signature"
+else
+    [[ -f "${app_path}/Contents/_CodeSignature/CodeResources" ]] || fail "Developer ID bundle signature resources are missing"
+    /usr/bin/codesign --verify --deep --strict=all --verbose=2 "${app_path}" || fail "Developer ID signature verification failed"
+
+    signing_info="$(/usr/bin/codesign -dvvv "${app_path}" 2>&1)"
+    [[ "${signing_info}" == *"Identifier=${expected_bundle_id}"* ]] || fail "signed identifier does not match ${expected_bundle_id}"
+    [[ "${signing_info}" == *"Authority=Developer ID Application:"* ]] || fail "signature does not use a Developer ID Application certificate"
+    [[ "${signing_info}" == *"TeamIdentifier=${expected_team_id}"* ]] || fail "signature team does not match ${expected_team_id}"
+    [[ "${signing_info}" == *"Timestamp="* ]] || fail "signature has no secure timestamp"
+    /usr/bin/grep -Eq 'flags=.*\([^)]*runtime[^)]*\)' <<< "${signing_info}" || fail "hardened runtime flag is missing"
+
+    entitlements="$(/usr/bin/codesign -d --entitlements - --xml "${app_path}" 2>/dev/null)"
+    if /usr/bin/grep -q '<key>' <<< "${entitlements}"; then
+        fail "release signature contains an unexpected entitlement"
+    fi
+fi
 
 echo "Verified ${app_path}"
 echo "  bundle: ${bundle_id}"
 echo "  version: ${expected_version} (${expected_build})"
 echo "  architecture: ${expected_arch}"
+echo "  signing: ${signing_mode}"
 echo "  privacy: manifest and localized permission disclosures verified"

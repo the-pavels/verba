@@ -55,7 +55,7 @@ final class PerformanceSignposter: PerformanceObserver, @unchecked Sendable {
 
     init(
         signposter: OSSignposter = OSSignposter(
-            subsystem: Bundle.main.bundleIdentifier ?? "com.example.Verba",
+            subsystem: Bundle.main.bundleIdentifier ?? "io.github.the-pavels.verba",
             category: "Performance"
         ),
         recorder: @escaping Recorder = { _ in }

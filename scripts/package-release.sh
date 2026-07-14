@@ -11,15 +11,21 @@ workspace_version="$(/usr/bin/awk '
 version="${1:-${workspace_version}}"
 build_number="${2:-1}"
 release_arch="arm64"
+signing_mode="${VERBA_SIGNING_MODE:-unsigned}"
 dist_dir="${VERBA_DIST_DIR:-${repo_root}/dist}"
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/verba-release.XXXXXX")"
 archive_path="${work_dir}/Verba.xcarchive"
-artifact_basename="Verba-${version}-${build_number}-${release_arch}-unsigned"
-artifact_path="${dist_dir}/${artifact_basename}.zip"
-manifest_path="${dist_dir}/${artifact_basename}.manifest.txt"
-checksum_path="${artifact_path}.sha256"
+expected_team_id=""
+signing_arguments=()
 
-trap '/bin/rm -rf "${work_dir}"' EXIT
+cleanup() {
+    exit_status=$?
+    trap - EXIT
+    /bin/rm -rf "${work_dir}"
+    exit "${exit_status}"
+}
+
+trap cleanup EXIT
 
 if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "Version must use MAJOR.MINOR.PATCH format: ${version}" >&2
@@ -36,11 +42,71 @@ if [[ "${version}" != "${workspace_version}" ]]; then
     exit 1
 fi
 
+case "${signing_mode}" in
+    unsigned)
+        artifact_qualifier="unsigned"
+        signing_arguments+=(CODE_SIGNING_ALLOWED=NO)
+        ;;
+    developer-id)
+        expected_team_id="${VERBA_DEVELOPMENT_TEAM:-}"
+        signing_identity="${VERBA_SIGNING_IDENTITY:-}"
+
+        if [[ -z "${expected_team_id}" ]]; then
+            echo "VERBA_DEVELOPMENT_TEAM is required for Developer ID signing" >&2
+            exit 1
+        fi
+        if [[ -z "${signing_identity}" ]]; then
+            echo "VERBA_SIGNING_IDENTITY is required for Developer ID signing" >&2
+            exit 1
+        fi
+
+        if [[ ! "${expected_team_id}" =~ ^[A-Z0-9]{10}$ ]]; then
+            echo "VERBA_DEVELOPMENT_TEAM must be a 10-character Apple team ID" >&2
+            exit 1
+        fi
+
+        identity_listing="$(/usr/bin/security find-identity -v -p codesigning 2>&1)"
+        matched_identity="$(/usr/bin/grep -F "${signing_identity}" <<< "${identity_listing}" | /usr/bin/head -n 1 || true)"
+        if [[ -z "${matched_identity}" ]]; then
+            echo "VERBA_SIGNING_IDENTITY does not match an installed code-signing identity" >&2
+            echo "${identity_listing}" >&2
+            exit 1
+        fi
+        if [[ "${matched_identity}" != *"Developer ID Application:"* ]]; then
+            echo "VERBA_SIGNING_IDENTITY must select a Developer ID Application certificate" >&2
+            exit 1
+        fi
+        if [[ "${matched_identity}" != *"(${expected_team_id})"* ]]; then
+            echo "VERBA_SIGNING_IDENTITY does not belong to VERBA_DEVELOPMENT_TEAM" >&2
+            exit 1
+        fi
+
+        artifact_qualifier="developer-id"
+        signing_arguments+=(
+            CODE_SIGNING_ALLOWED=YES
+            CODE_SIGN_STYLE=Manual
+            "DEVELOPMENT_TEAM=${expected_team_id}"
+            "CODE_SIGN_IDENTITY=${signing_identity}"
+            CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
+            OTHER_CODE_SIGN_FLAGS=--timestamp
+        )
+        ;;
+    *)
+        echo "Unsupported VERBA_SIGNING_MODE: ${signing_mode}" >&2
+        exit 1
+        ;;
+esac
+
+artifact_basename="Verba-${version}-${build_number}-${release_arch}-${artifact_qualifier}"
+artifact_path="${dist_dir}/${artifact_basename}.zip"
+manifest_path="${dist_dir}/${artifact_basename}.manifest.txt"
+checksum_path="${artifact_path}.sha256"
+
 mkdir -p "${dist_dir}"
 
 cd "${repo_root}"
 
-echo "Archiving Verba ${version} (${build_number}) for ${release_arch}"
+echo "Archiving Verba ${version} (${build_number}) for ${release_arch} with ${signing_mode} signing"
 xcodebuild \
     -quiet \
     -project macos/Verba.xcodeproj \
@@ -54,11 +120,16 @@ xcodebuild \
     VERBA_RUST_ARCHS="${release_arch}" \
     MARKETING_VERSION="${version}" \
     CURRENT_PROJECT_VERSION="${build_number}" \
-    CODE_SIGNING_ALLOWED=NO \
+    "${signing_arguments[@]}" \
     archive
 
 app_path="${archive_path}/Products/Applications/Verba.app"
-"${repo_root}/scripts/verify-release.sh" "${app_path}" "${version}" "${build_number}"
+"${repo_root}/scripts/verify-release.sh" \
+    "${app_path}" \
+    "${version}" \
+    "${build_number}" \
+    "${signing_mode}" \
+    "${expected_team_id}"
 
 source_revision="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
 source_state=clean
@@ -80,6 +151,10 @@ temporary_manifest="${work_dir}/${artifact_basename}.manifest.txt"
     echo "version=${version}"
     echo "build=${build_number}"
     echo "architecture=${release_arch}"
+    echo "signing=${signing_mode}"
+    if [[ -n "${expected_team_id}" ]]; then
+        echo "team-id=${expected_team_id}"
+    fi
     echo "source-revision=${source_revision}"
     echo "source-state=${source_state}"
     echo "source-date-epoch=${source_date_epoch}"

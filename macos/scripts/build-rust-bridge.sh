@@ -45,7 +45,15 @@ thin_library="${repo_root}/target/${rust_target}/${rust_profile}/libverba_ffi.a"
 xcode_library_dir="${repo_root}/target/verba-xcode/${rust_profile}"
 xcode_library="${xcode_library_dir}/libverba_ffi.a"
 staging_dir="$(mktemp -d "${TMPDIR:-/tmp}/verba-bindings.XXXXXX")"
-trap '/bin/rm -rf "${staging_dir}"' EXIT
+
+cleanup() {
+    exit_status=$?
+    trap - EXIT
+    /bin/rm -rf "${staging_dir}"
+    exit "${exit_status}"
+}
+
+trap cleanup EXIT
 
 mkdir -p "${generated_dir}" "${xcode_library_dir}"
 /usr/bin/install -m 0644 "${thin_library}" "${xcode_library}"
