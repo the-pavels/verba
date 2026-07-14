@@ -5,7 +5,8 @@ import XCTest
 
 @MainActor
 final class AppleTranslatorTests: XCTestCase {
-    func testInstalledPairTranslatesWithAutomaticSourceDetection() async throws {
+    func testInstalledPairTranslatesWithIdentifiedSource() async throws {
+        let languageIdentifier = FakeTranslationLanguageIdentifier(identifier: "de")
         let availability = FakeTranslationAvailability(status: .installed)
         let sessions = FakeTranslationSessions(
             result: .success(
@@ -17,6 +18,7 @@ final class AppleTranslatorTests: XCTestCase {
             )
         )
         let translator = AppleTranslator(
+            languageIdentifier: languageIdentifier,
             availability: availability,
             sessions: sessions
         )
@@ -34,13 +36,37 @@ final class AppleTranslatorTests: XCTestCase {
                 translatedText: "Hello"
             )
         )
+        XCTAssertEqual(languageIdentifier.requests, ["Hallo"])
         XCTAssertEqual(availability.requests.count, 1)
-        XCTAssertEqual(availability.requests[0].text, "Hallo")
+        XCTAssertEqual(availability.requests[0].source.minimalIdentifier, "de")
         XCTAssertEqual(availability.requests[0].target.minimalIdentifier, "en")
         XCTAssertEqual(sessions.requests.count, 1)
-        XCTAssertNil(sessions.requests[0].source)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "de")
         XCTAssertEqual(sessions.requests[0].target.minimalIdentifier, "en")
         XCTAssertEqual(sessions.requests[0].preparation, .none)
+    }
+
+    func testSystemLanguageIdentifierDetectsSelectedGermanText() async throws {
+        let availability = FakeTranslationAvailability(status: .installed)
+        let translator = AppleTranslator(
+            availability: availability,
+            sessions: FakeTranslationSessions(
+                result: .success(
+                    AppleTranslationResult(
+                        sourceLanguageIdentifier: "de",
+                        targetLanguageIdentifier: "en",
+                        translatedText: "The boss spoke"
+                    )
+                )
+            )
+        )
+
+        _ = try await translator.translate(
+            "Der Chef sprach",
+            targetLanguageIdentifier: "en"
+        )
+
+        XCTAssertEqual(availability.requests.first?.source.minimalIdentifier, "de")
     }
 
     func testSupportedPairPreparesAndResumesTranslation() async throws {
@@ -54,6 +80,7 @@ final class AppleTranslatorTests: XCTestCase {
             )
         )
         let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "en"),
             availability: FakeTranslationAvailability(status: .supported),
             sessions: sessions
         )
@@ -65,7 +92,7 @@ final class AppleTranslatorTests: XCTestCase {
 
         XCTAssertEqual(result.translatedText, "Bonjour")
         XCTAssertEqual(sessions.requests.count, 1)
-        XCTAssertNil(sessions.requests[0].source)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "en")
         XCTAssertEqual(sessions.requests[0].target.minimalIdentifier, "fr")
         XCTAssertEqual(sessions.requests[0].preparation, .required)
     }
@@ -73,6 +100,7 @@ final class AppleTranslatorTests: XCTestCase {
     func testUnsupportedPairDoesNotCreateASession() async {
         let sessions = FakeTranslationSessions(result: .failure(TestFailure()))
         let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "en"),
             availability: FakeTranslationAvailability(status: .unsupported),
             sessions: sessions
         )
@@ -85,8 +113,25 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertTrue(sessions.requests.isEmpty)
     }
 
+    func testUnidentifiedSourceDoesNotCheckAvailabilityOrCreateASession() async {
+        let availability = FakeTranslationAvailability(status: .installed)
+        let sessions = FakeTranslationSessions(result: .failure(TestFailure()))
+        let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(identifier: nil),
+            availability: availability,
+            sessions: sessions
+        )
+
+        await assertTranslationError(.unableToIdentifyLanguage) {
+            try await translator.translate("...", targetLanguageIdentifier: "en")
+        }
+        XCTAssertTrue(availability.requests.isEmpty)
+        XCTAssertTrue(sessions.requests.isEmpty)
+    }
+
     func testCancellationIsMappedWithoutLosingItsMeaning() async {
         let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "de"),
             availability: FakeTranslationAvailability(
                 result: .failure(CancellationError())
             ),
@@ -100,6 +145,7 @@ final class AppleTranslatorTests: XCTestCase {
 
     func testUnknownFailuresAreRedacted() async {
         let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "de"),
             availability: FakeTranslationAvailability(
                 result: .failure(TestFailure())
             ),
@@ -129,6 +175,7 @@ final class AppleTranslatorTests: XCTestCase {
             ]
         )
         let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "de"),
             availability: FakeTranslationAvailability(status: .installed),
             sessions: sessions
         )
@@ -142,12 +189,12 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertEqual(sessions.requests.map(\.preparation), [.none, .required])
     }
 
-    func testSessionBrokerConfiguresAutomaticSourceAndCancelsPendingWork() async {
+    func testSessionBrokerConfiguresIdentifiedSourceAndCancelsPendingWork() async {
         let sessions = SystemTranslationSessionProvider()
         let task = Task { @MainActor in
             try await sessions.translate(
                 "Hallo",
-                source: nil,
+                source: Locale.Language(identifier: "de"),
                 target: Locale.Language(identifier: "en"),
                 preparation: .required
             )
@@ -155,7 +202,7 @@ final class AppleTranslatorTests: XCTestCase {
 
         await Task.yield()
 
-        XCTAssertNil(sessions.configuration?.source)
+        XCTAssertEqual(sessions.configuration?.source?.minimalIdentifier, "de")
         XCTAssertEqual(sessions.configuration?.target?.minimalIdentifier, "en")
 
         task.cancel()
@@ -171,6 +218,7 @@ final class AppleTranslatorTests: XCTestCase {
     func testNativeAdapterConvertsTheTranslationResult() async throws {
         let adapter = NativeAppleTranslator(
             translator: AppleTranslator(
+                languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "de"),
                 availability: FakeTranslationAvailability(status: .installed),
                 sessions: FakeTranslationSessions(
                     result: .success(
@@ -203,6 +251,7 @@ final class AppleTranslatorTests: XCTestCase {
     func testNativeAdapterPreservesUnsupportedPairs() async {
         let adapter = NativeAppleTranslator(
             translator: AppleTranslator(
+                languageIdentifier: FakeTranslationLanguageIdentifier(identifier: "en"),
                 availability: FakeTranslationAvailability(status: .unsupported),
                 sessions: FakeTranslationSessions(result: .failure(TestFailure()))
             )
@@ -239,9 +288,24 @@ final class AppleTranslatorTests: XCTestCase {
 }
 
 @MainActor
+private final class FakeTranslationLanguageIdentifier: TranslationLanguageIdentifying {
+    private let language: Locale.Language?
+    private(set) var requests: [String] = []
+
+    init(identifier: String?) {
+        language = identifier.map(Locale.Language.init(identifier:))
+    }
+
+    func identify(_ text: String) -> Locale.Language? {
+        requests.append(text)
+        return language
+    }
+}
+
+@MainActor
 private final class FakeTranslationAvailability: TranslationAvailabilityChecking {
     struct Request {
-        let text: String
+        let source: Locale.Language
         let target: Locale.Language
     }
 
@@ -257,10 +321,10 @@ private final class FakeTranslationAvailability: TranslationAvailabilityChecking
     }
 
     func status(
-        for text: String,
+        from source: Locale.Language,
         target: Locale.Language
     ) async throws -> TranslationPairStatus {
-        requests.append(Request(text: text, target: target))
+        requests.append(Request(source: source, target: target))
         return try result.get()
     }
 }

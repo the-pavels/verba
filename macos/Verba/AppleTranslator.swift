@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 @preconcurrency import Translation
 
 enum TranslationPairStatus: Equatable, Sendable {
@@ -27,9 +28,14 @@ enum AppleTranslationError: Error, Equatable, Sendable {
 }
 
 @MainActor
+protocol TranslationLanguageIdentifying {
+    func identify(_ text: String) -> Locale.Language?
+}
+
+@MainActor
 protocol TranslationAvailabilityChecking {
     func status(
-        for text: String,
+        from source: Locale.Language,
         target: Locale.Language
     ) async throws -> TranslationPairStatus
 }
@@ -46,13 +52,16 @@ protocol TranslationSessionProviding {
 
 @MainActor
 struct AppleTranslator {
+    private let languageIdentifier: any TranslationLanguageIdentifying
     private let availability: any TranslationAvailabilityChecking
     private let sessions: any TranslationSessionProviding
 
     init(
+        languageIdentifier: any TranslationLanguageIdentifying = SystemTranslationLanguageIdentifier(),
         availability: any TranslationAvailabilityChecking = SystemTranslationAvailability(),
         sessions: any TranslationSessionProviding
     ) {
+        self.languageIdentifier = languageIdentifier
         self.availability = availability
         self.sessions = sessions
     }
@@ -64,19 +73,23 @@ struct AppleTranslator {
         let target = Locale.Language(identifier: targetLanguageIdentifier)
 
         do {
-            switch try await availability.status(for: text, target: target) {
+            guard let source = languageIdentifier.identify(text) else {
+                throw AppleTranslationError.unableToIdentifyLanguage
+            }
+
+            switch try await availability.status(from: source, target: target) {
             case .installed:
                 do {
                     return try await sessions.translate(
                         text,
-                        source: nil,
+                        source: source,
                         target: target,
                         preparation: .none
                     )
                 } catch where translationRequiresPreparation(error) {
                     return try await sessions.translate(
                         text,
-                        source: nil,
+                        source: source,
                         target: target,
                         preparation: .required
                     )
@@ -84,7 +97,7 @@ struct AppleTranslator {
             case .supported:
                 return try await sessions.translate(
                     text,
-                    source: nil,
+                    source: source,
                     target: target,
                     preparation: .required
                 )
@@ -100,12 +113,24 @@ struct AppleTranslator {
 }
 
 @MainActor
+private struct SystemTranslationLanguageIdentifier: TranslationLanguageIdentifying {
+    func identify(_ text: String) -> Locale.Language? {
+        guard let language = NLLanguageRecognizer.dominantLanguage(for: text),
+              language != .undetermined
+        else {
+            return nil
+        }
+        return Locale.Language(identifier: language.rawValue)
+    }
+}
+
+@MainActor
 private struct SystemTranslationAvailability: TranslationAvailabilityChecking {
     func status(
-        for text: String,
+        from source: Locale.Language,
         target: Locale.Language
     ) async throws -> TranslationPairStatus {
-        switch try await LanguageAvailability().status(for: text, to: target) {
+        switch await LanguageAvailability().status(from: source, to: target) {
         case .installed:
             .installed
         case .supported:
