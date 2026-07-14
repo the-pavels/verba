@@ -59,10 +59,14 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
                     preparation: preparation,
                     continuation: continuation
                 )
-                configuration = TranslationSession.Configuration(
-                    source: source,
-                    target: target
-                )
+                if configuration?.source == source, configuration?.target == target {
+                    configuration?.invalidate()
+                } else {
+                    configuration = TranslationSession.Configuration(
+                        source: source,
+                        target: target
+                    )
+                }
             }
         } onCancel: {
             Task { @MainActor [weak self] in
@@ -138,7 +142,6 @@ final class SystemTranslationSessionProvider: ObservableObject, TranslationSessi
         }
 
         pendingRequest = nil
-        configuration = nil
         request.continuation.resume(with: result)
     }
 }

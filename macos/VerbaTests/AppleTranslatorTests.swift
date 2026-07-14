@@ -239,6 +239,37 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertEqual(result.translatedText, "Hello")
     }
 
+    func testSessionBrokerInvalidatesConfigurationForRepeatedLanguagePair() async throws {
+        let sessions = SystemTranslationSessionProvider()
+        let firstTask = Task { @MainActor in
+            try await sessions.translate(
+                "Hallo",
+                source: Locale.Language(identifier: "de"),
+                target: Locale.Language(identifier: "en"),
+                preparation: .none
+            )
+        }
+        await Task.yield()
+        let initialVersion = try XCTUnwrap(sessions.configuration).version
+
+        await sessions.run(FakeTranslationSessionExecutor())
+        _ = try await firstTask.value
+
+        let secondTask = Task { @MainActor in
+            try await sessions.translate(
+                "Guten Tag",
+                source: Locale.Language(identifier: "de"),
+                target: Locale.Language(identifier: "en"),
+                preparation: .none
+            )
+        }
+        await Task.yield()
+
+        XCTAssertGreaterThan(try XCTUnwrap(sessions.configuration).version, initialVersion)
+        await sessions.run(FakeTranslationSessionExecutor())
+        _ = try await secondTask.value
+    }
+
     func testNativeAdapterConvertsTheTranslationResult() async throws {
         let adapter = NativeAppleTranslator(
             translator: AppleTranslator(
