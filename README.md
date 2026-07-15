@@ -4,7 +4,7 @@ Translate and proofread selected text without leaving the app you are using.
 
 Verba lives in the macOS menu bar. Select text in any app, press a shortcut, and a small result window appears near your pointer. Copy the result when you are ready and carry on with your work.
 
-![Verba showing a translation from German to English](macos/VerbaTests/__Snapshots__/translation-light.png)
+<img src="macos/VerbaTests/__Snapshots__/translation-light.png" width="520" alt="Verba showing a translation from German to English">
 
 ## What Verba can do
 
