@@ -24,6 +24,9 @@ struct ShortcutRecorderView: NSViewRepresentable {
         button.configuredValue = value
         button.recordingHandler = onRecord
         button.setAccessibilityLabel(accessibilityName)
+        button.setAccessibilityHelp(
+            LocalizedCopy.text("Press to record a new shortcut. Press Escape to cancel.")
+        )
     }
 }
 
@@ -59,6 +62,10 @@ final class ShortcutRecorderButton: NSButton {
         isRecording = true
         title = LocalizedCopy.text("Press shortcut…")
         setAccessibilityValue(LocalizedCopy.text("Recording"))
+        setAccessibilityHelp(
+            LocalizedCopy.text("Press the new shortcut. Press Escape to cancel.")
+        )
+        NSAccessibility.post(element: self, notification: .valueChanged)
         window?.makeFirstResponder(self)
     }
 
@@ -108,9 +115,16 @@ final class ShortcutRecorderButton: NSButton {
     }
 
     private func finishRecording() {
+        guard isRecording else {
+            return
+        }
         isRecording = false
         title = configuredValue
         setAccessibilityValue(configuredValue)
+        setAccessibilityHelp(
+            LocalizedCopy.text("Press to record a new shortcut. Press Escape to cancel.")
+        )
+        NSAccessibility.post(element: self, notification: .valueChanged)
     }
 
     private func shortcutKey(for event: NSEvent) -> String? {

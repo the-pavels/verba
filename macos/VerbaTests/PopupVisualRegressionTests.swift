@@ -26,14 +26,14 @@ final class PopupVisualRegressionTests: XCTestCase {
                 PopupResultSection(title: "Original") {
                     ProofreadingDiffText(
                         segments: diff.original,
-                        accessibilityLabel: "Original: \(originalText)"
+                        accessibilityLabel: AccessibilityCopy.originalText(originalText)
                     )
                 }
 
                 PopupResultSection(title: "Corrected text", isEmphasized: true) {
                     ProofreadingDiffText(
                         segments: diff.corrected,
-                        accessibilityLabel: "Corrected text: \(correctedText)"
+                        accessibilityLabel: AccessibilityCopy.correctedText(correctedText)
                     )
                 }
             }

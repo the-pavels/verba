@@ -11,6 +11,10 @@ struct ResultCopyButton: View {
         .buttonStyle(.borderedProminent)
         .controlSize(.regular)
         .help(helpText)
+        .accessibilityLabel(helpText)
+        .accessibilityHint(
+            LocalizedCopy.text("Copies the result and closes the popup.")
+        )
         .keyboardShortcut("c", modifiers: EventModifiers.command)
     }
 }

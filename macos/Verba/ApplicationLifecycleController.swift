@@ -1,9 +1,5 @@
 import AppKit
 
-enum LaunchAtLoginPolicy: Equatable {
-    case deferred
-}
-
 @MainActor
 protocol ApplicationLifecycleRuntime: AnyObject {
     func prepareForSleep()
@@ -35,8 +31,6 @@ protocol ApplicationLifecycleEventSource: AnyObject {
 
 @MainActor
 final class ApplicationLifecycleController {
-    static let launchAtLoginPolicy = LaunchAtLoginPolicy.deferred
-
     private let runtime: any ApplicationLifecycleRuntime
     private let popup: any ApplicationLifecyclePopup
     private let accessibilityPermission: any AccessibilityPermissionRefreshing

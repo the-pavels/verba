@@ -11,9 +11,11 @@ struct VerbaSettingsView: View {
     @ObservedObject var shortcuts: ShortcutSettingsController
     @ObservedObject var accessibility: AccessibilityPermissionController
     @ObservedObject var support: SettingsSupportController
+    @ObservedObject var launchAtLogin: LaunchAtLoginController
 
     var body: some View {
         Form {
+            LaunchAtLoginSettingsView(controller: launchAtLogin)
             TargetLanguageSettingsView(controller: targetLanguage)
             ShortcutSettingsView(controller: shortcuts)
             ApiKeySettingsView(controller: apiKey)
@@ -37,11 +39,13 @@ struct VerbaSettingsView: View {
             await apiKey.load()
             shortcuts.load()
             accessibility.refresh()
+            launchAtLogin.refresh()
         }
         .onReceive(
             NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
         ) { _ in
             accessibility.refresh()
+            launchAtLogin.refresh()
         }
     }
 }

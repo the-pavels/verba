@@ -184,8 +184,11 @@ private struct FirstRunSetupView: View {
             Divider()
                 .padding(.vertical, 18)
 
-            page
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            ScrollView {
+                page
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Divider()
                 .padding(.vertical, 16)
@@ -228,6 +231,12 @@ private struct FirstRunSetupView: View {
                 total: Double(FirstRunSetupStep.allCases.count)
             )
             .accessibilityLabel(LocalizedCopy.text("Setup progress"))
+            .accessibilityValue(
+                AccessibilityCopy.setupProgress(
+                    current: model.step.rawValue + 1,
+                    total: FirstRunSetupStep.allCases.count
+                )
+            )
         }
     }
 

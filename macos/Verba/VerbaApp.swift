@@ -9,6 +9,7 @@ struct VerbaApp: App {
     @StateObject private var apiKeySettings: ApiKeySettingsController
     @StateObject private var shortcutSettings: ShortcutSettingsController
     @StateObject private var settingsSupport: SettingsSupportController
+    @StateObject private var launchAtLogin: LaunchAtLoginController
 
     private let popupController: PopupController
     private let runtime: VerbaRuntime
@@ -23,6 +24,7 @@ struct VerbaApp: App {
         let settingsSupport = SettingsSupportController(rustCoreVersion: rustCoreVersion())
         _accessibilityPermission = StateObject(wrappedValue: accessibilityPermission)
         _settingsSupport = StateObject(wrappedValue: settingsSupport)
+        _launchAtLogin = StateObject(wrappedValue: LaunchAtLoginController())
 
         let translationSessions = SystemTranslationSessionProvider()
         let popupController = PopupController(translationSessions: translationSessions)
@@ -99,7 +101,8 @@ struct VerbaApp: App {
                 apiKey: apiKeySettings,
                 shortcuts: shortcutSettings,
                 accessibility: accessibilityPermission,
-                support: settingsSupport
+                support: settingsSupport,
+                launchAtLogin: launchAtLogin
             )
         }
     }

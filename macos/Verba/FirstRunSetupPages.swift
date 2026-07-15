@@ -155,6 +155,9 @@ struct FirstRunProofreadingPage: View {
                     text: $apiKey.apiKeyInput
                 )
                 .disabled(apiKey.isLoading || apiKey.isTesting)
+                .accessibilityHint(
+                    LocalizedCopy.text("Stored only in your macOS Keychain.")
+                )
 
                 HStack {
                     Label(statusTitle, systemImage: statusImage)
@@ -320,6 +323,8 @@ struct SetupValueRow: View {
                 .font(.system(.body, design: .monospaced))
                 .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(AccessibilityCopy.setting(title: title, value: value))
     }
 }
 

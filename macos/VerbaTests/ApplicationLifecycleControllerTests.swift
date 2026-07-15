@@ -3,10 +3,6 @@ import XCTest
 
 @MainActor
 final class ApplicationLifecycleControllerTests: XCTestCase {
-    func testLaunchAtLoginRemainsDeferredForVersionOne() {
-        XCTAssertEqual(ApplicationLifecycleController.launchAtLoginPolicy, .deferred)
-    }
-
     func testSleepWakeScreenAndTerminationEventsReachTheirOwners() {
         let runtime = FakeLifecycleRuntime()
         let popup = FakeLifecyclePopup()

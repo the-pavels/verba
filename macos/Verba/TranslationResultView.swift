@@ -31,6 +31,7 @@ struct TranslationResultView: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
+                            .accessibilityLabel(AccessibilityCopy.originalText(originalText))
                     }
 
                     PopupResultSection(
@@ -41,6 +42,9 @@ struct TranslationResultView: View {
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
+                            .accessibilityLabel(
+                                AccessibilityCopy.translationText(translatedText)
+                            )
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

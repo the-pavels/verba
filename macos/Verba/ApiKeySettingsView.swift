@@ -7,6 +7,9 @@ struct ApiKeySettingsView: View {
         Section("Proofreading") {
             SecureField("OpenAI API key", text: $controller.apiKeyInput)
                 .disabled(controller.isLoading || controller.isTesting)
+                .accessibilityHint(
+                    LocalizedCopy.text("Stored only in your macOS Keychain.")
+                )
 
             HStack {
                 Button(
@@ -45,6 +48,9 @@ struct ApiKeySettingsView: View {
                         : LocalizedCopy.text("No API key configured")
                 )
                 .foregroundStyle(.secondary)
+                .accessibilityLabel(
+                    AccessibilityCopy.apiKeyStatus(isConfigured: controller.isConfigured)
+                )
             }
 
             if let feedback = controller.feedback {

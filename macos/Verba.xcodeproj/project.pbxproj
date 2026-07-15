@@ -54,6 +54,8 @@
 		10000000000000000000007C /* FirstRunSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000007D /* FirstRunSetup.swift */; };
 		10000000000000000000007E /* FirstRunSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000007F /* FirstRunSetupTests.swift */; };
 		100000000000000000000080 /* FirstRunSetupPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000081 /* FirstRunSetupPages.swift */; };
+		100000000000000000000082 /* LaunchAtLoginSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000083 /* LaunchAtLoginSettings.swift */; };
+		100000000000000000000084 /* LaunchAtLoginControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000085 /* LaunchAtLoginControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +118,8 @@
 		10000000000000000000007D /* FirstRunSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetup.swift; sourceTree = "<group>"; };
 		10000000000000000000007F /* FirstRunSetupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetupTests.swift; sourceTree = "<group>"; };
 		100000000000000000000081 /* FirstRunSetupPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetupPages.swift; sourceTree = "<group>"; };
+		100000000000000000000083 /* LaunchAtLoginSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginSettings.swift; sourceTree = "<group>"; };
+		100000000000000000000085 /* LaunchAtLoginControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -158,6 +162,7 @@
 				10000000000000000000007D /* FirstRunSetup.swift */,
 				100000000000000000000081 /* FirstRunSetupPages.swift */,
 				10000000000000000000006B /* Localizable.strings */,
+				100000000000000000000083 /* LaunchAtLoginSettings.swift */,
 				100000000000000000000068 /* LocalizedCopy.swift */,
 				100000000000000000000017 /* MenuBarContentView.swift */,
 				100000000000000000000048 /* NativeAppleTranslator.swift */,
@@ -212,6 +217,7 @@
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
 				10000000000000000000007F /* FirstRunSetupTests.swift */,
+				100000000000000000000085 /* LaunchAtLoginControllerTests.swift */,
 				10000000000000000000007B /* MenuBarContentTests.swift */,
 				100000000000000000000062 /* PopupRecoveryTests.swift */,
 				100000000000000000000071 /* PerformanceSignposterTests.swift */,
@@ -359,6 +365,7 @@
 				100000000000000000000041 /* AppleTranslator.swift in Sources */,
 				10000000000000000000007C /* FirstRunSetup.swift in Sources */,
 				100000000000000000000080 /* FirstRunSetupPages.swift in Sources */,
+				100000000000000000000082 /* LaunchAtLoginSettings.swift in Sources */,
 				100000000000000000000016 /* MenuBarContentView.swift in Sources */,
 				100000000000000000000047 /* NativeAppleTranslator.swift in Sources */,
 				100000000000000000000067 /* LocalizedCopy.swift in Sources */,
@@ -395,6 +402,7 @@
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
 				10000000000000000000007E /* FirstRunSetupTests.swift in Sources */,
+				100000000000000000000084 /* LaunchAtLoginControllerTests.swift in Sources */,
 				10000000000000000000007A /* MenuBarContentTests.swift in Sources */,
 				100000000000000000000061 /* PopupRecoveryTests.swift in Sources */,
 				100000000000000000000070 /* PerformanceSignposterTests.swift in Sources */,

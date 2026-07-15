@@ -16,6 +16,30 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(LocalizedCopy.text("Retry"), "Retry")
     }
 
+    func testAccessibilityCopyDescribesProgressSettingsAndResults() {
+        XCTAssertEqual(
+            AccessibilityCopy.setupProgress(current: 2, total: 5),
+            "Step 2 of 5"
+        )
+        XCTAssertEqual(
+            AccessibilityCopy.setting(title: "Translate", value: "Control T"),
+            "Translate: Control T"
+        )
+        XCTAssertEqual(AccessibilityCopy.originalText("Hello"), "Original text: Hello")
+        XCTAssertEqual(
+            AccessibilityCopy.translationText("Bonjour"),
+            "Translation text: Bonjour"
+        )
+        XCTAssertEqual(
+            AccessibilityCopy.correctedText("Hello."),
+            "Corrected text: Hello."
+        )
+        XCTAssertEqual(
+            AccessibilityCopy.apiKeyStatus(isConfigured: true),
+            "API key stored in Keychain"
+        )
+    }
+
     func testRustErrorCopyIsLocalizedWithoutChangingItsRecoveryContext() {
         let presentation = PresentationViewModel.error(
             action: .translate,

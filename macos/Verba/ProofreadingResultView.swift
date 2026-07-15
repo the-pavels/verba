@@ -25,7 +25,7 @@ struct ProofreadingResultView: View {
                     PopupResultSection(title: LocalizedCopy.text("Original")) {
                         ProofreadingDiffText(
                             segments: diff.original,
-                            accessibilityLabel: "Original: \(originalText)"
+                            accessibilityLabel: AccessibilityCopy.originalText(originalText)
                         )
                     }
 
@@ -35,7 +35,7 @@ struct ProofreadingResultView: View {
                     ) {
                         ProofreadingDiffText(
                             segments: diff.corrected,
-                            accessibilityLabel: "Corrected text: \(correctedText)"
+                            accessibilityLabel: AccessibilityCopy.correctedText(correctedText)
                         )
                     }
                 }
