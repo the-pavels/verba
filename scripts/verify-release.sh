@@ -185,6 +185,22 @@ else
     [[ "${signing_info}" == *"Timestamp="* ]] || fail "signature has no secure timestamp"
     /usr/bin/grep -Eq 'flags=.*\([^)]*runtime[^)]*\)' <<< "${signing_info}" || fail "hardened runtime flag is missing"
 
+    embedded_code=(
+        "${sparkle_framework}/Versions/B/Autoupdate"
+        "${sparkle_framework}/Versions/B/Updater.app"
+        "${sparkle_framework}/Versions/B/XPCServices/Downloader.xpc"
+        "${sparkle_framework}/Versions/B/XPCServices/Installer.xpc"
+        "${sparkle_framework}"
+    )
+    for code_path in "${embedded_code[@]}"; do
+        code_info="$(/usr/bin/codesign -dvvv "${code_path}" 2>&1)"
+        relative_code_path="${code_path#"${app_path}/"}"
+        [[ "${code_info}" == *"Authority=Developer ID Application:"* ]] || fail "${relative_code_path} does not use a Developer ID Application certificate"
+        [[ "${code_info}" == *"TeamIdentifier=${expected_team_id}"* ]] || fail "${relative_code_path} has the wrong signing team"
+        [[ "${code_info}" == *"Timestamp="* ]] || fail "${relative_code_path} has no secure timestamp"
+        /usr/bin/grep -Eq 'flags=.*\([^)]*runtime[^)]*\)' <<< "${code_info}" || fail "${relative_code_path} has no hardened runtime"
+    done
+
     entitlements="$(/usr/bin/codesign -d --entitlements - --xml "${app_path}" 2>/dev/null)"
     if /usr/bin/grep -q '<key>' <<< "${entitlements}"; then
         fail "release signature contains an unexpected entitlement"

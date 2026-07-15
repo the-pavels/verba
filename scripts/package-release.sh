@@ -9,7 +9,7 @@ workspace_version="$(/usr/bin/awk '
     in_package && /^version = / { gsub(/[\" ]/, "", $3); print $3; exit }
 ' "${repo_root}/Cargo.toml")"
 version="${1:-${workspace_version}}"
-build_number="${2:-7}"
+build_number="${2:-12}"
 release_arch="arm64"
 signing_mode="${VERBA_SIGNING_MODE:-unsigned}"
 dist_dir="${VERBA_DIST_DIR:-${repo_root}/dist}"
@@ -124,6 +124,27 @@ xcodebuild \
     archive
 
 app_path="${archive_path}/Products/Applications/Verba.app"
+if [[ "${signing_mode}" == "developer-id" ]]; then
+    export_options="${work_dir}/ExportOptions.plist"
+    export_path="${work_dir}/Export"
+    /usr/bin/plutil -create xml1 "${export_options}"
+    /usr/bin/plutil -insert destination -string export "${export_options}"
+    /usr/bin/plutil -insert method -string developer-id "${export_options}"
+    /usr/bin/plutil -insert signingStyle -string manual "${export_options}"
+    /usr/bin/plutil -insert signingCertificate -string "${signing_identity}" "${export_options}"
+    /usr/bin/plutil -insert teamID -string "${expected_team_id}" "${export_options}"
+
+    xcodebuild \
+        -quiet \
+        -exportArchive \
+        -archivePath "${archive_path}" \
+        -exportPath "${export_path}" \
+        -exportOptionsPlist "${export_options}"
+    app_path="${export_path}/Verba.app"
+fi
+
+/usr/bin/xattr -cr "${app_path}"
+
 "${repo_root}/scripts/verify-release.sh" \
     "${app_path}" \
     "${version}" \
@@ -182,11 +203,29 @@ COPYFILE_DISABLE=1 /usr/bin/ditto \
     "${app_path}" \
     "${temporary_artifact}"
 
+archive_entries="${work_dir}/${artifact_basename}.entries.txt"
+/usr/bin/zipinfo -1 "${temporary_artifact}" > "${archive_entries}"
+if /usr/bin/grep -E '(^|/)\._' "${archive_entries}" >/dev/null; then
+    echo "Release archive contains AppleDouble metadata that can invalidate the app after extraction" >&2
+    /usr/bin/grep -E '(^|/)\._' "${archive_entries}" >&2
+    exit 1
+fi
+
 extracted_artifact_dir="${work_dir}/extracted-artifact"
 /bin/mkdir -p "${extracted_artifact_dir}"
 /usr/bin/ditto -x -k "${temporary_artifact}" "${extracted_artifact_dir}"
 "${repo_root}/scripts/verify-release.sh" \
     "${extracted_artifact_dir}/Verba.app" \
+    "${version}" \
+    "${build_number}" \
+    "${signing_mode}" \
+    "${expected_team_id}"
+
+portable_extraction_dir="${work_dir}/portable-extraction"
+/bin/mkdir -p "${portable_extraction_dir}"
+/usr/bin/unzip -q "${temporary_artifact}" -d "${portable_extraction_dir}"
+"${repo_root}/scripts/verify-release.sh" \
+    "${portable_extraction_dir}/Verba.app" \
     "${version}" \
     "${build_number}" \
     "${signing_mode}" \

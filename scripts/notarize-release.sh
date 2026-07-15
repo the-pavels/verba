@@ -9,7 +9,7 @@ workspace_version="$(/usr/bin/awk '
     in_package && /^version = / { gsub(/[\" ]/, "", $3); print $3; exit }
 ' "${repo_root}/Cargo.toml")"
 version="${1:-${workspace_version}}"
-build_number="${2:-7}"
+build_number="${2:-12}"
 release_arch="arm64"
 team_id="${VERBA_DEVELOPMENT_TEAM:-}"
 notary_profile="${VERBA_NOTARY_KEYCHAIN_PROFILE:-verba-notary}"
@@ -189,6 +189,7 @@ stapled_dir="${work_dir}/stapled"
 /usr/bin/ditto -x -k "${signed_artifact}" "${stapled_dir}"
 stapled_app="${stapled_dir}/Verba.app"
 /usr/bin/xcrun stapler staple "${stapled_app}"
+/usr/bin/xattr -cr "${stapled_app}"
 verify_notarized_app "${stapled_app}"
 
 notarized_basename="Verba-${version}-${build_number}-${release_arch}-notarized"
@@ -216,18 +217,34 @@ temporary_manifest="${work_dir}/${notarized_basename}.manifest.txt"
     )
 } > "${temporary_manifest}"
 
-/usr/bin/ditto \
+COPYFILE_DISABLE=1 /usr/bin/ditto \
     -c \
     -k \
     --keepParent \
+    --norsrc \
+    --noextattr \
+    --noqtn \
+    --noacl \
     --zlibCompressionLevel 9 \
     "${stapled_app}" \
     "${temporary_artifact}"
+
+archive_entries="${work_dir}/${notarized_basename}.entries.txt"
+/usr/bin/zipinfo -1 "${temporary_artifact}" > "${archive_entries}"
+if /usr/bin/grep -E '(^|/)\._' "${archive_entries}" >/dev/null; then
+    /usr/bin/grep -E '(^|/)\._' "${archive_entries}" >&2
+    fail "notarized archive contains AppleDouble metadata that can invalidate the app after extraction"
+fi
 
 final_check_dir="${work_dir}/final-check"
 /bin/mkdir -p "${final_check_dir}"
 /usr/bin/ditto -x -k "${temporary_artifact}" "${final_check_dir}"
 verify_notarized_app "${final_check_dir}/Verba.app"
+
+portable_check_dir="${work_dir}/portable-check"
+/bin/mkdir -p "${portable_check_dir}"
+/usr/bin/unzip -q "${temporary_artifact}" -d "${portable_check_dir}"
+verify_notarized_app "${portable_check_dir}/Verba.app"
 
 artifact_path="${dist_dir}/${notarized_basename}.zip"
 manifest_path="${dist_dir}/${notarized_basename}.manifest.txt"

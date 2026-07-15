@@ -8,12 +8,12 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.0-10-arm64-notarized.zip` |
-| SHA-256 | `74aa719e8d96b210790963890159dd0f0146cb051b397c6859e5ba9c0db06694` |
-| Source revision | `39890bc53bcbdd1c0826e622e4cf2ac60b15fca9` |
+| Artifact | `Verba-1.0.0-12-arm64-notarized.zip` |
+| SHA-256 | `7d3b891ebebb69f102dbce32cd1f1030d47d99dc24820161ed732fa43c2f385b` |
+| Source revision | `edba52dcfca3d1d91c403ac752b8ac16ded1d8de` |
 | Source state in manifest | `clean` |
-| Notarization submission ID | `e3c41582-b860-4976-bf81-ca90cd7d9c2b` |
-| Build date | 2026-07-14 |
+| Notarization submission ID | `545628ac-055e-4922-bef4-14d8254e4d22` |
+| Build date | 2026-07-15 |
 | Build host | Mac14,6 (arm64), macOS 26.5.2 (25F84) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pending |
@@ -37,6 +37,7 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.0 (7) | `ab5966e77c416547c970094924e16481db535d2fe1f55483b503b11228f26a24` | Accepted, submission `aacbff8d-ae52-47da-b85c-891d14480e03` | Rejected during proofreading UX review: the corrected text and prose explanation did not make changed words obvious at a glance. |
 | 1.0.0 (8) | `faa8eefe4da896deca2e8d0b235131f1b3bbc0f3d5bf7b90d38f66cd02116808` | Accepted, submission `fe6ec3ee-a3d6-4802-aa7b-2ecebdb94c64` | Superseded before qualification: the word-level diff made the separate explanation redundant, and a live model comparison supported switching proofreading from Terra to the lower-cost Luna model. |
 | 1.0.0 (9) | `e7f17d7de1b23c4a70e3d903473b9c41181796716e54ba0e88c0d03f682ed201` | Accepted, submission `f1e670f2-4246-454e-954a-01e6762ba47a` | Superseded before qualification by the final popup visual, focus, sizing, click-away, and copy-and-dismiss refinements. |
+| 1.0.0 (11) | `d091b26781611ab190b520268b73756db1b9719cac8644f59b5ee515e1f215c3` | Invalid, submission `00b31509-2e92-4cdc-ba99-94e0bef2e58b` | Sparkle's nested updater, autoupdate tool, and XPC services retained ad-hoc signatures without secure timestamps. Build 12 added the required Xcode Developer ID export step. |
 
 ## Automated candidate verification
 
@@ -45,9 +46,9 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh`; includes consecutive same-pair Translation invalidation and bounded transient-empty capture retry regressions. |
 | RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh`; advisories, bans, licenses, sources, and notices passed. The accepted transitive `winnow` duplicate remains. |
 | Developer ID signing | Pass | Strict signature, team `623J248H3K`, secure timestamp, hardened runtime, and empty entitlements verified. |
-| Apple notarization | Pass | Accepted submission `e3c41582-b860-4976-bf81-ca90cd7d9c2b`; submitted hash and clean issue log verified. |
+| Apple notarization | Pass | Accepted submission `545628ac-055e-4922-bef4-14d8254e4d22`; submitted hash and null issue list verified. |
 | Stapling and Gatekeeper | Pass | Stapler validation passed; `spctl` reports `Notarized Developer ID`. |
-| Final artifact checksum | Pass | Local ZIP matches `74aa719e8d96b210790963890159dd0f0146cb051b397c6859e5ba9c0db06694`. |
+| Final artifact checksum | Pass | Local ZIP matches `7d3b891ebebb69f102dbce32cd1f1030d47d99dc24820161ed732fa43c2f385b`; the archive contains no AppleDouble entries, and both native and portable extraction pass strict signature and notarization checks. |
 
 ## Artifact and clean installation
 
@@ -55,9 +56,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-10-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-12-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 10, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 12, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 

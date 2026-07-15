@@ -25,6 +25,7 @@ Use this checklist for every direct-distribution Verba release. The authoritativ
 - [ ] Export `VERBA_DEVELOPMENT_TEAM` and `VERBA_SIGNING_IDENTITY`, then run `./scripts/notarize-release.sh VERSION BUILD`.
 - [ ] Require an accepted notarization result, matching submitted-archive hash, valid stapled ticket, valid Developer ID signature, expected team, hardened runtime without exception entitlements, and a successful Gatekeeper assessment.
 - [ ] Require the notarized manifest to report the frozen source revision and `source-state=clean`.
+- [ ] Run `./scripts/prepare-update-feed.sh NOTARIZED_ZIP vVERSION` and verify both the archive signature and signed-feed footer before publication.
 
 ## 4. Test installation on a clean Mac
 
@@ -41,12 +42,13 @@ Use this checklist for every direct-distribution Verba release. The authoritativ
 
 - [ ] Publish the exact `Verba-VERSION-BUILD-arm64-notarized.zip` that passed clean-machine testing. Never re-zip or modify it after qualification.
 - [ ] Publish its generated `.sha256` file beside it and repeat the checksum verification after downloading both public assets.
+- [ ] Publish the generated `appcast.xml` beside the exact notarized ZIP without editing it after signing.
 - [ ] Publish `THIRD_PARTY_NOTICES.md`, release notes, supported OS/CPU requirements, known limitations, installation steps, [PRIVACY.md](PRIVACY.md), and [SECURITY.md](SECURITY.md).
 - [ ] Keep signed-only and unsigned archives private and label them as non-distributable.
 
 ## 6. Retain release evidence
 
-Retain the public notarized ZIP, checksum, notices, release notes, source tag/commit, manifest, notarization result, and notarization log indefinitely. They are the evidence needed to reproduce provenance and verify an old download.
+Retain the public notarized ZIP, checksum, signed appcast, notices, release notes, source tag/commit, manifest, notarization result, and notarization log indefinitely. They are the evidence needed to reproduce provenance and verify an old download.
 
 Keep the matching Xcode archive and dSYM in access-controlled storage for as long as the release is supported and for at least one additional year. Treat dSYMs and crash artifacts as sensitive. Never archive the Developer ID private key, notary credential, OpenAI key, or other secrets with release artifacts.
 
@@ -54,10 +56,10 @@ Record the person, date, source revision, build machine/Xcode version, notarizat
 
 ## 7. Roll back or withdraw
 
-Verba has no automatic updater. A rollback is therefore a release-publication and user-installation operation, not a server-side switch.
+An automatic-update rollback must use a new, higher build number. Sparkle will not treat an older build as an update.
 
-- Stop promoting the affected version and clearly mark it withdrawn without deleting its provenance record.
-- Restore links to the last qualified notarized ZIP and its original checksum, notices, privacy document, and release notes. Never rebuild an old version under the same version/build identifier.
-- Tell affected users to quit Verba, replace the application in `/Applications` with the previous qualified build, and reopen it. Preferences and the Keychain item use the permanent bundle/service identifier and normally survive replacement.
+- Stop promoting the affected version and clearly mark it withdrawn without deleting its provenance record or signed appcast.
+- Restore direct-download links to the last qualified notarized ZIP for manual recovery, but do not publish a downgraded appcast item.
+- Tell affected users who cannot wait for the corrective update to quit Verba, replace the application in `/Applications` with the previous qualified build, and reopen it. Preferences and the Keychain item use the permanent bundle/service identifier and normally survive replacement.
 - If persisted settings or credentials are implicated, direct users through the complete cleanup steps in [PRIVACY.md](PRIVACY.md) before installing the previous build.
-- Prepare a corrected release with a new version or build number, repeat this entire checklist, and document the reason for withdrawal.
+- Prepare a corrected release with a higher build number, repeat this entire checklist, publish its newly signed appcast, and document the reason for withdrawal.

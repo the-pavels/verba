@@ -20,10 +20,10 @@ From the repository root, run:
 ./scripts/package-release.sh
 ```
 
-The version defaults to `[workspace.package].version` in `Cargo.toml` and the build number defaults to the current release build, `9`. Pass both explicitly when preparing a later build:
+The version defaults to `[workspace.package].version` in `Cargo.toml` and the build number defaults to the current release build, `12`. Pass both explicitly when preparing a later build:
 
 ```sh
-./scripts/package-release.sh 1.0.0 10
+./scripts/package-release.sh 1.0.0 13
 ```
 
 The requested marketing version must match the Rust workspace version. The workflow performs a Release `xcodebuild archive`, regenerates the UniFFI Swift bridge from the locked Rust build, and writes these ignored outputs under `dist/`:
@@ -41,12 +41,14 @@ Unsigned bundle timestamps are normalized to `SOURCE_DATE_EPOCH`, which defaults
 `scripts/verify-release.sh` rejects the package unless all of the following are true:
 
 - the app metadata contains the requested version and build number, a nonempty bundle identifier, macOS 15.0 deployment target, and menu-bar-only mode;
-- the only executable architecture is arm64;
+- the app executable architecture is arm64 and the pinned Sparkle framework contains its expected universal helpers;
 - the compiled app icon, `Contents/Resources/PrivacyInfo.xcprivacy`, and localized Accessibility/OpenAI disclosure strings are present;
 - the privacy manifest declares no tracking and records the app-only UserDefaults reason `CA92.1`;
-- the bundle contains exactly the executable, metadata, localization, compiled asset catalog, icon, and privacy manifest expected for item 40;
+- the bundle contains only the expected app resources and Sparkle 2.9.2 framework layout;
+- the ZIP contains no AppleDouble metadata, and both native and portable extraction preserve the verified bundle;
 - linked libraries do not reference a developer home or Cargo target directory;
-- the unsigned workflow contains no bundle signature, while the Developer ID workflow has the expected authority, team, secure timestamp, hardened-runtime flag, and no entitlement keys.
+- the unsigned workflow contains no app-bundle signature, while the Developer ID workflow has the expected authority, team, secure timestamp, hardened-runtime flag, and no app entitlement keys;
+- every embedded Sparkle helper, XPC service, and framework has the expected Developer ID authority, team, secure timestamp, and hardened runtime.
 
 The workflow runs this verification against the archived app and again after extracting the final ZIP. The artifact is copied into `dist/` only after both checks pass.
 
@@ -80,13 +82,13 @@ VERBA_SIGNING_IDENTITY='Developer ID Application: Your Name (YOURTEAMID)' \
 ./scripts/package-signed-release.sh
 ```
 
-The workflow refuses Apple Development, Mac Distribution, ad-hoc, missing, and ambiguous identity inputs. It asks Xcode to archive with a secure timestamp, hardened runtime, and no injected base entitlements, then produces:
+The workflow refuses Apple Development, Mac Distribution, ad-hoc, missing, and ambiguous identity inputs. It asks Xcode to archive with a secure timestamp, hardened runtime, and no injected base entitlements, then performs a Developer ID export so Sparkle's nested helpers are re-signed for distribution. It produces:
 
 - `Verba-VERSION-BUILD-arm64-developer-id.zip`
 - `Verba-VERSION-BUILD-arm64-developer-id.zip.sha256`
 - `Verba-VERSION-BUILD-arm64-developer-id.manifest.txt`
 
-Verba needs no hardened-runtime exception or restricted-resource entitlement. Its Rust static library is linked into the single app executable, and the bundle contains no nested framework, helper, plug-in, XPC service, or other Mach-O object. The verifier therefore requires exactly one Mach-O, verifies the app recursively with `codesign --deep --strict=all`, and checks the Developer ID authority, team, secure timestamp, hardened-runtime flag, and absence of entitlement keys.
+Verba itself needs no hardened-runtime exception or restricted-resource entitlement. Its Rust static library is linked into the app executable. Sparkle embeds a framework, updater app, autoupdate tool, and two XPC services; the verifier allowlists their exact paths and requires every nested code object to use the same Developer ID team, secure timestamp, and hardened runtime.
 
 Do not distribute the signed-only ZIP. The notarization workflow submits that exact artifact, then publishes a separately named archive after stapling changes the app bundle.
 
@@ -122,5 +124,16 @@ After acceptance, the workflow extracts the submitted app, staples and validates
 - `Verba-VERSION-BUILD-arm64-developer-id.notary-SUBMISSION_ID.log.json`
 
 The notarized manifest records the accepted submission ID, submitted archive hash, notarization-log hash, source state, and hashes of the final stapled bundle files. Publish only the checksum generated for the notarized ZIP.
+
+Generate the production update feed from that exact final ZIP:
+
+```sh
+VERBA_DEVELOPMENT_TEAM=YOURTEAMID \
+./scripts/prepare-update-feed.sh \
+    dist/Verba-VERSION-BUILD-arm64-notarized.zip \
+    vVERSION
+```
+
+This verifies notarization again, signs both the archive enclosure and appcast with the Sparkle Ed25519 key in Keychain, and writes `dist/appcast.xml`. Publish the unchanged notarized ZIP and `appcast.xml` to the matching GitHub release. Do not edit the appcast after signing.
 
 Use the [release checklist](RELEASE_CHECKLIST.md) for clean-machine installation, publication, artifact retention, and rollback. Publish [third-party notices](THIRD_PARTY_NOTICES.md) with every release.
