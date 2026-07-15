@@ -5,12 +5,14 @@ struct MenuBarContentView: View {
     @Environment(\.openSettings) private var openSettings
 
     @ObservedObject var accessibilityPermission: AccessibilityPermissionController
+    @ObservedObject var automaticUpdates: AutomaticUpdateController
     let presentPopupPreview: (PresentationViewModel) -> Void
 
     var body: some View {
         menuContent
             .onAppear {
                 accessibilityPermission.refresh()
+                automaticUpdates.refresh()
             }
             .onReceive(
                 NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
@@ -41,6 +43,11 @@ struct MenuBarContentView: View {
             NSApplication.shared.activate()
             openSettings()
         }
+
+        Button("Check for Updates…") {
+            automaticUpdates.checkForUpdates()
+        }
+        .disabled(!automaticUpdates.canCheckForUpdates)
 
         Button("About Verba") {
             NSApplication.shared.orderFrontStandardAboutPanel()

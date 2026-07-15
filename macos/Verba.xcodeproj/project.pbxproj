@@ -56,6 +56,9 @@
 		100000000000000000000080 /* FirstRunSetupPages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000081 /* FirstRunSetupPages.swift */; };
 		100000000000000000000082 /* LaunchAtLoginSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000083 /* LaunchAtLoginSettings.swift */; };
 		100000000000000000000084 /* LaunchAtLoginControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000085 /* LaunchAtLoginControllerTests.swift */; };
+		100000000000000000000086 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 100000000000000000000088 /* Sparkle */; };
+		100000000000000000000089 /* AutomaticUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000008A /* AutomaticUpdateController.swift */; };
+		10000000000000000000008B /* AutomaticUpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10000000000000000000008C /* AutomaticUpdateControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,6 +123,9 @@
 		100000000000000000000081 /* FirstRunSetupPages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunSetupPages.swift; sourceTree = "<group>"; };
 		100000000000000000000083 /* LaunchAtLoginSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginSettings.swift; sourceTree = "<group>"; };
 		100000000000000000000085 /* LaunchAtLoginControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginControllerTests.swift; sourceTree = "<group>"; };
+		10000000000000000000008A /* AutomaticUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticUpdateController.swift; sourceTree = "<group>"; };
+		10000000000000000000008C /* AutomaticUpdateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticUpdateControllerTests.swift; sourceTree = "<group>"; };
+		10000000000000000000008D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,6 +133,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				100000000000000000000086 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -154,6 +161,7 @@
 			isa = PBXGroup;
 			children = (
 				10000000000000000000002B /* AccessibilityPermissionController.swift */,
+				10000000000000000000008A /* AutomaticUpdateController.swift */,
 				100000000000000000000073 /* Assets.xcassets */,
 				100000000000000000000064 /* ApplicationLifecycleController.swift */,
 				100000000000000000000053 /* ApiKeySettingsController.swift */,
@@ -161,6 +169,7 @@
 				100000000000000000000044 /* AppleTranslator.swift */,
 				10000000000000000000007D /* FirstRunSetup.swift */,
 				100000000000000000000081 /* FirstRunSetupPages.swift */,
+				10000000000000000000008D /* Info.plist */,
 				10000000000000000000006B /* Localizable.strings */,
 				100000000000000000000083 /* LaunchAtLoginSettings.swift */,
 				100000000000000000000068 /* LocalizedCopy.swift */,
@@ -213,6 +222,7 @@
 				100000000000000000000079 /* __Snapshots__ */,
 				10000000000000000000002D /* AccessibilityPermissionControllerTests.swift */,
 				10000000000000000000006D /* AccessibilityReadinessTests.swift */,
+				10000000000000000000008C /* AutomaticUpdateControllerTests.swift */,
 				100000000000000000000066 /* ApplicationLifecycleControllerTests.swift */,
 				100000000000000000000056 /* ApiKeySettingsControllerTests.swift */,
 				100000000000000000000046 /* AppleTranslatorTests.swift */,
@@ -246,6 +256,9 @@
 			dependencies = (
 			);
 			name = Verba;
+			packageProductDependencies = (
+				100000000000000000000088 /* Sparkle */,
+			);
 			productName = Verba;
 			productReference = 100000000000000000000003 /* Verba.app */;
 			productType = "com.apple.product-type.application";
@@ -296,6 +309,9 @@
 				Base,
 			);
 			mainGroup = 100000000000000000000005;
+			packageReferences = (
+				100000000000000000000087 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = 100000000000000000000007 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -359,6 +375,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				10000000000000000000002A /* AccessibilityPermissionController.swift in Sources */,
+				100000000000000000000089 /* AutomaticUpdateController.swift in Sources */,
 				100000000000000000000063 /* ApplicationLifecycleController.swift in Sources */,
 				10000000000000000000004F /* ApiKeySettingsController.swift in Sources */,
 				100000000000000000000050 /* ApiKeySettingsView.swift in Sources */,
@@ -398,6 +415,7 @@
 			files = (
 				10000000000000000000002C /* AccessibilityPermissionControllerTests.swift in Sources */,
 				10000000000000000000006C /* AccessibilityReadinessTests.swift in Sources */,
+				10000000000000000000008B /* AutomaticUpdateControllerTests.swift in Sources */,
 				100000000000000000000065 /* ApplicationLifecycleControllerTests.swift in Sources */,
 				100000000000000000000052 /* ApiKeySettingsControllerTests.swift in Sources */,
 				100000000000000000000043 /* AppleTranslatorTests.swift in Sources */,
@@ -434,6 +452,25 @@
 		};
 /* End PBXTargetDependency section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		100000000000000000000087 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.9.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		100000000000000000000088 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 100000000000000000000087 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+
 /* Begin XCBuildConfiguration section */
 		10000000000000000000000E /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -467,10 +504,8 @@
 				CODE_SIGNING_ALLOWED = NO;
 				CURRENT_PROJECT_VERSION = 9;
 				ENABLE_TESTABILITY = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Verba;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Verba/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
@@ -508,10 +543,8 @@
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_CODE_COVERAGE = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Verba;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_LSUIElement = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Verba/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (

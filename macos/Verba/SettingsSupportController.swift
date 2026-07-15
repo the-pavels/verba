@@ -153,6 +153,8 @@ struct PrivacyAndSupportSettingsView: View {
             Text("Proofreading sends only the selected text to OpenAI when you invoke Proofread. Your API key remains in Keychain.")
             Text("Verba does not keep selected-text history or include private content in support diagnostics.")
                 .foregroundStyle(.secondary)
+            Text("Update checks contact GitHub without sending selected text or your API key.")
+                .foregroundStyle(.secondary)
         }
     }
 

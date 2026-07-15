@@ -17,6 +17,8 @@
 "Check your connection, then invoke Proofread again." = "Check your connection, then invoke Proofread again.";
 "Check your connection, then try again." = "Check your connection, then try again.";
 "Check your OpenAI account limits or replace the API key." = "Check your OpenAI account limits or replace the API key.";
+"Check for updates automatically" = "Check for updates automatically";
+"Check for Updates…" = "Check for Updates…";
 "Click a shortcut, then press the new key combination." = "Click a shortcut, then press the new key combination.";
 "Clipboard unavailable" = "Clipboard unavailable";
 "Choose a different target language or select different text." = "Choose a different target language or select different text.";
@@ -169,6 +171,10 @@
 "Try translating the selection again." = "Try translating the selection again.";
 "Use a letter, number, punctuation key, function key, or navigation key." = "Use a letter, number, punctuation key, function key, or navigation key.";
 "Unknown" = "Unknown";
+"Update checking is unavailable in this build." = "Update checking is unavailable in this build.";
+"Update checks contact GitHub without sending selected text or your API key." = "Update checks contact GitHub without sending selected text or your API key.";
+"Updates" = "Updates";
+"Updates are verified with Developer ID and a separate update-signing key." = "Updates are verified with Developer ID and a separate update-signing key.";
 "Verba" = "Verba";
 "Verba can capture selected text when you use a shortcut." = "Verba can capture selected text when you use a shortcut.";
 "Verba could not safely capture the selection. Try again." = "Verba could not safely capture the selection. Try again.";

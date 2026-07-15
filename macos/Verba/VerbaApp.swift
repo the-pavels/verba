@@ -10,6 +10,7 @@ struct VerbaApp: App {
     @StateObject private var shortcutSettings: ShortcutSettingsController
     @StateObject private var settingsSupport: SettingsSupportController
     @StateObject private var launchAtLogin: LaunchAtLoginController
+    @StateObject private var automaticUpdates: AutomaticUpdateController
 
     private let popupController: PopupController
     private let runtime: VerbaRuntime
@@ -25,6 +26,7 @@ struct VerbaApp: App {
         _accessibilityPermission = StateObject(wrappedValue: accessibilityPermission)
         _settingsSupport = StateObject(wrappedValue: settingsSupport)
         _launchAtLogin = StateObject(wrappedValue: LaunchAtLoginController())
+        _automaticUpdates = StateObject(wrappedValue: AutomaticUpdateController())
 
         let translationSessions = SystemTranslationSessionProvider()
         let popupController = PopupController(translationSessions: translationSessions)
@@ -88,6 +90,7 @@ struct VerbaApp: App {
         MenuBarExtra("Verba", systemImage: "character.cursor.ibeam") {
             MenuBarContentView(
                 accessibilityPermission: accessibilityPermission,
+                automaticUpdates: automaticUpdates,
                 presentPopupPreview: { presentation in
                     popupController.present(presentation)
                 }
@@ -102,7 +105,8 @@ struct VerbaApp: App {
                 shortcuts: shortcutSettings,
                 accessibility: accessibilityPermission,
                 support: settingsSupport,
-                launchAtLogin: launchAtLogin
+                launchAtLogin: launchAtLogin,
+                automaticUpdates: automaticUpdates
             )
         }
     }
