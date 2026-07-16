@@ -12,7 +12,8 @@ use verba_core::{
 
 use super::{build_request, decode_response};
 use crate::{
-    CONNECTION_TEST_MAX_OUTPUT_TOKENS, DEFAULT_MODEL, OPENAI_BASE_URL, OpenAiClient, OpenAiConfig,
+    CONNECTION_TEST_MAX_OUTPUT_TOKENS, CONNECTION_TEST_REASONING_EFFORT, DEFAULT_MODEL,
+    OPENAI_BASE_URL, OPENAI_REQUEST_TIMEOUT_SECONDS, OpenAiClient, OpenAiConfig,
     PROOFREADING_MAX_OUTPUT_TOKENS, PROOFREADING_REASONING_EFFORT,
     PROOFREADING_REQUEST_POLICY_VERSION, ResponsesApiResponse,
     connection::{connection_test_request, decode_connection_test_response},
@@ -197,7 +198,9 @@ fn production_model_meets_release_threshold() {
         corpus_version: corpus.version,
         model: DEFAULT_MODEL,
         request_policy_version: PROOFREADING_REQUEST_POLICY_VERSION,
-        reasoning_effort: PROOFREADING_REASONING_EFFORT.as_str(),
+        proofreading_reasoning_effort: PROOFREADING_REASONING_EFFORT.as_str(),
+        connection_test_reasoning_effort: CONNECTION_TEST_REASONING_EFFORT.as_str(),
+        request_timeout_seconds: OPENAI_REQUEST_TIMEOUT_SECONDS,
         maximum_estimated_input_tokens: MAX_PROOFREADING_ESTIMATED_TOKENS,
         proofreading_max_output_tokens: PROOFREADING_MAX_OUTPUT_TOKENS,
         connection_test_max_output_tokens: CONNECTION_TEST_MAX_OUTPUT_TOKENS,
@@ -445,7 +448,9 @@ struct EvaluationReport {
     corpus_version: u32,
     model: &'static str,
     request_policy_version: &'static str,
-    reasoning_effort: &'static str,
+    proofreading_reasoning_effort: &'static str,
+    connection_test_reasoning_effort: &'static str,
+    request_timeout_seconds: u64,
     maximum_estimated_input_tokens: usize,
     proofreading_max_output_tokens: u32,
     connection_test_max_output_tokens: u32,

@@ -5,7 +5,7 @@ use serde_json::json;
 use verba_core::{coordinator::CancellationToken, proofreading::ProofreaderError};
 
 use crate::{
-    CONNECTION_TEST_MAX_OUTPUT_TOKENS, OpenAiClient, PROOFREADING_REASONING_EFFORT,
+    CONNECTION_TEST_MAX_OUTPUT_TOKENS, CONNECTION_TEST_REASONING_EFFORT, OpenAiClient,
     ResponsesApiRequest, ResponsesApiResponse,
 };
 
@@ -68,7 +68,7 @@ pub(crate) fn connection_test_request() -> ResponsesApiRequest {
                 "text": "Return true in the required connection-test schema."
             }]
         }]),
-        PROOFREADING_REASONING_EFFORT,
+        CONNECTION_TEST_REASONING_EFFORT,
     )
     .with_text_configuration(json!({
         "format": {
@@ -203,7 +203,7 @@ mod tests {
         assert_eq!(calls[0].api_key, "test-key");
         assert_eq!(
             calls[0].request.reasoning_effort(),
-            PROOFREADING_REASONING_EFFORT
+            CONNECTION_TEST_REASONING_EFFORT
         );
         assert_eq!(
             calls[0].request.max_output_tokens(),

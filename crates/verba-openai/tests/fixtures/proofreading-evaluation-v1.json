@@ -42,7 +42,7 @@
       "id": "quoted-text-001",
       "mandatory": true,
       "input": { "kind": "literal", "text": "She said, \"This are ready.\"" },
-      "expected": { "kind": "corrected", "accepted_texts": ["She said, \"This is ready.\""] }
+      "expected": { "kind": "corrected", "accepted_texts": ["She said, \"This is ready.\"", "She said, \"These are ready.\""] }
     },
     {
       "id": "markdown-code-001",

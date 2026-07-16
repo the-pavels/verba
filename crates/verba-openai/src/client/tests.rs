@@ -17,6 +17,10 @@ fn production_configuration_uses_the_documented_model_and_finite_timeouts() {
     assert_eq!(config.base_url(), OPENAI_BASE_URL);
     assert_eq!(config.model(), DEFAULT_MODEL);
     assert!(config.connect_timeout() > Duration::ZERO);
+    assert_eq!(
+        config.request_timeout(),
+        Duration::from_secs(OPENAI_REQUEST_TIMEOUT_SECONDS)
+    );
     assert!(config.request_timeout() > config.connect_timeout());
 }
 
