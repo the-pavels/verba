@@ -29,6 +29,7 @@ pub enum CaptureFailure {
     TimedOut,
     PermissionDenied,
     SecureField,
+    FieldSecurityUnavailable,
     UnsupportedContent,
     ClipboardUnavailable,
     Cancelled,

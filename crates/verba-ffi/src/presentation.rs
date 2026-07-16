@@ -207,4 +207,29 @@ mod tests {
     fn initial_presentation_is_idle() {
         assert_eq!(super::initial_presentation(), PresentationViewModel::Idle);
     }
+
+    #[test]
+    fn preserves_field_security_failure_for_the_swift_host() {
+        let core_state = PresentationState::Error(ErrorPresentation {
+            action: Some(TextAction::Translate),
+            title: "Selection safety couldn’t be verified".to_owned(),
+            message: "Keep the source app active, select text in a standard field, and try again."
+                .to_owned(),
+            recovery: RecoveryAction::Retry,
+            diagnostic_code: "capture.field-security-unavailable".to_owned(),
+        });
+
+        assert_eq!(
+            PresentationViewModel::from(core_state),
+            PresentationViewModel::Error {
+                action: Some(PresentationAction::Translate),
+                title: "Selection safety couldn’t be verified".to_owned(),
+                message:
+                    "Keep the source app active, select text in a standard field, and try again."
+                        .to_owned(),
+                recovery: RecoveryActionViewModel::Retry,
+                diagnostic_code: "capture.field-security-unavailable".to_owned(),
+            }
+        );
+    }
 }

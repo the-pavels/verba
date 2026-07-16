@@ -47,6 +47,7 @@
 "Invoke Proofread again when you’re ready." = "Invoke Proofread again when you’re ready.";
 "Invoke the action again when you’re ready." = "Invoke the action again when you’re ready.";
 "Keep the source app active and try again." = "Keep the source app active and try again.";
+"Keep the source app active, select text in a standard field, and try again." = "Keep the source app active, select text in a standard field, and try again.";
 "Keychain is unavailable. Quit and reopen Verba, then try again." = "Keychain is unavailable. Quit and reopen Verba, then try again.";
 "Language pair unavailable" = "Language pair unavailable";
 "Launch at login couldn’t be changed. Try again." = "Launch at login couldn’t be changed. Try again.";
@@ -126,6 +127,7 @@
 "Select some text, then invoke the action again." = "Select some text, then invoke the action again.";
 "Select text outside the secure field, then invoke the action again." = "Select text outside the secure field, then invoke the action again.";
 "Selection timed out" = "Selection timed out";
+"Selection safety couldn’t be verified" = "Selection safety couldn’t be verified";
 "Selection too long" = "Selection too long";
 "Send selected text to OpenAI?" = "Send selected text to OpenAI?";
 "Settings..." = "Settings...";

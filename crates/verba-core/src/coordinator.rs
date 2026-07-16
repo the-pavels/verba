@@ -639,6 +639,12 @@ fn capture_failure_presentation(action: TextAction, failure: CaptureFailure) -> 
             RecoveryAction::Dismiss,
             "capture.secure-field",
         ),
+        CaptureFailure::FieldSecurityUnavailable => (
+            "Selection safety couldn’t be verified",
+            "Keep the source app active, select text in a standard field, and try again.",
+            RecoveryAction::Retry,
+            "capture.field-security-unavailable",
+        ),
         CaptureFailure::UnsupportedContent => (
             "Text selection required",
             "The selected content does not contain readable text.",

@@ -8,7 +8,7 @@ use verba_core::capture::{CaptureFailure, CapturedText, TextCapture};
 use crate::{
     MacOsPasteboard, PasteboardRestoreOutcome, PasteboardSnapshot, PasteboardSnapshotError,
 };
-use accessibility::{AccessibilityStatus, SystemAccessibility};
+use accessibility::{AccessibilityStatus, FocusedElementSecurity, SystemAccessibility};
 use synthetic_copy::{CopyPoster, CoreGraphicsCopy};
 
 const COPY_TIMEOUT: Duration = Duration::from_millis(500);
@@ -87,8 +87,12 @@ where
         if !self.accessibility.is_trusted() {
             return Err(CaptureFailure::PermissionDenied);
         }
-        if self.accessibility.focused_element_is_secure() {
-            return Err(CaptureFailure::SecureField);
+        match self.accessibility.focused_element_security() {
+            FocusedElementSecurity::NotSecure => {}
+            FocusedElementSecurity::Secure => return Err(CaptureFailure::SecureField),
+            FocusedElementSecurity::Unknown => {
+                return Err(CaptureFailure::FieldSecurityUnavailable);
+            }
         }
 
         let snapshot = self

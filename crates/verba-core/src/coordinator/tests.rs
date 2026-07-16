@@ -121,6 +121,12 @@ fn capture_failures_become_actionable_presentations_without_processing() {
             "capture.secure-field",
         ),
         (
+            CaptureFailure::FieldSecurityUnavailable,
+            "Selection safety couldn’t be verified",
+            RecoveryAction::Retry,
+            "capture.field-security-unavailable",
+        ),
+        (
             CaptureFailure::UnsupportedContent,
             "Text selection required",
             RecoveryAction::Dismiss,

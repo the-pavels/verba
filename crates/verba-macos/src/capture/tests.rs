@@ -78,9 +78,22 @@ fn reports_permission_denial_without_touching_the_clipboard() {
 #[test]
 fn reports_a_secure_field_without_posting_copy() {
     let mut fixture = Fixture::new(Some("original"), Some("selected"));
-    fixture.capture.accessibility.secure = true;
+    fixture.capture.accessibility.security = FocusedElementSecurity::Secure;
 
     assert_eq!(fixture.capture.capture(), Err(CaptureFailure::SecureField));
+    assert_eq!(fixture.snapshot_calls(), 0);
+    assert_eq!(fixture.post_calls(), 0);
+}
+
+#[test]
+fn rejects_unknown_field_security_without_posting_copy() {
+    let mut fixture = Fixture::new(Some("original"), Some("selected"));
+    fixture.capture.accessibility.security = FocusedElementSecurity::Unknown;
+
+    assert_eq!(
+        fixture.capture.capture(),
+        Err(CaptureFailure::FieldSecurityUnavailable)
+    );
     assert_eq!(fixture.snapshot_calls(), 0);
     assert_eq!(fixture.post_calls(), 0);
 }
@@ -174,7 +187,7 @@ impl Fixture {
             pasteboard,
             FakeAccessibility {
                 trusted: true,
-                secure: false,
+                security: FocusedElementSecurity::NotSecure,
             },
             copy,
             FakeClock {
@@ -292,7 +305,7 @@ impl CapturePasteboard for FakePasteboard {
 
 struct FakeAccessibility {
     trusted: bool,
-    secure: bool,
+    security: FocusedElementSecurity,
 }
 
 impl AccessibilityStatus for FakeAccessibility {
@@ -300,8 +313,8 @@ impl AccessibilityStatus for FakeAccessibility {
         self.trusted
     }
 
-    fn focused_element_is_secure(&self) -> bool {
-        self.secure
+    fn focused_element_security(&self) -> FocusedElementSecurity {
+        self.security
     }
 }
 
