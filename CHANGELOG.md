@@ -14,12 +14,14 @@ Initial direct-distribution release for macOS 15 or later on Apple silicon.
 - Preserve rich clipboard contents during cross-application selection capture and avoid overwriting concurrent clipboard changes.
 - Provide explicit permission, disclosure, offline, cancellation, credential, provider, and recovery states.
 - Copy privacy-safe support diagnostics without selected text, results, or credentials.
+- Optionally launch Verba at login using macOS Service Management without a helper executable.
+- Check a signed Sparkle feed manually or through opt-in periodic checks, with silent automatic installation and system profiling disabled.
 
 ### Distribution and privacy
 
 - Distributed as an Apple-silicon Developer ID application with Hardened Runtime, notarization, and a stapled ticket.
 - Translation runs through Apple's framework on the Mac; macOS may download language resources.
 - Proofreading sends the selected text to OpenAI only after an explicit action and first-use disclosure. API requests set `store: false`.
-- Verba has no accounts, analytics, advertising, automatic updates, history, or cloud synchronization.
+- Verba has no accounts, analytics, advertising, history, or cloud synchronization. Periodic update checks are opt-in and contact GitHub without selected text or API credentials.
 
 See [PRIVACY.md](PRIVACY.md) for complete data handling and cleanup instructions and [RELEASE_TEST_MATRIX.md](RELEASE_TEST_MATRIX.md) for release qualification status.

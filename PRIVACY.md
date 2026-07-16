@@ -29,6 +29,20 @@ Proofreading sends the selected text to OpenAI under the user's own API account.
 
 Verba rejects redirects, requires HTTPS for production requests, and applies finite connection and request timeouts. It does not log request bodies, response bodies, authorization headers, selected text, corrected text, or API keys.
 
+## Launch at login
+
+Launch at login is off by default. If the user enables **Launch Verba at login** in Settings, Verba registers its main application with macOS using `SMAppService.mainApp`. macOS owns the registration and any required approval in **System Settings > General > Login Items**. Verba does not install a separate login helper or mirror this state in its preferences.
+
+The user can turn the setting off in Verba or disable it in System Settings. Unregistering prevents Verba from launching at future logins but does not terminate a currently running copy.
+
+## Updates and GitHub
+
+Verba uses Sparkle to check a signed update feed hosted on GitHub. It makes no update request until the user chooses **Check for Updates…** or enables **Check for updates automatically** in Settings. Automatic checks are off by default and can be disabled from the same setting. When enabled, Sparkle uses its default scheduled interval of approximately one day while the app is running.
+
+An update check requests `https://github.com/the-pavels/verba/releases/latest/download/appcast.xml` over HTTPS. GitHub necessarily receives the connecting IP address, request time, and ordinary HTTPS request metadata. Verba does not add selected text, clipboard contents, the OpenAI API key, proofreading data, or custom feed parameters. Sparkle system profiling is explicitly disabled, so Verba does not append Sparkle's optional operating-system, hardware, application, or language profile to the feed URL. See [Sparkle's update settings](https://sparkle-project.org/documentation/customization/) and [system-profiling documentation](https://sparkle-project.org/documentation/system-profiling/).
+
+If an update is available, Sparkle displays it for the user to review. Verba disables silent automatic update installation. Accepted update archives are downloaded from the matching GitHub release and must pass the app's Developer ID checks plus the signed-feed and Ed25519 archive checks before installation.
+
 ## Data stored on the Mac
 
 Verba stores these non-secret preferences in the macOS preferences domain `io.github.the-pavels.verba`:
@@ -36,7 +50,10 @@ Verba stores these non-secret preferences in the macOS preferences domain `io.gi
 - target translation language;
 - acknowledgement of the proofreading disclosure;
 - Translate and Proofread shortcuts;
-- whether the Accessibility permission explanation has been requested before.
+- whether the Accessibility permission explanation has been requested before;
+- Sparkle's automatic-check preference and local update-check state.
+
+Launch-at-login state is held by macOS Service Management rather than the Verba preferences domain.
 
 The OpenAI API key is a macOS Keychain generic-password item with service `io.github.the-pavels.verba` and account `openai-api-key`. Verba reads it only when testing the OpenAI connection or performing proofreading. Translation does not need the key.
 
@@ -44,11 +61,11 @@ Support diagnostics show only the app version, macOS version, architecture, Acce
 
 ## Uninstall and complete local cleanup
 
-Removing `Verba.app` stops the application but intentionally does not delete its Keychain item, preferences, or macOS Accessibility decision. This lets a normal reinstall preserve the user's settings and key.
+Removing `Verba.app` stops the application but intentionally does not delete its Keychain item, preferences, macOS Accessibility decision, or Service Management state. This lets a normal reinstall preserve the user's settings and key.
 
 For a complete cleanup:
 
-1. Quit Verba.
+1. In Verba Settings, turn off **Launch Verba at login**, then quit Verba. If the app was already removed or the registration still appears, disable Verba in **System Settings > General > Login Items**. macOS can retain a stale visual entry temporarily after the app is removed.
 2. In Verba Settings, choose **Delete API Key**, then move `Verba.app` to the Trash. If the app was already removed, delete the Keychain item in Keychain Access, or run:
 
    ```sh
@@ -77,6 +94,7 @@ The commands can report that no matching item or domain exists when cleanup was 
 - Accessibility permission is required for cross-application selection capture. Some applications or protected fields may prevent capture.
 - Translation availability depends on Apple's supported languages and any required language-resource download.
 - Proofreading requires network access, a valid OpenAI API key, available API quota, and OpenAI service availability.
-- Verba does not launch at login, replace selected text automatically, keep history, or synchronize settings.
+- Launch at login and periodic update checks are optional and off by default. Silent automatic update installation is disabled.
+- Verba does not replace selected text automatically, keep history, or synchronize settings.
 
 Privacy behavior should be reviewed again whenever capture, networking, storage, diagnostics, or providers change.

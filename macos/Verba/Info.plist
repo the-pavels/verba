@@ -26,7 +26,11 @@
 	<true/>
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
+	<key>SUAllowsAutomaticUpdates</key>
+	<false/>
 	<key>SUEnableAutomaticChecks</key>
+	<false/>
+	<key>SUEnableSystemProfiling</key>
 	<false/>
 	<key>SUFeedURL</key>
 	<string>https://github.com/the-pavels/verba/releases/latest/download/appcast.xml</string>

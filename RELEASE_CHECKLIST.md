@@ -8,6 +8,7 @@ Use this checklist for every direct-distribution Verba release. The authoritativ
 - [ ] Start from a clean, reviewed source revision and record its commit and tag.
 - [ ] Confirm the supported matrix remains macOS 15 or later on Apple silicon. Record any intentional compatibility change in an ADR and the release notes.
 - [ ] Review [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md), and the app's first-use disclosures against the current implementation.
+- [ ] Recheck public documentation whenever networking, persistence, startup behavior, diagnostics, update infrastructure, or providers changed. Confirm the documents describe the shipped defaults and opt-out controls.
 - [ ] Regenerate [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) with `./scripts/generate-third-party-notices.sh` and confirm `git diff --exit-code -- THIRD_PARTY_NOTICES.md` is clean.
 
 ## 2. Qualify the source
@@ -33,6 +34,7 @@ Use this checklist for every direct-distribution Verba release. The authoritativ
 - [ ] From the download directory, run `shasum -a 256 -c Verba-VERSION-BUILD-arm64-notarized.zip.sha256` and require `OK`.
 - [ ] Extract the ZIP, move `Verba.app` to `/Applications`, and open it normally from Finder. Do not use a Gatekeeper bypass or remove quarantine metadata.
 - [ ] Confirm Verba appears only in the menu bar and that About reports the expected version and build.
+- [ ] Confirm launch at login and automatic update checks are off by default, update-system profiling and silent installation remain disabled, and both opt-in controls reflect the current system/preference state.
 - [ ] Confirm the Accessibility explanation appears before the system prompt, denial is recoverable, and approval enables selection capture after returning from System Settings.
 - [ ] Configure both shortcuts, a target language, and an OpenAI API key. Quit and reopen Verba; confirm settings and Keychain state persist.
 - [ ] Translate and proofread selected text in at least two application families. Confirm clipboard restoration, copy-result behavior, no automatic replacement, and actionable offline/permission/key errors.

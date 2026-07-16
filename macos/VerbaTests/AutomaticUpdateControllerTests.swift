@@ -3,6 +3,25 @@ import XCTest
 
 @MainActor
 final class AutomaticUpdateControllerTests: XCTestCase {
+    func testBundleDefaultsKeepUpdateNetworkingOptInAndDisableProfilingAndSilentInstallation() {
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "SUEnableAutomaticChecks") as? Bool,
+            false
+        )
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "SUAutomaticallyUpdate") as? Bool,
+            false
+        )
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "SUAllowsAutomaticUpdates") as? Bool,
+            false
+        )
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "SUEnableSystemProfiling") as? Bool,
+            false
+        )
+    }
+
     func testConfigurationRequiresHTTPSAndA32BytePublicKey() {
         let key = Data(repeating: 7, count: 32).base64EncodedString()
 
