@@ -219,7 +219,7 @@ fn proofreading_provider_failures_require_an_explicit_user_recovery_action() {
         ),
         (
             ProofreaderError::Incomplete,
-            "Invalid proofreading response",
+            "Proofreading response was incomplete",
             RecoveryAction::Retry,
             "proofreading.provider.incomplete",
         ),
@@ -262,6 +262,22 @@ fn proofreading_provider_failures_require_an_explicit_user_recovery_action() {
         assert_eq!(presentation.recovery, expected_recovery);
         assert_eq!(presentation.diagnostic_code, expected_code);
     }
+}
+
+#[test]
+fn incomplete_proofreading_response_recommends_a_shorter_retry() {
+    let PresentationState::Error(presentation) = processing_failure_presentation(
+        TextAction::Proofread,
+        ProcessingFailure::ProofreadingProvider(ProofreaderError::Incomplete),
+    ) else {
+        panic!("incomplete provider response should produce an error presentation");
+    };
+
+    assert_eq!(
+        presentation.message,
+        "Select a shorter passage or try proofreading again."
+    );
+    assert_eq!(presentation.recovery, RecoveryAction::Retry);
 }
 
 #[test]
@@ -558,6 +574,18 @@ fn non_provider_processing_failures_have_exhaustive_recovery_actions() {
             ProcessingFailure::InputTooLong,
             RecoveryAction::Dismiss,
             "proofreading.input-too-long",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::InputTokenLimit,
+            RecoveryAction::Dismiss,
+            "proofreading.estimated-token-limit",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::InputTokenLimit,
+            RecoveryAction::Retry,
+            "translation.unexpected-failure-kind",
         ),
         (
             TextAction::Translate,

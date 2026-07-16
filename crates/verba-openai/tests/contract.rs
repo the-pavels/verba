@@ -44,6 +44,7 @@ fn sends_the_responses_api_contract_over_http() {
     );
     assert_eq!(request.body["model"], TEST_MODEL);
     assert_eq!(request.body["store"], false);
+    assert_eq!(request.body["reasoning"], json!({"effort": "low"}));
     assert_eq!(request.body["max_output_tokens"], 16_384);
 
     let input = request.body["input"]

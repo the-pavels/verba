@@ -17,7 +17,7 @@ use request::build_request;
 use response::decode_response;
 
 #[cfg(test)]
-use request::{INSTRUCTIONS, MAX_OUTPUT_TOKENS};
+use request::INSTRUCTIONS;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ApiKeyProviderError {

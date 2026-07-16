@@ -12,6 +12,12 @@ pub use validation::{
 };
 
 pub const MAX_PROOFREADING_CHARACTERS: usize = 10_000;
+pub const MAX_PROOFREADING_ESTIMATED_TOKENS: usize = 10_000;
+
+#[must_use]
+pub const fn conservative_token_estimate(text: &str) -> usize {
+    text.len()
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ProofreadingConsent {
@@ -205,6 +211,10 @@ pub enum ProofreadingFailure {
         maximum_characters: usize,
         actual_characters: usize,
     },
+    EstimatedInputTooLarge {
+        maximum_estimated_tokens: usize,
+        estimated_tokens: usize,
+    },
     ConsentRequired,
     Cancelled,
     InvalidResult,
@@ -251,6 +261,14 @@ impl ProofreadText {
             return Err(ProofreadingFailure::InputTooLong {
                 maximum_characters: MAX_PROOFREADING_CHARACTERS,
                 actual_characters: character_count,
+            });
+        }
+
+        let estimated_tokens = conservative_token_estimate(&text);
+        if estimated_tokens > MAX_PROOFREADING_ESTIMATED_TOKENS {
+            return Err(ProofreadingFailure::EstimatedInputTooLarge {
+                maximum_estimated_tokens: MAX_PROOFREADING_ESTIMATED_TOKENS,
+                estimated_tokens,
             });
         }
 

@@ -32,11 +32,14 @@ fn builds_a_responses_request_without_retaining_server_state() {
     }]);
     let text = json!({"format": {"type": "json_schema"}});
 
-    let response = block_on(client.create_response(
-        "secret-key",
-        ResponsesApiRequest::new(input.clone()).with_text_configuration(text.clone()),
-        &CancellationToken::default(),
-    ))
+    let response = block_on(
+        client.create_response(
+            "secret-key",
+            ResponsesApiRequest::new(input.clone(), ReasoningEffort::Low)
+                .with_text_configuration(text.clone()),
+            &CancellationToken::default(),
+        ),
+    )
     .unwrap();
 
     assert_eq!(response.body(), &json!({"id": "resp_test"}));
@@ -50,6 +53,7 @@ fn builds_a_responses_request_without_retaining_server_state() {
             "model": "test-model",
             "input": input,
             "text": text,
+            "reasoning": {"effort": "low"},
             "store": false
         })
     );
@@ -104,7 +108,7 @@ fn rejects_missing_credentials_without_executing_a_request() {
     assert_eq!(
         block_on(client.create_response(
             "  ",
-            ResponsesApiRequest::new(json!("Text")),
+            ResponsesApiRequest::new(json!("Text"), ReasoningEffort::Low),
             &CancellationToken::default(),
         ))
         .err(),
@@ -152,7 +156,7 @@ fn maps_redacted_transport_and_http_failures() {
         assert_eq!(
             block_on(client.create_response(
                 "secret-key",
-                ResponsesApiRequest::new(json!("Text")),
+                ResponsesApiRequest::new(json!("Text"), ReasoningEffort::Low),
                 &CancellationToken::default(),
             ))
             .err(),
@@ -171,7 +175,7 @@ fn rejects_malformed_success_bodies() {
     assert_eq!(
         block_on(client.create_response(
             "secret-key",
-            ResponsesApiRequest::new(json!("Text")),
+            ResponsesApiRequest::new(json!("Text"), ReasoningEffort::Low),
             &CancellationToken::default(),
         ))
         .err(),
@@ -193,7 +197,7 @@ fn cancellation_drops_an_in_flight_transport_request() {
     let worker = thread::spawn(move || {
         block_on(client.create_response(
             "secret-key",
-            ResponsesApiRequest::new(json!("Text")),
+            ResponsesApiRequest::new(json!("Text"), ReasoningEffort::Low),
             &cancellation,
         ))
     });

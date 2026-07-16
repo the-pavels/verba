@@ -136,6 +136,7 @@ fn proofreading_processing_failure(failure: ProofreadingFailure) -> ProcessingFa
         }
         ProofreadingFailure::ConsentRequired => ProcessingFailure::UnsupportedConfiguration,
         ProofreadingFailure::InputTooLong { .. } => ProcessingFailure::InputTooLong,
+        ProofreadingFailure::EstimatedInputTooLarge { .. } => ProcessingFailure::InputTokenLimit,
         ProofreadingFailure::Provider(error) => ProcessingFailure::ProofreadingProvider(error),
         ProofreadingFailure::EmptyInput => ProcessingFailure::EmptyInput,
     }
@@ -410,6 +411,13 @@ mod tests {
                     actual_characters: 10_001,
                 },
                 ProcessingFailure::InputTooLong,
+            ),
+            (
+                ProofreadingFailure::EstimatedInputTooLarge {
+                    maximum_estimated_tokens: 10_000,
+                    estimated_tokens: 10_001,
+                },
+                ProcessingFailure::InputTokenLimit,
             ),
             (
                 ProofreadingFailure::InvalidResult,

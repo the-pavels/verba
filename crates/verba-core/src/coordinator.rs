@@ -69,6 +69,7 @@ pub enum ProcessingFailure {
     Cancelled,
     EmptyInput,
     InputTooLong,
+    InputTokenLimit,
     SameLanguage,
     InvalidOutput,
     ProofreadingPolicyViolation(ProofreadingPolicyViolation),
@@ -743,6 +744,18 @@ fn processing_failure_presentation(
             RecoveryAction::Dismiss,
             "proofreading.input-too-long",
         ),
+        (TextAction::Proofread, ProcessingFailure::InputTokenLimit) => (
+            "Selection too complex",
+            "Select a shorter passage with fewer symbols, then invoke Proofread again.",
+            RecoveryAction::Dismiss,
+            "proofreading.estimated-token-limit",
+        ),
+        (TextAction::Translate, ProcessingFailure::InputTokenLimit) => (
+            "Translation failed",
+            "Try translating the selection again.",
+            RecoveryAction::Retry,
+            "translation.unexpected-failure-kind",
+        ),
         (TextAction::Translate, ProcessingFailure::SameLanguage) => (
             "Text is already in the target language",
             "Choose a different target language or select different text.",
@@ -856,8 +869,8 @@ fn proofreading_provider_failure(
             "proofreading.provider.refused",
         ),
         ProofreaderError::Incomplete => (
-            "Invalid proofreading response",
-            "Verba couldn’t use the response. Try again.",
+            "Proofreading response was incomplete",
+            "Select a shorter passage or try proofreading again.",
             RecoveryAction::Retry,
             "proofreading.provider.incomplete",
         ),

@@ -89,6 +89,7 @@
 "Preview Popup" = "Preview Popup";
 "Privacy" = "Privacy";
 "Proofread" = "Proofread";
+"Proofreading response was incomplete" = "Proofreading response was incomplete";
 "Proofread Selected Text" = "Proofread Selected Text";
 "Proofread shortcut" = "Proofread shortcut";
 "Proofreading" = "Proofreading";
@@ -123,11 +124,14 @@
 "Secure text can’t be captured" = "Secure text can’t be captured";
 "Select at most 10,000 characters and invoke Proofread again." = "Select at most 10,000 characters and invoke Proofread again.";
 "Select at most 10,000 characters and invoke Translate again." = "Select at most 10,000 characters and invoke Translate again.";
+"Select a shorter passage or try proofreading again." = "Select a shorter passage or try proofreading again.";
+"Select a shorter passage with fewer symbols, then invoke Proofread again." = "Select a shorter passage with fewer symbols, then invoke Proofread again.";
 "Select different text, then invoke Proofread again." = "Select different text, then invoke Proofread again.";
 "Select some text, then invoke the action again." = "Select some text, then invoke the action again.";
 "Select text outside the secure field, then invoke the action again." = "Select text outside the secure field, then invoke the action again.";
 "Selection timed out" = "Selection timed out";
 "Selection safety couldn’t be verified" = "Selection safety couldn’t be verified";
+"Selection too complex" = "Selection too complex";
 "Selection too long" = "Selection too long";
 "Send selected text to OpenAI?" = "Send selected text to OpenAI?";
 "Settings..." = "Settings...";

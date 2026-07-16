@@ -4,9 +4,10 @@ use serde::Deserialize;
 use serde_json::json;
 use verba_core::{coordinator::CancellationToken, proofreading::ProofreaderError};
 
-use crate::{OpenAiClient, ResponsesApiRequest, ResponsesApiResponse};
-
-const CONNECTION_TEST_MAX_OUTPUT_TOKENS: u32 = 32;
+use crate::{
+    CONNECTION_TEST_MAX_OUTPUT_TOKENS, OpenAiClient, PROOFREADING_REASONING_EFFORT,
+    ResponsesApiRequest, ResponsesApiResponse,
+};
 
 pub struct OpenAiConnectionTester {
     client: Arc<dyn ResponsesClient>,
@@ -58,14 +59,17 @@ impl ResponsesClient for OpenAiClient {
     }
 }
 
-fn connection_test_request() -> ResponsesApiRequest {
-    ResponsesApiRequest::new(json!([{
-        "role": "developer",
-        "content": [{
-            "type": "input_text",
-            "text": "Return true in the required connection-test schema."
-        }]
-    }]))
+pub(crate) fn connection_test_request() -> ResponsesApiRequest {
+    ResponsesApiRequest::new(
+        json!([{
+            "role": "developer",
+            "content": [{
+                "type": "input_text",
+                "text": "Return true in the required connection-test schema."
+            }]
+        }]),
+        PROOFREADING_REASONING_EFFORT,
+    )
     .with_text_configuration(json!({
         "format": {
             "type": "json_schema",
@@ -85,11 +89,18 @@ fn connection_test_request() -> ResponsesApiRequest {
     .with_max_output_tokens(CONNECTION_TEST_MAX_OUTPUT_TOKENS)
 }
 
-fn decode_connection_test_response(response: ResponsesApiResponse) -> Result<(), ProofreaderError> {
+pub(crate) fn decode_connection_test_response(
+    response: ResponsesApiResponse,
+) -> Result<(), ProofreaderError> {
     let response = serde_json::from_value::<ResponseEnvelope>(response.into_body())
         .map_err(|_| ProofreaderError::MalformedResponse)?;
-    if response.status != ResponseStatus::Completed {
-        return Err(ProofreaderError::MalformedResponse);
+    match response.status {
+        ResponseStatus::Completed => {}
+        ResponseStatus::Incomplete | ResponseStatus::Queued | ResponseStatus::InProgress => {
+            return Err(ProofreaderError::Incomplete);
+        }
+        ResponseStatus::Cancelled => return Err(ProofreaderError::Cancelled),
+        ResponseStatus::Failed | ResponseStatus::Unknown => return Err(ProofreaderError::Failed),
     }
 
     let mut output_text = None;
@@ -127,12 +138,17 @@ struct ResponseEnvelope {
     output: Vec<OutputItem>,
 }
 
-#[derive(Clone, Copy, Deserialize, Eq, PartialEq)]
+#[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum ResponseStatus {
     Completed,
+    Incomplete,
+    Queued,
+    InProgress,
+    Failed,
+    Cancelled,
     #[serde(other)]
-    Other,
+    Unknown,
 }
 
 #[derive(Deserialize)]
@@ -185,7 +201,14 @@ mod tests {
         let calls = client.calls.lock().unwrap();
         assert_eq!(calls.len(), 1);
         assert_eq!(calls[0].api_key, "test-key");
-        assert_eq!(calls[0].request.max_output_tokens(), Some(32));
+        assert_eq!(
+            calls[0].request.reasoning_effort(),
+            PROOFREADING_REASONING_EFFORT
+        );
+        assert_eq!(
+            calls[0].request.max_output_tokens(),
+            Some(CONNECTION_TEST_MAX_OUTPUT_TOKENS)
+        );
         assert_eq!(
             calls[0].request.input(),
             &json!([{
@@ -251,6 +274,35 @@ mod tests {
                 Ok(ResponsesApiResponse::new(body)),
             )));
             assert!(block_on(tester.test("test-key", &CancellationToken::default())).is_err());
+        }
+    }
+
+    #[test]
+    fn maps_nonterminal_and_terminal_statuses_to_actionable_errors() {
+        for status in ["incomplete", "queued", "in_progress"] {
+            assert_eq!(
+                decode_connection_test_response(ResponsesApiResponse::new(json!({
+                    "status": status,
+                    "output": []
+                }))),
+                Err(ProofreaderError::Incomplete)
+            );
+        }
+        assert_eq!(
+            decode_connection_test_response(ResponsesApiResponse::new(json!({
+                "status": "cancelled",
+                "output": []
+            }))),
+            Err(ProofreaderError::Cancelled)
+        );
+        for status in ["failed", "unknown_status"] {
+            assert_eq!(
+                decode_connection_test_response(ResponsesApiResponse::new(json!({
+                    "status": status,
+                    "output": []
+                }))),
+                Err(ProofreaderError::Failed)
+            );
         }
     }
 

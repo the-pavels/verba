@@ -5,15 +5,21 @@ use serde::{Deserialize, Serialize};
 use verba_core::{
     coordinator::CancellationToken,
     proofreading::{
-        ProofreaderError, ProofreaderResponse, ProofreadingPolicyValidation,
-        evaluate_proofreading_policy,
+        MAX_PROOFREADING_ESTIMATED_TOKENS, ProofreaderError, ProofreaderResponse,
+        ProofreadingPolicyValidation, evaluate_proofreading_policy,
     },
 };
 
 use super::{build_request, decode_response};
-use crate::{DEFAULT_MODEL, OPENAI_BASE_URL, OpenAiClient, OpenAiConfig, ResponsesApiResponse};
+use crate::{
+    CONNECTION_TEST_MAX_OUTPUT_TOKENS, DEFAULT_MODEL, OPENAI_BASE_URL, OpenAiClient, OpenAiConfig,
+    PROOFREADING_MAX_OUTPUT_TOKENS, PROOFREADING_REASONING_EFFORT,
+    PROOFREADING_REQUEST_POLICY_VERSION, ResponsesApiResponse,
+    connection::{connection_test_request, decode_connection_test_response},
+};
 
 const CORPUS: &str = include_str!("../../tests/fixtures/proofreading-evaluation-v1.json");
+const CONNECTION_TEST_ATTEMPTS: usize = 5;
 
 #[test]
 fn versioned_corpus_is_stable_bounded_and_release_gated() {
@@ -37,6 +43,11 @@ fn versioned_corpus_is_stable_bounded_and_release_gated() {
         assert!(
             case.input.materialize().chars().count() <= MAX_PROOFREADING_CHARACTERS,
             "{} exceeds the production input boundary",
+            case.id
+        );
+        assert!(
+            case.input.materialize().len() <= MAX_PROOFREADING_ESTIMATED_TOKENS,
+            "{} exceeds the production estimated-token boundary",
             case.id
         );
     }
@@ -93,7 +104,10 @@ fn evaluation_report_records_usage_and_cost_without_text_content() {
         }],
         "usage": {
             "input_tokens": 100,
-            "output_tokens": 25
+            "output_tokens": 25,
+            "output_tokens_details": {
+                "reasoning_tokens": 20
+            }
         }
     }));
 
@@ -103,6 +117,8 @@ fn evaluation_report_records_usage_and_cost_without_text_content() {
     assert!(report.passed);
     assert_eq!(report.input_tokens, Some(100));
     assert_eq!(report.output_tokens, Some(25));
+    assert_eq!(report.reasoning_tokens, Some(20));
+    assert_eq!(report.visible_output_tokens, Some(5));
     assert!((report.cost_usd.unwrap() - 0.000_4).abs() < f64::EPSILON);
     assert!(!encoded.contains(original));
     assert!(!encoded.contains(corrected));
@@ -122,6 +138,24 @@ fn production_model_meets_release_threshold() {
         OpenAiClient::new(OpenAiConfig::new(OPENAI_BASE_URL, DEFAULT_MODEL))
             .expect("the production OpenAI configuration should be valid"),
     );
+
+    let mut connection_attempts = Vec::with_capacity(CONNECTION_TEST_ATTEMPTS);
+    for attempt in 1..=CONNECTION_TEST_ATTEMPTS {
+        let started = Instant::now();
+        let response = block_on(client.create_response(
+            &api_key,
+            connection_test_request(),
+            &CancellationToken::default(),
+        ));
+        let latency_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+        connection_attempts.push(evaluate_connection_attempt(
+            attempt,
+            response,
+            latency_ms,
+            input_price,
+            output_price,
+        ));
+    }
 
     let mut case_reports = Vec::with_capacity(corpus.cases.len());
     for case in &corpus.cases {
@@ -149,11 +183,27 @@ fn production_model_meets_release_threshold() {
         .filter(|case| case.mandatory)
         .all(|case| case.passed);
     let pass_rate = passed as f64 / case_reports.len() as f64;
-    let total_cost_usd = case_reports.iter().filter_map(|case| case.cost_usd).sum();
+    let connection_test_passed = connection_attempts.iter().all(|attempt| attempt.passed);
+    let total_cost_usd = case_reports
+        .iter()
+        .filter_map(|case| case.cost_usd)
+        .chain(
+            connection_attempts
+                .iter()
+                .filter_map(|attempt| attempt.cost_usd),
+        )
+        .sum();
     let report = EvaluationReport {
         corpus_version: corpus.version,
         model: DEFAULT_MODEL,
+        request_policy_version: PROOFREADING_REQUEST_POLICY_VERSION,
+        reasoning_effort: PROOFREADING_REASONING_EFFORT.as_str(),
+        maximum_estimated_input_tokens: MAX_PROOFREADING_ESTIMATED_TOKENS,
+        proofreading_max_output_tokens: PROOFREADING_MAX_OUTPUT_TOKENS,
+        connection_test_max_output_tokens: CONNECTION_TEST_MAX_OUTPUT_TOKENS,
         release_threshold: corpus.release_threshold,
+        connection_test_passed,
+        connection_attempts,
         mandatory_passed,
         passed_cases: passed,
         total_cases: case_reports.len(),
@@ -165,10 +215,33 @@ fn production_model_meets_release_threshold() {
     fs::write(&report_path, encoded).expect("evaluation report should be writable");
 
     assert!(
-        mandatory_passed && pass_rate >= corpus.release_threshold,
+        connection_test_passed && mandatory_passed && pass_rate >= corpus.release_threshold,
         "live evaluation did not meet the release gate; inspect the privacy-safe report at {}",
         report_path.display()
     );
+}
+
+fn evaluate_connection_attempt(
+    attempt: usize,
+    response: Result<ResponsesApiResponse, ProofreaderError>,
+    latency_ms: u64,
+    input_price: f64,
+    output_price: f64,
+) -> ConnectionAttemptReport {
+    let usage = response.as_ref().ok().and_then(response_usage);
+    let result = response.and_then(decode_connection_test_response);
+
+    ConnectionAttemptReport {
+        attempt,
+        passed: result.is_ok() && usage.is_some(),
+        error_code: result.err().map(provider_error_code),
+        latency_ms,
+        input_tokens: usage.map(|usage| usage.input_tokens),
+        output_tokens: usage.map(|usage| usage.output_tokens),
+        reasoning_tokens: usage.map(|usage| usage.reasoning_tokens),
+        visible_output_tokens: usage.map(TokenUsage::visible_output_tokens),
+        cost_usd: usage.map(|usage| token_cost(usage, input_price, output_price)),
+    }
 }
 
 fn evaluate_case(
@@ -205,10 +278,7 @@ fn evaluate_case(
         .is_some_and(|validation| validation.first_violation().is_none())
         || matches!(outcome, ObservedOutcome::ProviderError(_));
     let usage_recorded = usage.is_some();
-    let cost_usd = usage.map(|usage| {
-        (usage.input_tokens as f64 * input_price + usage.output_tokens as f64 * output_price)
-            / 1_000_000.0
-    });
+    let cost_usd = usage.map(|usage| token_cost(usage, input_price, output_price));
 
     CaseReport {
         id: case.id.clone(),
@@ -220,6 +290,8 @@ fn evaluate_case(
         latency_ms,
         input_tokens: usage.map(|usage| usage.input_tokens),
         output_tokens: usage.map(|usage| usage.output_tokens),
+        reasoning_tokens: usage.map(|usage| usage.reasoning_tokens),
+        visible_output_tokens: usage.map(TokenUsage::visible_output_tokens),
         cost_usd,
     }
 }
@@ -229,7 +301,16 @@ fn response_usage(response: &ResponsesApiResponse) -> Option<TokenUsage> {
     Some(TokenUsage {
         input_tokens: usage.get("input_tokens")?.as_u64()?,
         output_tokens: usage.get("output_tokens")?.as_u64()?,
+        reasoning_tokens: usage
+            .pointer("/output_tokens_details/reasoning_tokens")
+            .and_then(serde_json::Value::as_u64)
+            .unwrap_or(0),
     })
+}
+
+fn token_cost(usage: TokenUsage, input_price: f64, output_price: f64) -> f64 {
+    (usage.input_tokens as f64 * input_price + usage.output_tokens as f64 * output_price)
+        / 1_000_000.0
 }
 
 fn require_opt_in() {
@@ -350,13 +431,27 @@ impl ExpectedOutcome {
 struct TokenUsage {
     input_tokens: u64,
     output_tokens: u64,
+    reasoning_tokens: u64,
+}
+
+impl TokenUsage {
+    const fn visible_output_tokens(self) -> u64 {
+        self.output_tokens.saturating_sub(self.reasoning_tokens)
+    }
 }
 
 #[derive(Serialize)]
 struct EvaluationReport {
     corpus_version: u32,
     model: &'static str,
+    request_policy_version: &'static str,
+    reasoning_effort: &'static str,
+    maximum_estimated_input_tokens: usize,
+    proofreading_max_output_tokens: u32,
+    connection_test_max_output_tokens: u32,
     release_threshold: f64,
+    connection_test_passed: bool,
+    connection_attempts: Vec<ConnectionAttemptReport>,
     mandatory_passed: bool,
     passed_cases: usize,
     total_cases: usize,
@@ -376,6 +471,21 @@ struct CaseReport {
     latency_ms: u64,
     input_tokens: Option<u64>,
     output_tokens: Option<u64>,
+    reasoning_tokens: Option<u64>,
+    visible_output_tokens: Option<u64>,
+    cost_usd: Option<f64>,
+}
+
+#[derive(Serialize)]
+struct ConnectionAttemptReport {
+    attempt: usize,
+    passed: bool,
+    error_code: Option<&'static str>,
+    latency_ms: u64,
+    input_tokens: Option<u64>,
+    output_tokens: Option<u64>,
+    reasoning_tokens: Option<u64>,
+    visible_output_tokens: Option<u64>,
     cost_usd: Option<f64>,
 }
 

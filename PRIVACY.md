@@ -31,6 +31,8 @@ Proofreading sends the selected text to OpenAI under the user's own API account.
 
 Verba rejects redirects, requires HTTPS for production requests, and applies finite connection and request timeouts. It does not log request bodies, response bodies, authorization headers, selected text, corrected text, or API keys.
 
+Before any proofreading network request, Verba enforces both a 10,000-character limit and a conservative 10,000-token estimate that counts each UTF-8 byte as one estimated token. The estimate deliberately errs high and is not the provider's tokenizer. A symbol-dense selection can therefore be rejected even when it contains fewer than 10,000 characters.
+
 OpenAI is instructed to correct spelling and grammar only and to preserve language, meaning, tone, whitespace, line structure, and formatting. Language, meaning, tone, and correction scope are model behavior evaluated against a versioned release corpus, not guarantees that software can prove. Before displaying a correction, Verba mechanically rejects changes to exact leading and trailing Unicode whitespace, line endings, blank-line positions, and selected Markdown-style list, blockquote, code, strong-emphasis, and strikethrough markers. Other formatting, including rich-text attributes that are not present in the captured plain text, cannot be preserved or validated.
 
 The paid live-model release evaluator is opt-in and is not part of the installed app. Its report contains only stable synthetic case identifiers, pass/fail outcomes, invariant results, latency, token counts, and calculated cost. It excludes corpus text, corrected text, API keys, and provider response bodies.
@@ -95,7 +97,7 @@ The commands can report that no matching item or domain exists when cleanup was 
 ## Current limitations
 
 - macOS 15 or later and Apple silicon (`arm64`) are required. Intel Macs and the Mac App Store are not supported.
-- Only plain-text selections up to 10,000 characters are accepted.
+- Only plain-text selections up to 10,000 characters are accepted. Proofreading also applies the conservative token-aware preflight described above, so symbol-dense text may have a lower effective limit.
 - Global shortcuts default to Control-Option-T for Translate and Control-Option-P for Proofread and can be changed in Settings.
 - Accessibility permission is required for cross-application selection capture. Some applications or protected fields may prevent capture.
 - Translation availability depends on Apple's supported languages and any required language-resource download.

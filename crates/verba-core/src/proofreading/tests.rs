@@ -245,6 +245,55 @@ fn rejects_empty_and_oversized_input_without_calling_the_provider() {
 }
 
 #[test]
+fn character_boundaries_remain_inclusive_before_the_provider_call() {
+    let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::NoIssues)));
+    let use_case = ProofreadText::new(proofreader.clone());
+
+    for character_count in [9_999, 10_000] {
+        assert_eq!(
+            block_on(use_case.execute(
+                "a".repeat(character_count),
+                ProofreadingConsent::Granted,
+                &CancellationToken::default(),
+            )),
+            Ok(ProofreadingResult::NoIssues)
+        );
+    }
+    assert_eq!(proofreader.requests().len(), 2);
+}
+
+#[test]
+fn token_dense_input_is_rejected_before_network_use() {
+    let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::NoIssues)));
+    let use_case = ProofreadText::new(proofreader.clone());
+    let accepted = "🙂".repeat(2_500);
+    let rejected = "🙂".repeat(2_501);
+
+    assert_eq!(conservative_token_estimate(&accepted), 10_000);
+    assert_eq!(
+        block_on(use_case.execute(
+            accepted,
+            ProofreadingConsent::Granted,
+            &CancellationToken::default(),
+        )),
+        Ok(ProofreadingResult::NoIssues)
+    );
+    assert_eq!(conservative_token_estimate(&rejected), 10_004);
+    assert_eq!(
+        block_on(use_case.execute(
+            rejected,
+            ProofreadingConsent::Granted,
+            &CancellationToken::default(),
+        )),
+        Err(ProofreadingFailure::EstimatedInputTooLarge {
+            maximum_estimated_tokens: 10_000,
+            estimated_tokens: 10_004,
+        })
+    );
+    assert_eq!(proofreader.requests().len(), 1);
+}
+
+#[test]
 fn skips_the_provider_when_the_request_is_already_cancelled() {
     let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::NoIssues)));
     let use_case = ProofreadText::new(proofreader.clone());

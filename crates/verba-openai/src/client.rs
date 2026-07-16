@@ -82,15 +82,17 @@ pub enum OpenAiClientBuildError {
 #[derive(Clone)]
 pub struct ResponsesApiRequest {
     input: Value,
+    reasoning_effort: ReasoningEffort,
     text: Option<Value>,
     max_output_tokens: Option<u32>,
 }
 
 impl ResponsesApiRequest {
     #[must_use]
-    pub const fn new(input: Value) -> Self {
+    pub const fn new(input: Value, reasoning_effort: ReasoningEffort) -> Self {
         Self {
             input,
+            reasoning_effort,
             text: None,
             max_output_tokens: None,
         }
@@ -114,6 +116,11 @@ impl ResponsesApiRequest {
     }
 
     #[must_use]
+    pub const fn reasoning_effort(&self) -> ReasoningEffort {
+        self.reasoning_effort
+    }
+
+    #[must_use]
     pub const fn text_configuration(&self) -> Option<&Value> {
         self.text.as_ref()
     }
@@ -121,6 +128,31 @@ impl ResponsesApiRequest {
     #[must_use]
     pub const fn max_output_tokens(&self) -> Option<u32> {
         self.max_output_tokens
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReasoningEffort {
+    None,
+    Low,
+    Medium,
+    High,
+    Xhigh,
+    Max,
+}
+
+impl ReasoningEffort {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Xhigh => "xhigh",
+            Self::Max => "max",
+        }
     }
 }
 
@@ -188,6 +220,9 @@ impl OpenAiClient {
         let body = serde_json::to_vec(&CreateResponseBody {
             model: &self.model,
             input: &request.input,
+            reasoning: ReasoningConfiguration {
+                effort: request.reasoning_effort,
+            },
             text: request.text.as_ref(),
             max_output_tokens: request.max_output_tokens,
             store: false,
@@ -238,11 +273,17 @@ impl OpenAiClient {
 struct CreateResponseBody<'a> {
     model: &'a str,
     input: &'a Value,
+    reasoning: ReasoningConfiguration,
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<&'a Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     max_output_tokens: Option<u32>,
     store: bool,
+}
+
+#[derive(Serialize)]
+struct ReasoningConfiguration {
+    effort: ReasoningEffort,
 }
 
 fn responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
