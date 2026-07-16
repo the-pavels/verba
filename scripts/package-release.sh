@@ -168,6 +168,18 @@ if [[ "${signing_mode}" == "unsigned" ]]; then
     /usr/bin/find "${app_path}" -exec /usr/bin/touch -h -t "${normalized_timestamp}" {} +
 fi
 
+rustc_details="$(rustc --version --verbose)"
+cargo_details="$(cargo --version --verbose)"
+rustc_version="$(rustc --version)"
+cargo_version="$(cargo --version)"
+rustc_commit_hash="$(/usr/bin/awk -F ': ' '$1 == "commit-hash" { print $2; exit }' <<< "${rustc_details}")"
+rustc_commit_date="$(/usr/bin/awk -F ': ' '$1 == "commit-date" { print $2; exit }' <<< "${rustc_details}")"
+rustc_host="$(/usr/bin/awk -F ': ' '$1 == "host" { print $2; exit }' <<< "${rustc_details}")"
+rustc_llvm_version="$(/usr/bin/awk -F ': ' '$1 == "LLVM version" { print $2; exit }' <<< "${rustc_details}")"
+cargo_commit_hash="$(/usr/bin/awk -F ': ' '$1 == "commit-hash" { print $2; exit }' <<< "${cargo_details}")"
+cargo_commit_date="$(/usr/bin/awk -F ': ' '$1 == "commit-date" { print $2; exit }' <<< "${cargo_details}")"
+cargo_host="$(/usr/bin/awk -F ': ' '$1 == "host" { print $2; exit }' <<< "${cargo_details}")"
+
 temporary_manifest="${work_dir}/${artifact_basename}.manifest.txt"
 {
     echo "artifact=${artifact_basename}.zip"
@@ -181,6 +193,15 @@ temporary_manifest="${work_dir}/${artifact_basename}.manifest.txt"
     echo "source-revision=${source_revision}"
     echo "source-state=${source_state}"
     echo "source-date-epoch=${source_date_epoch}"
+    echo "rustc-version=${rustc_version}"
+    echo "rustc-commit-hash=${rustc_commit_hash}"
+    echo "rustc-commit-date=${rustc_commit_date}"
+    echo "rustc-host=${rustc_host}"
+    echo "rustc-llvm-version=${rustc_llvm_version}"
+    echo "cargo-version=${cargo_version}"
+    echo "cargo-commit-hash=${cargo_commit_hash}"
+    echo "cargo-commit-date=${cargo_commit_date}"
+    echo "cargo-host=${cargo_host}"
     echo "bundle-files-sha256:"
     (
         cd "${app_path}"

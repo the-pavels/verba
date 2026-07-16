@@ -2,6 +2,8 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.0 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
+**Candidate 12 status:** Superseded before manual qualification by the 2026-07-16 audit remediation. Preserve its provenance evidence, but do not publish it. Replace the candidate record below with build 13 or later after remediation is complete and a new notarized artifact exists.
+
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
 ## Candidate record
@@ -161,7 +163,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| FINAL-01 | Measure 20 cold launches and 20 invocations per action on the oldest supported Mac using the documented signposts. | Every p95 budget in `README.md` passes. | Not run | Attach the Instruments summary; never attach selected text. |
+| FINAL-01 | Measure 20 cold launches and 20 invocations per action on the oldest supported Mac using the documented signposts. | Every p95 budget in [PERFORMANCE.md](PERFORMANCE.md) passes. | Not run | Attach the Instruments summary; never attach selected text. |
 | FINAL-02 | Download the published candidate and checksum into a new directory and verify again. | Its SHA-256 matches this record and the tested local candidate. | Not run | |
 | FINAL-03 | Inspect the extracted bundle and public release assets. | No source PDF, API key, signing/notary credential, dSYM, archive, source path, or unintended generated file is present. | Not run | |
 | FINAL-04 | Review `CHANGELOG.md`, `PRIVACY.md`, `SECURITY.md`, third-party notices, installation instructions, limitations, and rollback guidance. | Published documentation matches the candidate behavior. | Not run | |

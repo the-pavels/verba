@@ -32,7 +32,7 @@ The requested marketing version must match the Rust workspace version. The workf
 - `Verba-VERSION-BUILD-arm64-unsigned.zip.sha256`
 - `Verba-VERSION-BUILD-arm64-unsigned.manifest.txt`
 
-The manifest records the source revision and clean/dirty state plus the SHA-256 of every file in the app bundle. Only the checksum produced for the final notarized archive is publishable.
+The manifest records the source revision and clean/dirty state, the exact Rust and Cargo build toolchain, and the SHA-256 of every file in the app bundle. Only the checksum produced for the final notarized archive is publishable.
 
 Unsigned bundle timestamps are normalized to `SOURCE_DATE_EPOCH`, which defaults to the current Git commit time. Set that variable explicitly when reproducing an unsigned artifact from exported sources that do not include Git metadata. Developer ID bundles are not modified after signing because changing signed bundle metadata invalidates the signature; Apple's secure timestamp also means signed archive bytes are not expected to be reproducible.
 
