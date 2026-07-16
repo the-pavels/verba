@@ -198,6 +198,7 @@ pub enum ProofreaderError {
     TimedOut,
     Refused,
     Incomplete,
+    ResponseTooLarge,
     MalformedResponse,
     ServiceUnavailable,
     Cancelled,

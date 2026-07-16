@@ -2,7 +2,7 @@
 
 The production default is `gpt-5.6-luna`. It was selected on 2026-07-14 after a live comparison against Terra covered no-change, multilingual, punctuation, paragraph, list, quotation, and formatting-preservation cases. Both models produced semantically correct results across the suite; Luna was slightly faster and about 49% cheaper in the sampled requests. Verba keeps the model injectable so tests can use a fixed value and the production choice can be updated independently of the transport.
 
-The client uses the Responses API and sends `store: false`. It does not log API keys, selected text, corrected text, raw request bodies, or raw response bodies.
+The production client is pinned to `https://api.openai.com/v1/responses`, rejects redirects, and sends `store: false`. Custom HTTPS endpoints require the explicitly named development constructor, while plain HTTP is accepted only by the loopback testing constructor for literal IPv4 or IPv6 loopback addresses. Successful response bodies are limited to 512 KiB and provider error bodies to 64 KiB. Both declared lengths and streamed bytes are checked before JSON decoding. The adapter does not log API keys, selected text, corrected text, raw request bodies, or raw response bodies.
 
 ## Request policy
 

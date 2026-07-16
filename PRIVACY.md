@@ -29,7 +29,7 @@ macOS does not provide an atomic multi-item clipboard replacement operation: cle
 
 Proofreading sends the selected text to OpenAI under the user's own API account. Verba sets `store: false` and does not create a conversation or retain a response for later retrieval. This setting does not mean that OpenAI never retains request data: OpenAI documents that API inputs and outputs may be included in abuse-monitoring logs for up to 30 days by default, unless the API organization has an approved data-retention control. OpenAI states that API data is not used to train its models unless the customer explicitly opts in. See [OpenAI's API data controls](https://developers.openai.com/api/docs/guides/your-data) for the current provider policy.
 
-Verba rejects redirects, requires HTTPS for production requests, and applies finite connection and request timeouts. It does not log request bodies, response bodies, authorization headers, selected text, corrected text, or API keys.
+Verba pins production proofreading to `https://api.openai.com/v1/responses`, rejects redirects, and applies finite connection and request timeouts. It limits successful provider responses to 512 KiB and error responses to 64 KiB before parsing them. It does not log request bodies, response bodies, authorization headers, selected text, corrected text, or API keys.
 
 Before any proofreading network request, Verba enforces both a 10,000-character limit and a conservative 10,000-token estimate that counts each UTF-8 byte as one estimated token. The estimate deliberately errs high and is not the provider's tokenizer. A symbol-dense selection can therefore be rejected even when it contains fewer than 10,000 characters.
 

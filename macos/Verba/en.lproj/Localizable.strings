@@ -73,6 +73,7 @@
 "OpenAI is rate limiting requests. Wait a moment and try again." = "OpenAI is rate limiting requests. Wait a moment and try again.";
 "OpenAI is temporarily unavailable. Try again later." = "OpenAI is temporarily unavailable. Try again later.";
 "OpenAI quota unavailable" = "OpenAI quota unavailable";
+"OpenAI response too large" = "OpenAI response too large";
 "OpenAI rate limit reached" = "OpenAI rate limit reached";
 "OpenAI rejected this key. Replace it and try again." = "OpenAI rejected this key. Replace it and try again.";
 "OpenAI request timed out" = "OpenAI request timed out";
@@ -125,6 +126,7 @@
 "Select at most 10,000 characters and invoke Proofread again." = "Select at most 10,000 characters and invoke Proofread again.";
 "Select at most 10,000 characters and invoke Translate again." = "Select at most 10,000 characters and invoke Translate again.";
 "Select a shorter passage or try proofreading again." = "Select a shorter passage or try proofreading again.";
+"Select a shorter passage, then try proofreading again." = "Select a shorter passage, then try proofreading again.";
 "Select a shorter passage with fewer symbols, then invoke Proofread again." = "Select a shorter passage with fewer symbols, then invoke Proofread again.";
 "Select different text, then invoke Proofread again." = "Select different text, then invoke Proofread again.";
 "Select some text, then invoke the action again." = "Select some text, then invoke the action again.";

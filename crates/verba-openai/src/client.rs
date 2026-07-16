@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration};
 use futures::future::{Either, select};
 use serde::Serialize;
 use serde_json::Value;
-use url::{Host, Url};
+use url::Url;
 use verba_core::{coordinator::CancellationToken, proofreading::ProofreaderError};
 
 use crate::transport::{HttpExecutor, HttpRequest, HttpResponse, ReqwestExecutor, TransportError};
@@ -17,7 +17,6 @@ const DEFAULT_REQUEST_TIMEOUT: Duration = Duration::from_secs(OPENAI_REQUEST_TIM
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct OpenAiConfig {
-    base_url: String,
     model: String,
     connect_timeout: Duration,
     request_timeout: Duration,
@@ -25,9 +24,8 @@ pub struct OpenAiConfig {
 
 impl OpenAiConfig {
     #[must_use]
-    pub fn new(base_url: impl Into<String>, model: impl Into<String>) -> Self {
+    pub fn new(model: impl Into<String>) -> Self {
         Self {
-            base_url: base_url.into(),
             model: model.into(),
             connect_timeout: DEFAULT_CONNECT_TIMEOUT,
             request_timeout: DEFAULT_REQUEST_TIMEOUT,
@@ -43,11 +41,6 @@ impl OpenAiConfig {
         self.connect_timeout = connect_timeout;
         self.request_timeout = request_timeout;
         self
-    }
-
-    #[must_use]
-    pub fn base_url(&self) -> &str {
-        &self.base_url
     }
 
     #[must_use]
@@ -68,7 +61,7 @@ impl OpenAiConfig {
 
 impl Default for OpenAiConfig {
     fn default() -> Self {
-        Self::new(OPENAI_BASE_URL, DEFAULT_MODEL)
+        Self::new(DEFAULT_MODEL)
     }
 }
 
@@ -186,7 +179,26 @@ pub struct OpenAiClient {
 
 impl OpenAiClient {
     pub fn new(config: OpenAiConfig) -> Result<Self, OpenAiClientBuildError> {
-        let endpoint = responses_endpoint(&config.base_url)?;
+        Self::with_endpoint(production_responses_endpoint()?, config)
+    }
+
+    pub fn new_for_development(
+        base_url: &str,
+        config: OpenAiConfig,
+    ) -> Result<Self, OpenAiClientBuildError> {
+        Self::with_endpoint(development_responses_endpoint(base_url)?, config)
+    }
+
+    #[doc(hidden)]
+    #[cfg(any(test, debug_assertions))]
+    pub fn new_for_loopback_testing(
+        base_url: &str,
+        config: OpenAiConfig,
+    ) -> Result<Self, OpenAiClientBuildError> {
+        Self::with_endpoint(loopback_responses_endpoint(base_url)?, config)
+    }
+
+    fn with_endpoint(endpoint: Url, config: OpenAiConfig) -> Result<Self, OpenAiClientBuildError> {
         let model = config.model.trim();
         if model.is_empty() {
             return Err(OpenAiClientBuildError::EmptyModel);
@@ -250,10 +262,10 @@ impl OpenAiClient {
 
     #[cfg(test)]
     fn with_executor(
+        endpoint: Url,
         config: OpenAiConfig,
         executor: Arc<dyn HttpExecutor>,
     ) -> Result<Self, OpenAiClientBuildError> {
-        let endpoint = responses_endpoint(&config.base_url)?;
         let model = config.model.trim();
         if model.is_empty() {
             return Err(OpenAiClientBuildError::EmptyModel);
@@ -287,9 +299,33 @@ struct ReasoningConfiguration {
     effort: ReasoningEffort,
 }
 
-fn responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
+fn production_responses_endpoint() -> Result<Url, OpenAiClientBuildError> {
+    responses_endpoint(OPENAI_BASE_URL, EndpointPolicy::Production)
+}
+
+fn development_responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
+    responses_endpoint(base_url, EndpointPolicy::Development)
+}
+
+#[cfg(any(test, debug_assertions))]
+fn loopback_responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
+    responses_endpoint(base_url, EndpointPolicy::LoopbackTest)
+}
+
+#[derive(Clone, Copy)]
+enum EndpointPolicy {
+    Production,
+    Development,
+    #[cfg(any(test, debug_assertions))]
+    LoopbackTest,
+}
+
+fn responses_endpoint(
+    base_url: &str,
+    policy: EndpointPolicy,
+) -> Result<Url, OpenAiClientBuildError> {
     let mut base_url = Url::parse(base_url).map_err(|_| OpenAiClientBuildError::InvalidBaseUrl)?;
-    if !has_allowed_transport(&base_url)
+    if !has_allowed_endpoint(&base_url, policy)
         || !base_url.username().is_empty()
         || base_url.password().is_some()
         || base_url.query().is_some()
@@ -306,18 +342,21 @@ fn responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
         .map_err(|_| OpenAiClientBuildError::InvalidBaseUrl)
 }
 
-fn has_allowed_transport(url: &Url) -> bool {
-    if url.scheme() == "https" {
-        return true;
-    }
-    if url.scheme() != "http" {
-        return false;
-    }
-
-    match url.host() {
-        Some(Host::Ipv4(address)) => address.is_loopback(),
-        Some(Host::Ipv6(address)) => address.is_loopback(),
-        Some(Host::Domain(_)) | None => false,
+fn has_allowed_endpoint(url: &Url, policy: EndpointPolicy) -> bool {
+    match policy {
+        EndpointPolicy::Production => url.as_str() == OPENAI_BASE_URL,
+        EndpointPolicy::Development => url.scheme() == "https" && url.host().is_some(),
+        #[cfg(any(test, debug_assertions))]
+        EndpointPolicy::LoopbackTest => {
+            if url.scheme() != "http" {
+                return false;
+            }
+            match url.host() {
+                Some(url::Host::Ipv4(address)) => address.is_loopback(),
+                Some(url::Host::Ipv6(address)) => address.is_loopback(),
+                Some(url::Host::Domain(_)) | None => false,
+            }
+        }
     }
 }
 
@@ -335,6 +374,7 @@ fn map_transport_error(error: TransportError) -> ProofreaderError {
     match error {
         TransportError::Offline => ProofreaderError::Offline,
         TransportError::TimedOut => ProofreaderError::TimedOut,
+        TransportError::ResponseTooLarge => ProofreaderError::ResponseTooLarge,
         TransportError::Failed => ProofreaderError::Failed,
     }
 }

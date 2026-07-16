@@ -224,6 +224,12 @@ fn proofreading_provider_failures_require_an_explicit_user_recovery_action() {
             "proofreading.provider.incomplete",
         ),
         (
+            ProofreaderError::ResponseTooLarge,
+            "OpenAI response too large",
+            RecoveryAction::Retry,
+            "proofreading.provider.response-too-large",
+        ),
+        (
             ProofreaderError::MalformedResponse,
             "Invalid proofreading response",
             RecoveryAction::Retry,

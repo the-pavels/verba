@@ -14,7 +14,6 @@ use super::*;
 fn production_configuration_uses_the_documented_model_and_finite_timeouts() {
     let config = OpenAiConfig::default();
 
-    assert_eq!(config.base_url(), OPENAI_BASE_URL);
     assert_eq!(config.model(), DEFAULT_MODEL);
     assert!(config.connect_timeout() > Duration::ZERO);
     assert_eq!(
@@ -68,40 +67,64 @@ fn rejects_invalid_configuration_before_building_the_transport() {
     let executor = Arc::new(FakeExecutor::new(Ok(success_response(json!({})))));
 
     assert_eq!(
-        OpenAiClient::with_executor(OpenAiConfig::new("not a URL", "model"), executor.clone())
-            .err(),
+        development_responses_endpoint("not a URL").err(),
         Some(OpenAiClientBuildError::InvalidBaseUrl)
     );
     assert_eq!(
-        OpenAiClient::with_executor(OpenAiConfig::new("https://example.test", "  "), executor)
-            .err(),
+        OpenAiClient::with_executor(
+            development_responses_endpoint("https://example.test").unwrap(),
+            OpenAiConfig::new("  "),
+            executor,
+        )
+        .err(),
         Some(OpenAiClientBuildError::EmptyModel)
     );
 }
 
 #[test]
-fn requires_https_except_for_literal_loopback_test_servers() {
+fn production_is_pinned_and_nonproduction_endpoints_require_named_constructors() {
+    assert_eq!(
+        production_responses_endpoint().unwrap().as_str(),
+        "https://api.openai.com/v1/responses"
+    );
+    assert_eq!(
+        development_responses_endpoint("https://example.test/openai")
+            .unwrap()
+            .as_str(),
+        "https://example.test/openai/v1/responses"
+    );
+
     for base_url in [
         "http://example.test",
         "http://localhost",
         "ftp://example.test",
-        "https://user:password@example.test",
     ] {
         assert_eq!(
-            OpenAiClient::with_executor(
-                OpenAiConfig::new(base_url, "model"),
-                Arc::new(FakeExecutor::new(Ok(success_response(json!({}))))),
-            )
-            .err(),
+            development_responses_endpoint(base_url).err(),
+            Some(OpenAiClientBuildError::InvalidBaseUrl)
+        );
+    }
+    for base_url in [
+        "https://user:password@example.test",
+        "https://example.test?secret=value",
+        "https://example.test#fragment",
+    ] {
+        assert_eq!(
+            development_responses_endpoint(base_url).err(),
             Some(OpenAiClientBuildError::InvalidBaseUrl)
         );
     }
 
-    let client = OpenAiClient::with_executor(
-        OpenAiConfig::new("http://127.0.0.1:8080", "model"),
-        Arc::new(FakeExecutor::new(Ok(success_response(json!({}))))),
+    assert!(loopback_responses_endpoint("http://127.0.0.1:8080").is_ok());
+    assert!(loopback_responses_endpoint("http://[::1]:8080").is_ok());
+    assert_eq!(
+        loopback_responses_endpoint("http://localhost:8080").err(),
+        Some(OpenAiClientBuildError::InvalidBaseUrl)
     );
-    assert!(client.is_ok());
+    assert_eq!(
+        loopback_responses_endpoint("https://127.0.0.1:8080").err(),
+        Some(OpenAiClientBuildError::InvalidBaseUrl)
+    );
 }
 
 #[test]
@@ -126,6 +149,10 @@ fn maps_redacted_transport_and_http_failures() {
     for (response, expected) in [
         (Err(TransportError::Offline), ProofreaderError::Offline),
         (Err(TransportError::TimedOut), ProofreaderError::TimedOut),
+        (
+            Err(TransportError::ResponseTooLarge),
+            ProofreaderError::ResponseTooLarge,
+        ),
         (
             Ok(HttpResponse {
                 status: 401,
@@ -218,7 +245,8 @@ fn cancellation_drops_an_in_flight_transport_request() {
 
 fn test_client(executor: Arc<dyn HttpExecutor>) -> OpenAiClient {
     OpenAiClient::with_executor(
-        OpenAiConfig::new("https://example.test/openai", "test-model"),
+        development_responses_endpoint("https://example.test/openai").unwrap(),
+        OpenAiConfig::new("test-model"),
         executor,
     )
     .unwrap()

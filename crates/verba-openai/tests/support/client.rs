@@ -16,7 +16,7 @@ pub fn run_proofreading(
     text: &str,
 ) -> Result<ProofreadingResult, ProofreadingFailure> {
     let client = Arc::new(
-        OpenAiClient::new(OpenAiConfig::new(base_url, model))
+        OpenAiClient::new_for_loopback_testing(base_url, OpenAiConfig::new(model))
             .expect("test client configuration should be valid"),
     );
     let proofreader = Arc::new(OpenAiProofreader::new(

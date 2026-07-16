@@ -325,6 +325,7 @@ mod tests {
             ProofreaderError::TimedOut,
             ProofreaderError::Refused,
             ProofreaderError::Incomplete,
+            ProofreaderError::ResponseTooLarge,
             ProofreaderError::MalformedResponse,
             ProofreaderError::ServiceUnavailable,
             ProofreaderError::Failed,

@@ -171,6 +171,7 @@ fn map_connection_error(error: ProofreaderError) -> OpenAiApiKeyError {
         ProofreaderError::ServiceUnavailable => OpenAiApiKeyError::ServiceUnavailable,
         ProofreaderError::Refused
         | ProofreaderError::Incomplete
+        | ProofreaderError::ResponseTooLarge
         | ProofreaderError::MalformedResponse => OpenAiApiKeyError::InvalidResponse,
         ProofreaderError::Cancelled | ProofreaderError::Failed => {
             OpenAiApiKeyError::ConnectionFailed
@@ -260,6 +261,10 @@ mod tests {
             (
                 ProofreaderError::ServiceUnavailable,
                 OpenAiApiKeyError::ServiceUnavailable,
+            ),
+            (
+                ProofreaderError::ResponseTooLarge,
+                OpenAiApiKeyError::InvalidResponse,
             ),
             (
                 ProofreaderError::MalformedResponse,

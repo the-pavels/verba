@@ -874,6 +874,12 @@ fn proofreading_provider_failure(
             RecoveryAction::Retry,
             "proofreading.provider.incomplete",
         ),
+        ProofreaderError::ResponseTooLarge => (
+            "OpenAI response too large",
+            "Select a shorter passage, then try proofreading again.",
+            RecoveryAction::Retry,
+            "proofreading.provider.response-too-large",
+        ),
         ProofreaderError::MalformedResponse => (
             "Invalid proofreading response",
             "Verba couldn’t use the response. Try again.",

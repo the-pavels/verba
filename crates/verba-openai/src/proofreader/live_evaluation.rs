@@ -13,9 +13,8 @@ use verba_core::{
 use super::{build_request, decode_response};
 use crate::{
     CONNECTION_TEST_MAX_OUTPUT_TOKENS, CONNECTION_TEST_REASONING_EFFORT, DEFAULT_MODEL,
-    OPENAI_BASE_URL, OPENAI_REQUEST_TIMEOUT_SECONDS, OpenAiClient, OpenAiConfig,
-    PROOFREADING_MAX_OUTPUT_TOKENS, PROOFREADING_REASONING_EFFORT,
-    PROOFREADING_REQUEST_POLICY_VERSION, ResponsesApiResponse,
+    OPENAI_REQUEST_TIMEOUT_SECONDS, OpenAiClient, OpenAiConfig, PROOFREADING_MAX_OUTPUT_TOKENS,
+    PROOFREADING_REASONING_EFFORT, PROOFREADING_REQUEST_POLICY_VERSION, ResponsesApiResponse,
     connection::{connection_test_request, decode_connection_test_response},
 };
 
@@ -136,7 +135,7 @@ fn production_model_meets_release_threshold() {
     let corpus: EvaluationCorpus =
         serde_json::from_str(CORPUS).expect("the versioned evaluation corpus should be valid");
     let client = Arc::new(
-        OpenAiClient::new(OpenAiConfig::new(OPENAI_BASE_URL, DEFAULT_MODEL))
+        OpenAiClient::new(OpenAiConfig::new(DEFAULT_MODEL))
             .expect("the production OpenAI configuration should be valid"),
     );
 
@@ -346,6 +345,7 @@ fn provider_error_code(error: ProofreaderError) -> &'static str {
         ProofreaderError::TimedOut => "timed_out",
         ProofreaderError::Refused => "refused",
         ProofreaderError::Incomplete => "incomplete",
+        ProofreaderError::ResponseTooLarge => "response_too_large",
         ProofreaderError::MalformedResponse => "malformed_response",
         ProofreaderError::ServiceUnavailable => "service_unavailable",
         ProofreaderError::Cancelled => "cancelled",
