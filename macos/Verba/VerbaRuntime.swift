@@ -257,7 +257,10 @@ private enum VerbaRuntimeError: Error {
     case unavailable
 }
 
-private final class PopupPresentationObserver: PresentationObserver, @unchecked Sendable {
+private final class PopupPresentationObserver:
+    PresentationObserver,
+    @unchecked Sendable
+{
     private weak var popupController: PopupController?
     private let performance: PerformanceSignposter
 
@@ -276,6 +279,12 @@ private final class PopupPresentationObserver: PresentationObserver, @unchecked 
                 requestID: requestId,
                 presentation: presentation
             )
+        }
+    }
+
+    func captureCompleted(requestId: UInt64) {
+        Task { @MainActor [weak popupController] in
+            popupController?.captureDidComplete(requestID: requestId)
         }
     }
 }

@@ -193,22 +193,91 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertNil(PopupKeyboardCommand.command(for: plainC))
     }
 
-    func testLoadingPopupPreservesSourceFocusThroughCaptureWindow() {
-        let loadingDelay = PopupKeyboardFocusPolicy.delay(
-            for: .loading(action: .translate)
-        )
-        let errorDelay = PopupKeyboardFocusPolicy.delay(
-            for: .error(
-                action: .translate,
-                title: "Selection timed out",
-                message: "Try again.",
-                recovery: .retry,
-                diagnosticCode: "capture.timed-out"
+    func testLoadingPopupWaitsForCaptureCompletionWithoutATimer() {
+        var state = PopupCaptureFocusState()
+
+        XCTAssertEqual(
+            state.receive(requestID: 1, isLoading: true),
+            PopupCaptureFocusDecision(
+                beginsCapture: true,
+                shouldTakeKeyboardFocus: false
             )
         )
+        XCTAssertEqual(
+            state.receive(requestID: 1, isLoading: true),
+            PopupCaptureFocusDecision(
+                beginsCapture: false,
+                shouldTakeKeyboardFocus: false
+            )
+        )
+        XCTAssertTrue(state.captureDidComplete(requestID: 1))
+        XCTAssertEqual(
+            state.receive(requestID: 1, isLoading: true),
+            PopupCaptureFocusDecision(
+                beginsCapture: false,
+                shouldTakeKeyboardFocus: true
+            )
+        )
+    }
 
-        XCTAssertGreaterThan(loadingDelay, 0.5)
-        XCTAssertEqual(errorDelay, 0)
+    func testCaptureFailureMakesTheErrorInteractiveAndIgnoresLateCompletion() {
+        var state = PopupCaptureFocusState()
+        _ = state.receive(requestID: 1, isLoading: true)
+
+        XCTAssertEqual(
+            state.receive(requestID: 1, isLoading: false),
+            PopupCaptureFocusDecision(
+                beginsCapture: false,
+                shouldTakeKeyboardFocus: true
+            )
+        )
+        XCTAssertFalse(state.captureDidComplete(requestID: 1))
+    }
+
+    func testCaptureCompletionCanArriveBeforeTheLoadingPresentation() {
+        var state = PopupCaptureFocusState()
+
+        XCTAssertFalse(state.captureDidComplete(requestID: 1))
+        XCTAssertEqual(
+            state.receive(requestID: 1, isLoading: true),
+            PopupCaptureFocusDecision(
+                beginsCapture: false,
+                shouldTakeKeyboardFocus: true
+            )
+        )
+    }
+
+    func testEarlyCompletionFromANewerRequestRejectsOlderQueuedPresentation() {
+        var state = PopupCaptureFocusState()
+
+        XCTAssertFalse(state.captureDidComplete(requestID: 2))
+        XCTAssertNil(state.receive(requestID: 1, isLoading: true))
+        XCTAssertEqual(
+            state.receive(requestID: 2, isLoading: true),
+            PopupCaptureFocusDecision(
+                beginsCapture: false,
+                shouldTakeKeyboardFocus: true
+            )
+        )
+    }
+
+    func testNewCaptureInvalidatesCompletionFromThePreviousRequest() {
+        var state = PopupCaptureFocusState()
+        _ = state.receive(requestID: 1, isLoading: true)
+        _ = state.receive(requestID: 2, isLoading: true)
+
+        XCTAssertFalse(state.captureDidComplete(requestID: 1))
+        XCTAssertTrue(state.captureDidComplete(requestID: 2))
+        XCTAssertNil(state.receive(requestID: 1, isLoading: false))
+    }
+
+    func testDismissedCaptureCannotRegainKeyboardFocus() {
+        var state = PopupCaptureFocusState()
+        _ = state.receive(requestID: 1, isLoading: true)
+
+        state.dismiss()
+
+        XCTAssertFalse(state.captureDidComplete(requestID: 1))
     }
 
     func testClickAwayDismissesOnlyOutsideThePopupFrame() {

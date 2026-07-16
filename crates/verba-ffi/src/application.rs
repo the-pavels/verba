@@ -33,6 +33,7 @@ use crate::{
 #[uniffi::export(with_foreign)]
 pub trait PresentationObserver: Send + Sync {
     fn present(&self, request_id: u64, presentation: PresentationViewModel);
+    fn capture_completed(&self, request_id: u64);
 }
 
 #[derive(uniffi::Object)]
@@ -341,5 +342,9 @@ impl ResultPresenter for ForeignPresenter {
     fn present(&self, update: PresentationUpdate) {
         self.observer
             .present(update.request_id.value(), update.state.into());
+    }
+
+    fn capture_completed(&self, request_id: verba_core::coordinator::RequestId) {
+        self.observer.capture_completed(request_id.value());
     }
 }

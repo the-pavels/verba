@@ -51,6 +51,7 @@ fn registered_shortcut_captures_processes_and_presents_a_result() {
         ]
     );
     assert_eq!(capture.call_count(), 1);
+    assert_eq!(presenter.capture_ids(), vec![RequestId(1)]);
     assert_eq!(
         processor.requests(),
         vec![ProcessingRequest {
@@ -692,12 +693,17 @@ impl TextActionProcessor for QueueProcessor {
 #[derive(Default)]
 struct RecordingPresenter {
     updates: Mutex<Vec<PresentationUpdate>>,
+    capture_ids: Mutex<Vec<RequestId>>,
     updated: Condvar,
 }
 
 impl RecordingPresenter {
     fn updates(&self) -> Vec<PresentationUpdate> {
         self.updates.lock().unwrap().clone()
+    }
+
+    fn capture_ids(&self) -> Vec<RequestId> {
+        self.capture_ids.lock().unwrap().clone()
     }
 
     fn wait_for(&self, count: usize) -> Vec<PresentationUpdate> {
@@ -718,6 +724,10 @@ impl ResultPresenter for RecordingPresenter {
     fn present(&self, update: PresentationUpdate) {
         self.updates.lock().unwrap().push(update);
         self.updated.notify_all();
+    }
+
+    fn capture_completed(&self, request_id: RequestId) {
+        self.capture_ids.lock().unwrap().push(request_id);
     }
 }
 

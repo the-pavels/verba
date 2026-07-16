@@ -88,6 +88,8 @@ pub struct PresentationUpdate {
 
 pub trait ResultPresenter: Send + Sync {
     fn present(&self, update: PresentationUpdate);
+
+    fn capture_completed(&self, _request_id: RequestId) {}
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -377,6 +379,7 @@ impl CoordinatorInner {
             }
             self.capture.capture()
         };
+        self.presenter.capture_completed(request.id);
         self.metrics.record(WorkflowMilestone::CaptureCompleted {
             request_id: request.id,
         });

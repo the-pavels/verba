@@ -15,8 +15,7 @@ final class PopupController {
     private let windowFocusRestorer = PopupFocusRestorer<NSWindow>()
     private var clickMonitors: [ClickMonitor] = []
     private var copyableText: String?
-    private var focusGeneration: UInt64 = 0
-    private var latestRequestID: UInt64 = 0
+    private var captureFocusState = PopupCaptureFocusState()
     private var sourceApplication: NSRunningApplication?
 
     var onDismiss: (() -> Void)?
@@ -58,6 +57,13 @@ final class PopupController {
     }
 
     func present(_ presentation: PresentationViewModel) {
+        present(presentation, shouldTakeKeyboardFocus: true)
+    }
+
+    private func present(
+        _ presentation: PresentationViewModel,
+        shouldTakeKeyboardFocus: Bool
+    ) {
         let presentation = presentation.localizedForDisplay
         guard !presentation.isIdle else {
             hide()
@@ -112,17 +118,36 @@ final class PopupController {
                 : nil
         }
         panel.orderFrontRegardless()
-        scheduleKeyboardFocus(for: presentation)
+        if shouldTakeKeyboardFocus {
+            takeKeyboardFocus()
+        }
         startClickAwayMonitoring()
     }
 
     func present(requestID: UInt64, presentation: PresentationViewModel) {
-        guard requestID >= latestRequestID else {
+        guard let decision = captureFocusState.receive(
+            requestID: requestID,
+            isLoading: presentation.isLoading
+        ) else {
             return
         }
 
-        latestRequestID = requestID
-        present(presentation)
+        if decision.beginsCapture {
+            preserveSourceFocusForCapture()
+        }
+        present(
+            presentation,
+            shouldTakeKeyboardFocus: decision.shouldTakeKeyboardFocus
+        )
+    }
+
+    func captureDidComplete(requestID: UInt64) {
+        guard captureFocusState.captureDidComplete(requestID: requestID),
+              panel.isVisible
+        else {
+            return
+        }
+        takeKeyboardFocus()
     }
 
     func dismiss() {
@@ -148,7 +173,7 @@ final class PopupController {
     }
 
     private func hide(focusDisposition: PopupFocusDisposition = .restoreSource) {
-        focusGeneration &+= 1
+        captureFocusState.dismiss()
         copyableText = nil
         stopClickAwayMonitoring()
         let shouldRestoreFocus = focusDisposition.shouldRestoreSource(
@@ -176,21 +201,16 @@ final class PopupController {
         application.activate(from: NSRunningApplication.current, options: [])
     }
 
-    private func scheduleKeyboardFocus(for presentation: PresentationViewModel) {
-        focusGeneration &+= 1
-        let generation = focusGeneration
-        let delay = PopupKeyboardFocusPolicy.delay(for: presentation)
-
-        guard delay > 0 else {
-            takeKeyboardFocus()
-            return
+    private func preserveSourceFocusForCapture() {
+        let frontmostApplication = NSWorkspace.shared.frontmostApplication
+        if PopupSourceApplicationPolicy.shouldCapture(
+            candidateProcessIdentifier: frontmostApplication?.processIdentifier,
+            currentProcessIdentifier: NSRunningApplication.current.processIdentifier
+        ) {
+            sourceApplication = frontmostApplication
         }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self, self.focusGeneration == generation else {
-                return
-            }
-            self.takeKeyboardFocus()
+        if panel.isKeyWindow, let sourceApplication {
+            restoreFocus(to: sourceApplication)
         }
     }
 
@@ -388,16 +408,64 @@ enum PopupHostingSizingPolicy {
     static let options: NSHostingSizingOptions = []
 }
 
-enum PopupKeyboardFocusPolicy {
-    private static let captureWindow: TimeInterval = 0.65
+struct PopupCaptureFocusDecision: Equatable {
+    let beginsCapture: Bool
+    let shouldTakeKeyboardFocus: Bool
+}
 
-    static func delay(for presentation: PresentationViewModel) -> TimeInterval {
-        if case .loading = presentation {
-            // Synthetic Copy must reach the source app during the bounded capture window.
-            captureWindow
-        } else {
-            0
+struct PopupCaptureFocusState {
+    private var latestRequestID: UInt64 = 0
+    private var capturingRequestID: UInt64?
+    private var completedBeforePresentation: Set<UInt64> = []
+
+    mutating func receive(
+        requestID: UInt64,
+        isLoading: Bool
+    ) -> PopupCaptureFocusDecision? {
+        guard requestID >= latestRequestID,
+              requestID >= (completedBeforePresentation.max() ?? 0)
+        else {
+            return nil
         }
+
+        let captureAlreadyCompleted = completedBeforePresentation.remove(requestID) != nil
+        let beginsCapture = requestID > latestRequestID
+            && isLoading
+            && !captureAlreadyCompleted
+        if requestID > latestRequestID {
+            latestRequestID = requestID
+            capturingRequestID = beginsCapture ? requestID : nil
+            completedBeforePresentation = Set(
+                completedBeforePresentation.filter { $0 >= requestID }
+            )
+        }
+        if !isLoading, capturingRequestID == requestID {
+            capturingRequestID = nil
+        }
+
+        return PopupCaptureFocusDecision(
+            beginsCapture: beginsCapture,
+            shouldTakeKeyboardFocus: capturingRequestID != requestID
+        )
+    }
+
+    mutating func captureDidComplete(requestID: UInt64) -> Bool {
+        guard requestID >= latestRequestID else {
+            return false
+        }
+        guard requestID == latestRequestID else {
+            completedBeforePresentation.insert(requestID)
+            return false
+        }
+        guard capturingRequestID == requestID else {
+            return false
+        }
+        capturingRequestID = nil
+        return true
+    }
+
+    mutating func dismiss() {
+        capturingRequestID = nil
     }
 }
 
@@ -455,6 +523,14 @@ private extension PresentationViewModel {
             correctedText
         default:
             nil
+        }
+    }
+
+    var isLoading: Bool {
+        if case .loading = self {
+            true
+        } else {
+            false
         }
     }
 }
