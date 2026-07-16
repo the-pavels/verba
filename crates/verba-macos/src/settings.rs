@@ -17,7 +17,7 @@ const PROOFREAD_SHORTCUT_KEY: &str = "shortcuts.proofread";
 
 trait StringPreferences: Send + Sync {
     fn get(&self, key: &str) -> Option<String>;
-    fn set(&self, key: &str, value: &str);
+    fn set(&self, key: &str, value: Option<&str>);
 }
 
 struct UserDefaultsPreferences;
@@ -29,14 +29,33 @@ impl StringPreferences for UserDefaultsPreferences {
             .map(|value| value.to_string())
     }
 
-    fn set(&self, key: &str, value: &str) {
+    fn set(&self, key: &str, value: Option<&str>) {
         let defaults = NSUserDefaults::standardUserDefaults();
         let key = NSString::from_str(key);
-        let value = NSString::from_str(value);
-        unsafe {
-            defaults.setObject_forKey(Some(&value), &key);
+        if let Some(value) = value {
+            let value = NSString::from_str(value);
+            unsafe {
+                defaults.setObject_forKey(Some(&value), &key);
+            }
+        } else {
+            defaults.removeObjectForKey(&key);
         }
     }
+}
+
+fn set_and_verify(preferences: &dyn StringPreferences, key: &str, value: &str) -> bool {
+    let previous = preferences.get(key);
+    preferences.set(key, Some(value));
+    if preferences.get(key).as_deref() == Some(value) {
+        return true;
+    }
+
+    restore(preferences, key, previous.as_deref());
+    false
+}
+
+fn restore(preferences: &dyn StringPreferences, key: &str, value: Option<&str>) {
+    preferences.set(key, value);
 }
 
 pub struct MacOsTranslationSettingsStore {
@@ -72,9 +91,13 @@ impl TranslationSettingsStore for MacOsTranslationSettingsStore {
         &self,
         target_language: &LanguageIdentifier,
     ) -> Result<(), TranslationSettingsStoreError> {
-        self.preferences
-            .set(TARGET_LANGUAGE_KEY, target_language.as_str());
-        Ok(())
+        set_and_verify(
+            self.preferences.as_ref(),
+            TARGET_LANGUAGE_KEY,
+            target_language.as_str(),
+        )
+        .then_some(())
+        .ok_or(TranslationSettingsStoreError::Unavailable)
     }
 }
 
@@ -106,8 +129,13 @@ impl ProofreadingConsentStore for MacOsProofreadingConsentStore {
     }
 
     fn save_acknowledged(&self) -> Result<(), ProofreadingConsentStoreError> {
-        self.preferences.set(PROOFREADING_DISCLOSURE_KEY, "true");
-        Ok(())
+        set_and_verify(
+            self.preferences.as_ref(),
+            PROOFREADING_DISCLOSURE_KEY,
+            "true",
+        )
+        .then_some(())
+        .ok_or(ProofreadingConsentStoreError)
     }
 }
 
@@ -150,19 +178,36 @@ impl ShortcutSettingsStore for MacOsShortcutSettingsStore {
         &self,
         configuration: &ShortcutConfiguration,
     ) -> Result<(), ShortcutSettingsStoreError> {
-        self.preferences.set(
+        let previous_translate = self.preferences.get(TRANSLATE_SHORTCUT_KEY);
+        let previous_proofread = self.preferences.get(PROOFREAD_SHORTCUT_KEY);
+        let translate = encode_shortcut(
+            configuration.shortcut_for(verba_core::presentation::TextAction::Translate),
+        );
+        let proofread = encode_shortcut(
+            configuration.shortcut_for(verba_core::presentation::TextAction::Proofread),
+        );
+
+        self.preferences
+            .set(TRANSLATE_SHORTCUT_KEY, Some(&translate));
+        self.preferences
+            .set(PROOFREAD_SHORTCUT_KEY, Some(&proofread));
+        if self.preferences.get(TRANSLATE_SHORTCUT_KEY).as_deref() == Some(translate.as_str())
+            && self.preferences.get(PROOFREAD_SHORTCUT_KEY).as_deref() == Some(proofread.as_str())
+        {
+            return Ok(());
+        }
+
+        restore(
+            self.preferences.as_ref(),
             TRANSLATE_SHORTCUT_KEY,
-            &encode_shortcut(
-                configuration.shortcut_for(verba_core::presentation::TextAction::Translate),
-            ),
+            previous_translate.as_deref(),
         );
-        self.preferences.set(
+        restore(
+            self.preferences.as_ref(),
             PROOFREAD_SHORTCUT_KEY,
-            &encode_shortcut(
-                configuration.shortcut_for(verba_core::presentation::TextAction::Proofread),
-            ),
+            previous_proofread.as_deref(),
         );
-        Ok(())
+        Err(ShortcutSettingsStoreError)
     }
 }
 
@@ -249,6 +294,7 @@ mod tests {
     struct MemoryPreferences {
         values: Mutex<HashMap<String, String>>,
         writes: Mutex<Vec<(String, String)>>,
+        ignored_writes: Mutex<Vec<String>>,
     }
 
     impl StringPreferences for MemoryPreferences {
@@ -256,15 +302,24 @@ mod tests {
             self.values.lock().unwrap().get(key).cloned()
         }
 
-        fn set(&self, key: &str, value: &str) {
-            self.values
-                .lock()
-                .unwrap()
-                .insert(key.to_owned(), value.to_owned());
-            self.writes
-                .lock()
-                .unwrap()
-                .push((key.to_owned(), value.to_owned()));
+        fn set(&self, key: &str, value: Option<&str>) {
+            let mut ignored_writes = self.ignored_writes.lock().unwrap();
+            if let Some(index) = ignored_writes.iter().position(|ignored| ignored == key) {
+                ignored_writes.remove(index);
+                return;
+            }
+            drop(ignored_writes);
+
+            let mut values = self.values.lock().unwrap();
+            if let Some(value) = value {
+                values.insert(key.to_owned(), value.to_owned());
+                self.writes
+                    .lock()
+                    .unwrap()
+                    .push((key.to_owned(), value.to_owned()));
+            } else {
+                values.remove(key);
+            }
         }
     }
 
@@ -311,6 +366,31 @@ mod tests {
     }
 
     #[test]
+    fn target_language_save_fails_when_user_defaults_does_not_observe_the_write() {
+        let preferences = Arc::new(MemoryPreferences::default());
+        preferences
+            .values
+            .lock()
+            .unwrap()
+            .insert(TARGET_LANGUAGE_KEY.to_owned(), "en".to_owned());
+        preferences
+            .ignored_writes
+            .lock()
+            .unwrap()
+            .push(TARGET_LANGUAGE_KEY.to_owned());
+        let store = MacOsTranslationSettingsStore { preferences };
+
+        assert_eq!(
+            store.save_target_language(&LanguageIdentifier::new("de").unwrap()),
+            Err(TranslationSettingsStoreError::Unavailable)
+        );
+        assert_eq!(
+            store.load_target_language().unwrap(),
+            Some(LanguageIdentifier::new("en").unwrap())
+        );
+    }
+
+    #[test]
     fn loads_and_persists_the_non_secret_proofreading_acknowledgement() {
         let preferences = Arc::new(MemoryPreferences::default());
         let store = MacOsProofreadingConsentStore {
@@ -339,6 +419,28 @@ mod tests {
     }
 
     #[test]
+    fn consent_save_fails_when_user_defaults_does_not_observe_the_write() {
+        let preferences = Arc::new(MemoryPreferences::default());
+        preferences
+            .values
+            .lock()
+            .unwrap()
+            .insert(PROOFREADING_DISCLOSURE_KEY.to_owned(), "false".to_owned());
+        preferences
+            .ignored_writes
+            .lock()
+            .unwrap()
+            .push(PROOFREADING_DISCLOSURE_KEY.to_owned());
+        let store = MacOsProofreadingConsentStore { preferences };
+
+        assert_eq!(
+            store.save_acknowledged(),
+            Err(ProofreadingConsentStoreError)
+        );
+        assert!(!store.load_acknowledged().unwrap());
+    }
+
+    #[test]
     fn shortcut_settings_round_trip_and_invalid_values_fall_back() {
         let preferences = Arc::new(MemoryPreferences::default());
         let store = MacOsShortcutSettingsStore {
@@ -355,5 +457,43 @@ mod tests {
             "character:Q|1000".to_owned(),
         );
         assert_eq!(store.load().unwrap(), None);
+    }
+
+    #[test]
+    fn shortcut_readback_mismatch_restores_the_previous_configuration() {
+        let preferences = Arc::new(MemoryPreferences::default());
+        let store = MacOsShortcutSettingsStore {
+            preferences: preferences.clone(),
+        };
+        let current = ShortcutConfiguration::default();
+        store.save(&current).unwrap();
+
+        let replacement = current
+            .with_shortcut(
+                verba_core::presentation::TextAction::Translate,
+                Shortcut::new(
+                    ShortcutKey::character('L').unwrap(),
+                    ShortcutModifiers::new(false, true, true, false),
+                )
+                .unwrap(),
+            )
+            .unwrap()
+            .with_shortcut(
+                verba_core::presentation::TextAction::Proofread,
+                Shortcut::new(
+                    ShortcutKey::character('O').unwrap(),
+                    ShortcutModifiers::new(false, true, true, false),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+        preferences
+            .ignored_writes
+            .lock()
+            .unwrap()
+            .push(PROOFREAD_SHORTCUT_KEY.to_owned());
+
+        assert_eq!(store.save(&replacement), Err(ShortcutSettingsStoreError));
+        assert_eq!(store.load().unwrap(), Some(current));
     }
 }

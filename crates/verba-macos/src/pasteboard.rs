@@ -602,6 +602,9 @@ mod tests {
             written_items[1].dataForType(&png_type).unwrap().len(),
             large_data.len()
         );
+        unsafe {
+            let _: () = objc2::msg_send![&*pasteboard, releaseGlobally];
+        }
     }
 
     fn assert_round_trip(original: Vec<PasteboardItemSnapshot>) {
