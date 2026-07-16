@@ -123,3 +123,6 @@ fn validate_policy(policy: ProofreadingPolicy) -> Result<(), ProofreaderError> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod live_evaluation;

@@ -14,6 +14,7 @@ use futures::task::{ArcWake, waker_ref};
 use super::*;
 use crate::{
     presentation::{LanguagePair, ProofreadingPresentation, TranslationPresentation},
+    proofreading::ProofreadingPolicyViolation,
     testing::{FakeShortcutRegistry, FakeTextCapture},
 };
 
@@ -583,6 +584,30 @@ fn non_provider_processing_failures_have_exhaustive_recovery_actions() {
             "proofreading.invalid-output",
         ),
         (
+            TextAction::Proofread,
+            ProcessingFailure::ProofreadingPolicyViolation(
+                ProofreadingPolicyViolation::OuterWhitespace,
+            ),
+            RecoveryAction::Retry,
+            "proofreading.policy-violation.outer-whitespace",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::ProofreadingPolicyViolation(
+                ProofreadingPolicyViolation::LineStructure,
+            ),
+            RecoveryAction::Retry,
+            "proofreading.policy-violation.line-structure",
+        ),
+        (
+            TextAction::Proofread,
+            ProcessingFailure::ProofreadingPolicyViolation(
+                ProofreadingPolicyViolation::FormattingMarkers,
+            ),
+            RecoveryAction::Retry,
+            "proofreading.policy-violation.formatting-markers",
+        ),
+        (
             TextAction::Translate,
             ProcessingFailure::UnsupportedConfiguration,
             RecoveryAction::ChangeLanguage,
@@ -609,6 +634,14 @@ fn non_provider_processing_failures_have_exhaustive_recovery_actions() {
         (
             TextAction::Translate,
             ProcessingFailure::ProofreadingProvider(ProofreaderError::Failed),
+            RecoveryAction::Retry,
+            "translation.unexpected-failure-kind",
+        ),
+        (
+            TextAction::Translate,
+            ProcessingFailure::ProofreadingPolicyViolation(
+                ProofreadingPolicyViolation::OuterWhitespace,
+            ),
             RecoveryAction::Retry,
             "translation.unexpected-failure-kind",
         ),

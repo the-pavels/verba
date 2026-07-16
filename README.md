@@ -9,7 +9,7 @@ Verba lives in the macOS menu bar. Select text in any app, press a shortcut, and
 ## What Verba can do
 
 - **Translate text on your Mac.** Choose a target language and translate with Apple's built-in Translation framework.
-- **Proofread your writing.** Use your own OpenAI API key to correct spelling and grammar, with a short explanation of any changes.
+- **Proofread your writing.** Use your own OpenAI API key to request spelling and grammar corrections and review changes inline.
 - **Work across apps.** Use Verba in Mail, Notes, Safari, text editors, and other apps where you can select text.
 - **Stay out of the way.** Verba does not replace your text automatically or keep a history. You decide when to copy a result.
 

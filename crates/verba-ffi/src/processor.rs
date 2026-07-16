@@ -131,6 +131,9 @@ fn proofreading_processing_failure(failure: ProofreadingFailure) -> ProcessingFa
     match failure {
         ProofreadingFailure::Cancelled => ProcessingFailure::Cancelled,
         ProofreadingFailure::InvalidResult => ProcessingFailure::InvalidOutput,
+        ProofreadingFailure::PolicyViolation(violation) => {
+            ProcessingFailure::ProofreadingPolicyViolation(violation)
+        }
         ProofreadingFailure::ConsentRequired => ProcessingFailure::UnsupportedConfiguration,
         ProofreadingFailure::InputTooLong { .. } => ProcessingFailure::InputTooLong,
         ProofreadingFailure::Provider(error) => ProcessingFailure::ProofreadingProvider(error),
@@ -145,7 +148,8 @@ mod tests {
     use super::*;
     use crate::{NativeTranslationError, NativeTranslationRequest, NativeTranslationResponse};
     use verba_core::proofreading::{
-        ProofreaderError, ProofreaderResponse, ProofreadingCorrection, ProofreadingRequest,
+        ProofreaderError, ProofreaderResponse, ProofreadingCorrection, ProofreadingPolicyViolation,
+        ProofreadingRequest,
     };
     use verba_core::translation::{
         LanguageIdentifier, TranslationSettingsStore, TranslationSettingsStoreError,
@@ -333,6 +337,23 @@ mod tests {
     }
 
     #[test]
+    fn proofreading_rejects_policy_violations_before_presentation() {
+        let processor = test_processor(Arc::new(FakeProofreader::new(Ok(
+            ProofreaderResponse::Corrected(ProofreadingCorrection::new("This is wrong.")),
+        ))));
+
+        assert_eq!(
+            processor.proofread(
+                "  This are wrong.  ".to_owned(),
+                &CancellationToken::default()
+            ),
+            Err(ProcessingFailure::ProofreadingPolicyViolation(
+                ProofreadingPolicyViolation::OuterWhitespace
+            ))
+        );
+    }
+
+    #[test]
     fn unsupported_pairs_point_to_configuration() {
         assert_eq!(
             translation_processing_failure(TranslationFailure::UnsupportedPair {
@@ -393,6 +414,14 @@ mod tests {
             (
                 ProofreadingFailure::InvalidResult,
                 ProcessingFailure::InvalidOutput,
+            ),
+            (
+                ProofreadingFailure::PolicyViolation(
+                    ProofreadingPolicyViolation::FormattingMarkers,
+                ),
+                ProcessingFailure::ProofreadingPolicyViolation(
+                    ProofreadingPolicyViolation::FormattingMarkers,
+                ),
             ),
             (
                 ProofreadingFailure::ConsentRequired,

@@ -15,7 +15,10 @@ use crate::{
         ErrorPresentation, PresentationState, ProofreadingPresentation, RecoveryAction, TextAction,
         TranslationPresentation,
     },
-    proofreading::{ProofreaderError, ProofreadingConsentGate, ProofreadingConsentStoreError},
+    proofreading::{
+        ProofreaderError, ProofreadingConsentGate, ProofreadingConsentStoreError,
+        ProofreadingPolicyViolation,
+    },
     shortcut::{
         ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutRegistryError,
     },
@@ -68,6 +71,7 @@ pub enum ProcessingFailure {
     InputTooLong,
     SameLanguage,
     InvalidOutput,
+    ProofreadingPolicyViolation(ProofreadingPolicyViolation),
     UnsupportedConfiguration,
     ProofreadingProvider(ProofreaderError),
 }
@@ -700,6 +704,15 @@ fn processing_failure_presentation(
             RecoveryAction::Retry,
             "proofreading.invalid-output",
         ),
+        (TextAction::Proofread, ProcessingFailure::ProofreadingPolicyViolation(violation)) => {
+            proofreading_policy_violation(violation)
+        }
+        (TextAction::Translate, ProcessingFailure::ProofreadingPolicyViolation(_)) => (
+            "Translation failed",
+            "Try translating the selection again.",
+            RecoveryAction::Retry,
+            "translation.unexpected-failure-kind",
+        ),
         (TextAction::Translate, ProcessingFailure::UnsupportedConfiguration) => (
             "Language pair unavailable",
             "Choose a different target language, then try again.",
@@ -772,6 +785,28 @@ fn processing_failure_presentation(
         recovery,
         diagnostic_code: diagnostic_code.to_owned(),
     })
+}
+
+fn proofreading_policy_violation(
+    violation: ProofreadingPolicyViolation,
+) -> (&'static str, &'static str, RecoveryAction, &'static str) {
+    let diagnostic_code = match violation {
+        ProofreadingPolicyViolation::OuterWhitespace => {
+            "proofreading.policy-violation.outer-whitespace"
+        }
+        ProofreadingPolicyViolation::LineStructure => {
+            "proofreading.policy-violation.line-structure"
+        }
+        ProofreadingPolicyViolation::FormattingMarkers => {
+            "proofreading.policy-violation.formatting-markers"
+        }
+    };
+    (
+        "Proofreading result rejected",
+        "The result changed protected text formatting. Try proofreading again.",
+        RecoveryAction::Retry,
+        diagnostic_code,
+    )
 }
 
 fn proofreading_provider_failure(

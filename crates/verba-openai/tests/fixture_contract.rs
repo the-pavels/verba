@@ -13,7 +13,7 @@ use fixtures::{ExpectedOutcome, FIXTURES};
 use mock_server::{MockResponse, MockServer};
 
 #[test]
-fn preserves_curated_prompt_and_output_cases() {
+fn mocked_fixtures_verify_request_contract_and_response_decoding() {
     for fixture in FIXTURES {
         let response_payload = match fixture.expected {
             ExpectedOutcome::NoIssues => json!({

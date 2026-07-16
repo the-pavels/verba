@@ -4,7 +4,9 @@ mod client;
 mod mock_server;
 
 use serde_json::{Value, json};
-use verba_core::proofreading::{ProofreaderError, ProofreadingFailure, ProofreadingResult};
+use verba_core::proofreading::{
+    ProofreaderError, ProofreadingFailure, ProofreadingPolicyViolation, ProofreadingResult,
+};
 
 use client::run_proofreading;
 use mock_server::{MockResponse, MockServer};
@@ -114,6 +116,31 @@ fn maps_provider_http_errors_through_the_public_use_case() {
         assert_eq!(result, Err(ProofreadingFailure::Provider(expected)));
         assert_eq!(request.path, "/v1/responses");
     }
+}
+
+#[test]
+fn rejects_a_schema_valid_response_that_violates_proofreading_policy() {
+    let server = MockServer::start(MockResponse::json(
+        200,
+        completed_response(json!({
+            "outcome": "corrected",
+            "corrected_text": "This is wrong."
+        })),
+    ));
+
+    let result = run_proofreading(
+        server.base_url(),
+        TEST_MODEL,
+        TEST_API_KEY,
+        "  This are wrong.  ",
+    );
+
+    assert_eq!(
+        result,
+        Err(ProofreadingFailure::PolicyViolation(
+            ProofreadingPolicyViolation::OuterWhitespace
+        ))
+    );
 }
 
 fn completed_response(payload: Value) -> Value {

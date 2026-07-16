@@ -93,6 +93,96 @@ fn returns_a_validated_correction_and_records_the_strict_request() {
 }
 
 #[test]
+fn mechanical_policy_validation_preserves_unicode_whitespace_lines_and_markers() {
+    let original = "\u{a0}\u{2003}> **This are wrong.**\r\n\r\n  1. Keep `code`.\u{202f}";
+    let corrected = "\u{a0}\u{2003}> **This is wrong.**\r\n\r\n  1. Keep `code`.\u{202f}";
+
+    let validation = evaluate_proofreading_policy(original, corrected);
+
+    assert!(validation.outer_whitespace_preserved());
+    assert!(validation.line_structure_preserved());
+    assert!(validation.formatting_markers_preserved());
+    assert_eq!(validation.first_violation(), None);
+}
+
+#[test]
+fn mechanical_policy_validation_reports_each_enforced_invariant() {
+    let cases = [
+        (
+            "\u{a0}This are wrong.\u{2003}",
+            "This is wrong.\u{2003}",
+            ProofreadingPolicyViolation::OuterWhitespace,
+        ),
+        (
+            "First are wrong.\r\n\r\nSecond stays.",
+            "First is wrong.\n\nSecond stays.",
+            ProofreadingPolicyViolation::LineStructure,
+        ),
+        (
+            "First are wrong.\n\nSecond stays.",
+            "First is wrong.\nSecond stays.\nExtra text.",
+            ProofreadingPolicyViolation::LineStructure,
+        ),
+        (
+            "- **This are wrong.**",
+            "* This is wrong.",
+            ProofreadingPolicyViolation::FormattingMarkers,
+        ),
+        (
+            "> Keep `code` here.",
+            "Keep code here.",
+            ProofreadingPolicyViolation::FormattingMarkers,
+        ),
+        (
+            "```text\nThis are wrong.\n```",
+            "````text\nThis is wrong.\n````",
+            ProofreadingPolicyViolation::FormattingMarkers,
+        ),
+    ];
+
+    for (original, corrected, expected) in cases {
+        assert_eq!(
+            evaluate_proofreading_policy(original, corrected).first_violation(),
+            Some(expected)
+        );
+    }
+}
+
+#[test]
+fn rejects_schema_valid_corrections_that_violate_mechanical_policy() {
+    for (original, corrected, expected) in [
+        (
+            "  This are wrong.  ",
+            "This is wrong.",
+            ProofreadingPolicyViolation::OuterWhitespace,
+        ),
+        (
+            "First are wrong.\n\nSecond stays.",
+            "First is wrong.\nSecond stays.",
+            ProofreadingPolicyViolation::LineStructure,
+        ),
+        (
+            "- This item are wrong.",
+            "This item is wrong.",
+            ProofreadingPolicyViolation::FormattingMarkers,
+        ),
+    ] {
+        let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::Corrected(
+            ProofreadingCorrection::new(corrected),
+        ))));
+
+        assert_eq!(
+            block_on(ProofreadText::new(proofreader).execute(
+                original,
+                ProofreadingConsent::Granted,
+                &CancellationToken::default(),
+            )),
+            Err(ProofreadingFailure::PolicyViolation(expected))
+        );
+    }
+}
+
+#[test]
 fn keeps_no_issues_separate_from_corrected_text() {
     let proofreader = Arc::new(FakeProofreader::new(Ok(ProofreaderResponse::NoIssues)));
     let use_case = ProofreadText::new(proofreader);

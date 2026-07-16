@@ -31,6 +31,10 @@ Proofreading sends the selected text to OpenAI under the user's own API account.
 
 Verba rejects redirects, requires HTTPS for production requests, and applies finite connection and request timeouts. It does not log request bodies, response bodies, authorization headers, selected text, corrected text, or API keys.
 
+OpenAI is instructed to correct spelling and grammar only and to preserve language, meaning, tone, whitespace, line structure, and formatting. Language, meaning, tone, and correction scope are model behavior evaluated against a versioned release corpus, not guarantees that software can prove. Before displaying a correction, Verba mechanically rejects changes to exact leading and trailing Unicode whitespace, line endings, blank-line positions, and selected Markdown-style list, blockquote, code, strong-emphasis, and strikethrough markers. Other formatting, including rich-text attributes that are not present in the captured plain text, cannot be preserved or validated.
+
+The paid live-model release evaluator is opt-in and is not part of the installed app. Its report contains only stable synthetic case identifiers, pass/fail outcomes, invariant results, latency, token counts, and calculated cost. It excludes corpus text, corrected text, API keys, and provider response bodies.
+
 ## Launch at login
 
 Launch at login is off by default. If the user enables **Launch Verba at login** in Settings, Verba registers its main application with macOS using `SMAppService.mainApp`. macOS owns the registration and any required approval in **System Settings > General > Login Items**. Verba does not install a separate login helper or mirror this state in its preferences.
@@ -96,6 +100,7 @@ The commands can report that no matching item or domain exists when cleanup was 
 - Accessibility permission is required for cross-application selection capture. Some applications or protected fields may prevent capture.
 - Translation availability depends on Apple's supported languages and any required language-resource download.
 - Proofreading requires network access, a valid OpenAI API key, available API quota, and OpenAI service availability.
+- Proofreading language, meaning, tone, and spelling/grammar scope are evaluated best effort. Verba rejects detected changes to the mechanically protected plain-text formatting described above, but it cannot prove every semantic or formatting property of model output.
 - Launch at login and periodic update checks are optional and off by default. Silent automatic update installation is disabled.
 - Verba does not replace selected text automatically, keep history, or synchronize settings.
 

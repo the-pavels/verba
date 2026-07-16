@@ -5,6 +5,12 @@ use std::sync::{
 
 use crate::coordinator::CancellationToken;
 
+mod validation;
+
+pub use validation::{
+    ProofreadingPolicyValidation, ProofreadingPolicyViolation, evaluate_proofreading_policy,
+};
+
 pub const MAX_PROOFREADING_CHARACTERS: usize = 10_000;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -202,6 +208,7 @@ pub enum ProofreadingFailure {
     ConsentRequired,
     Cancelled,
     InvalidResult,
+    PolicyViolation(ProofreadingPolicyViolation),
     Provider(ProofreaderError),
 }
 
@@ -272,6 +279,13 @@ impl ProofreadText {
                     || correction.corrected_text == request.text
                 {
                     return Err(ProofreadingFailure::InvalidResult);
+                }
+
+                if let Some(violation) =
+                    evaluate_proofreading_policy(request.text(), correction.corrected_text())
+                        .first_violation()
+                {
+                    return Err(ProofreadingFailure::PolicyViolation(violation));
                 }
 
                 Ok(ProofreadingResult::Corrected(correction))
