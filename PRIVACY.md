@@ -21,7 +21,9 @@ Selection capture is a bounded clipboard transaction:
 2. It sends Copy and waits up to 500 milliseconds for plain text.
 3. It restores the snapshot only when no other process changed the pasteboard in the meantime.
 
-If another clipboard change wins the race, Verba cancels restoration instead of overwriting newer content. Empty selections, unsupported content, and secure text fields are rejected. The selected text and result exist transiently in process memory while the action runs.
+If another clipboard change wins the race, Verba cancels restoration instead of overwriting newer content. Before clearing the clipboard for restoration, Verba builds every replacement item in memory. After writing, it verifies the change count, item count, and original representation types. It retries once only when the same clipboard ownership is still current and the failed write left it empty.
+
+macOS does not provide an atomic multi-item clipboard replacement operation: clearing and writing are separate calls. A rare system write failure after the clear can therefore leave the clipboard empty or partially restored. Verba reports the failure and does not retry over a newer clipboard value. Empty selections, unsupported content, secure text fields, and fields whose security cannot be verified are rejected. The selected text and result exist transiently in process memory while the action runs.
 
 ## Proofreading and OpenAI
 
