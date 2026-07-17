@@ -7,14 +7,7 @@ derived_data_path="${VERBA_DERIVED_DATA_PATH:-${TMPDIR:-/tmp}/verba-check-derive
 
 cd "${repo_root}"
 
-echo "Checking Rust formatting"
-cargo fmt --all -- --check
-
-echo "Linting Rust"
-cargo clippy --locked --workspace --all-targets -- -D warnings
-
-echo "Testing Rust"
-cargo test --locked --workspace
+./scripts/portable-check.sh
 
 echo "Testing the macOS host"
 xcodebuild \

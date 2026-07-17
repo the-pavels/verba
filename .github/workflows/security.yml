@@ -1,0 +1,77 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - rust-toolchain.toml
+      - crates/**/Cargo.toml
+      - tools/**/Cargo.toml
+      - deny.toml
+      - macos/Verba.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+      - third_party/**
+      - THIRD_PARTY_NOTICES.md
+      - scripts/generate-third-party-notices.sh
+      - scripts/security-check.sh
+      - .github/workflows/security.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - rust-toolchain.toml
+      - crates/**/Cargo.toml
+      - tools/**/Cargo.toml
+      - deny.toml
+      - macos/Verba.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+      - third_party/**
+      - THIRD_PARTY_NOTICES.md
+      - scripts/generate-third-party-notices.sh
+      - scripts/security-check.sh
+      - .github/workflows/security.yml
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  dependencies:
+    name: Dependency advisories, policy, and notices
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Cache Cargo downloads
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: security-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          restore-keys: |
+            security-cargo-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Install pinned security tools
+        run: |
+          cargo install cargo-audit --version 0.22.2 --locked
+          cargo install cargo-deny --version 0.20.2 --locked
+
+      - name: Run dependency security gate
+        run: ./scripts/security-check.sh
