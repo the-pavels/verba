@@ -285,6 +285,11 @@ impl ShortcutCoordinator {
         self.inner.cancel_active(true)
     }
 
+    /// Translates already-captured text again using the current translation settings.
+    pub fn retranslate(&self, captured: CapturedText) {
+        self.inner.retranslate(captured);
+    }
+
     pub fn resolve_proofreading_disclosure(
         &self,
         accepted: bool,
@@ -317,53 +322,83 @@ struct CoordinatorInner {
 
 impl CoordinatorInner {
     fn start(self: &Arc<Self>, action: TextAction) {
-        let request = {
-            let _presentation_guard = self
-                .presentation_order
-                .lock()
-                .expect("presentation order lock poisoned");
-            let mut active = self.active.lock().expect("active request lock poisoned");
+        let Some(request) = self.begin_request(action, RequestInput::Capture) else {
+            return;
+        };
+        self.spawn_worker(request, Self::run);
+    }
 
-            if active
+    fn retranslate(self: &Arc<Self>, captured: CapturedText) {
+        let request = self
+            .begin_request(TextAction::Translate, RequestInput::Captured)
+            .expect("captured requests always replace active work");
+        self.spawn_worker(request, move |coordinator, request| {
+            coordinator.process_captured(request, captured);
+        });
+    }
+
+    fn begin_request(&self, action: TextAction, input: RequestInput) -> Option<ActiveRequest> {
+        let _presentation_guard = self
+            .presentation_order
+            .lock()
+            .expect("presentation order lock poisoned");
+        let mut active = self.active.lock().expect("active request lock poisoned");
+
+        if input == RequestInput::Capture
+            && active
                 .as_ref()
                 .is_some_and(|request| request.action == action)
-            {
-                return;
-            }
+        {
+            return None;
+        }
 
-            if let Some(request) = active.take() {
-                request.cancellation.cancel();
-                self.metrics.record(WorkflowMilestone::RequestCancelled {
-                    request_id: request.id,
-                });
-            }
-
-            let request = ActiveRequest {
-                id: RequestId(self.next_request_id.fetch_add(1, Ordering::Relaxed)),
-                action,
-                cancellation: CancellationToken::default(),
-                pending_text: Arc::new(Mutex::new(None)),
-            };
-            *active = Some(request.clone());
-            drop(active);
-
-            self.metrics.record(WorkflowMilestone::RequestStarted {
+        if let Some(request) = active.take() {
+            request.cancellation.cancel();
+            self.metrics.record(WorkflowMilestone::RequestCancelled {
                 request_id: request.id,
-                action,
             });
+        }
 
-            self.presenter.present(PresentationUpdate {
-                request_id: request.id,
-                state: PresentationState::Loading { action },
-            });
-            request
+        let request = ActiveRequest {
+            id: RequestId(self.next_request_id.fetch_add(1, Ordering::Relaxed)),
+            action,
+            cancellation: CancellationToken::default(),
+            pending_text: Arc::new(Mutex::new(None)),
         };
+        *active = Some(request.clone());
+        drop(active);
 
+        self.metrics.record(WorkflowMilestone::RequestStarted {
+            request_id: request.id,
+            action,
+        });
+
+        if input == RequestInput::Captured {
+            // No capture runs for a retranslation; report the capture phase as
+            // finished before the loading state so the popup keeps keyboard focus.
+            self.presenter.capture_completed(request.id);
+            self.metrics.record(WorkflowMilestone::CaptureCompleted {
+                request_id: request.id,
+            });
+        }
+
+        self.presenter.present(PresentationUpdate {
+            request_id: request.id,
+            state: PresentationState::Loading { action },
+        });
+        Some(request)
+    }
+
+    fn spawn_worker<F>(self: &Arc<Self>, request: ActiveRequest, work: F)
+    where
+        F: FnOnce(Arc<Self>, ActiveRequest) + Send + 'static,
+    {
+        let action = request.action;
         let coordinator = Arc::clone(self);
         let worker_request = request.clone();
         if thread::Builder::new()
             .name("verba-action".to_owned())
-            .spawn(move || coordinator.run(worker_request))
+            .spawn(move || work(coordinator, worker_request))
             .is_err()
         {
             self.complete(
@@ -601,6 +636,12 @@ struct ActiveRequest {
     action: TextAction,
     cancellation: CancellationToken,
     pending_text: Arc<Mutex<Option<CapturedText>>>,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum RequestInput {
+    Capture,
+    Captured,
 }
 
 struct AlwaysGrantedProofreadingConsent;

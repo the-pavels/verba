@@ -5,6 +5,7 @@ use std::{
 };
 
 use verba_core::{
+    capture::CapturedText,
     coordinator::{PresentationUpdate, ResultPresenter, ShortcutCoordinator},
     proofreading::ProofreadingConsentPreferences,
     shortcut::{
@@ -147,6 +148,14 @@ impl ApplicationRuntime {
 
     pub fn retry(&self, action: PresentationAction) {
         self.coordinator.on_shortcut(action.into());
+    }
+
+    pub fn retranslate(&self, text: String) -> bool {
+        let Ok(captured) = CapturedText::new(text) else {
+            return false;
+        };
+        self.coordinator.retranslate(captured);
+        true
     }
 
     pub fn acknowledge_proofreading_disclosure(&self) -> Result<bool, ProofreadingDisclosureError> {

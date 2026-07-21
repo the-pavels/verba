@@ -297,6 +297,16 @@ final class AccessibilityReadinessTests: XCTestCase {
         )
     }
 
+    func testMenuSelectionDoesNotCountAsAClickAway() {
+        XCTAssertFalse(
+            PopupClickAwayPolicy.shouldDismiss(
+                clickLocation: NSPoint(x: 50, y: 50),
+                popupFrame: NSRect(x: 100, y: 200, width: 420, height: 300),
+                menuWasTracking: true
+            )
+        )
+    }
+
     func testFocusRestorationIsWeakAndOneShot() {
         let restorer = PopupFocusRestorer<FocusOwner>()
         let popup = FocusOwner()

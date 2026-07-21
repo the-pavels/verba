@@ -67,17 +67,20 @@ final class TargetLanguageSettingsController: ObservableObject {
         isLoading = false
     }
 
-    func select(_ identifier: String) {
+    @discardableResult
+    func select(_ identifier: String) -> Bool {
         guard options.contains(where: { $0.id == identifier }) else {
-            return
+            return false
         }
 
         do {
             try preferences.setTargetLanguage(identifier)
             selectedIdentifier = identifier
             errorMessage = nil
+            return true
         } catch {
             errorMessage = LocalizedCopy.text("The target language couldn’t be saved.")
+            return false
         }
     }
 

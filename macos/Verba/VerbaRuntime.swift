@@ -36,6 +36,14 @@ final class VerbaRuntime {
             popupController.onRetry = { [weak application] action in
                 application?.retry(action: action)
             }
+            popupController.onTargetLanguageChanged = { [weak application] originalText in
+                guard let application else {
+                    return
+                }
+                if !application.retranslate(text: originalText) {
+                    application.retry(action: .translate)
+                }
+            }
         } catch let error as ApplicationRuntimeError {
             application = nil
             switch error {

@@ -33,7 +33,7 @@ final class TargetLanguageSettingsControllerTests: XCTestCase {
         )
         await controller.load()
 
-        controller.select("fr")
+        XCTAssertTrue(controller.select("fr"))
 
         XCTAssertEqual(controller.selectedIdentifier, "fr")
         XCTAssertEqual(preferences.selections, ["fr"])
@@ -51,10 +51,79 @@ final class TargetLanguageSettingsControllerTests: XCTestCase {
         )
         await controller.load()
 
-        controller.select("fr")
+        XCTAssertFalse(controller.select("fr"))
 
         XCTAssertEqual(controller.selectedIdentifier, "en")
         XCTAssertNotNil(controller.errorMessage)
+    }
+
+    func testPopupSelectionPersistsAndRequestsARetranslation() async {
+        let preferences = FakeTargetLanguagePreferences(selected: "en")
+        let controller = TargetLanguageSettingsController(
+            preferences: preferences,
+            languages: FakeSupportedLanguages(identifiers: ["en", "fr"]),
+            locale: Locale(identifier: "en")
+        )
+        await controller.load()
+        let popup = PopupController(
+            translationSessions: SystemTranslationSessionProvider()
+        )
+        popup.targetLanguageSettings = controller
+        var retranslatedTexts: [String] = []
+        popup.onTargetLanguageChanged = { retranslatedTexts.append($0) }
+
+        popup.selectTargetLanguage("fr", originalText: "Bonjour")
+
+        XCTAssertEqual(controller.selectedIdentifier, "fr")
+        XCTAssertEqual(preferences.selections, ["fr"])
+        XCTAssertEqual(retranslatedTexts, ["Bonjour"])
+    }
+
+    func testPopupSelectionIgnoresTheCurrentAndUnknownLanguages() async {
+        let preferences = FakeTargetLanguagePreferences(selected: "en")
+        let controller = TargetLanguageSettingsController(
+            preferences: preferences,
+            languages: FakeSupportedLanguages(identifiers: ["en", "fr"]),
+            locale: Locale(identifier: "en")
+        )
+        await controller.load()
+        let popup = PopupController(
+            translationSessions: SystemTranslationSessionProvider()
+        )
+        popup.targetLanguageSettings = controller
+        var retranslations = 0
+        popup.onTargetLanguageChanged = { _ in retranslations += 1 }
+
+        popup.selectTargetLanguage("en", originalText: "Hello")
+        popup.selectTargetLanguage("xx", originalText: "Hello")
+
+        XCTAssertEqual(controller.selectedIdentifier, "en")
+        XCTAssertEqual(preferences.selections, [])
+        XCTAssertEqual(retranslations, 0)
+    }
+
+    func testPopupSelectionDoesNotRetranslateWhenPersistenceFails() async {
+        let preferences = FakeTargetLanguagePreferences(
+            selected: "en",
+            selectionError: TestFailure()
+        )
+        let controller = TargetLanguageSettingsController(
+            preferences: preferences,
+            languages: FakeSupportedLanguages(identifiers: ["en", "fr"]),
+            locale: Locale(identifier: "en")
+        )
+        await controller.load()
+        let popup = PopupController(
+            translationSessions: SystemTranslationSessionProvider()
+        )
+        popup.targetLanguageSettings = controller
+        var retranslations = 0
+        popup.onTargetLanguageChanged = { _ in retranslations += 1 }
+
+        popup.selectTargetLanguage("fr", originalText: "Bonjour")
+
+        XCTAssertEqual(controller.selectedIdentifier, "en")
+        XCTAssertEqual(retranslations, 0)
     }
 }
 

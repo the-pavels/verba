@@ -152,6 +152,7 @@
 "That shortcut is already assigned to another Verba action." = "That shortcut is already assigned to another Verba action.";
 "That shortcut is already used by another app. Your previous shortcut is still active." = "That shortcut is already used by another app. Your previous shortcut is still active.";
 "That shortcut is reserved by macOS. Choose another combination." = "That shortcut is reserved by macOS. Choose another combination.";
+"Target language" = "Target language";
 "Target languages are unavailable. Try again." = "Target languages are unavailable. Try again.";
 "The clipboard changed before capture finished. Try again." = "The clipboard changed before capture finished. Try again.";
 "The connection to OpenAI timed out. Try again." = "The connection to OpenAI timed out. Try again.";
@@ -166,7 +167,9 @@
 "Translate" = "Translate";
 "Translate Selected Text" = "Translate Selected Text";
 "Translate shortcut" = "Translate shortcut";
+"Translate into a different language" = "Translate into a different language";
 "Translate to" = "Translate to";
+"Translated from %@" = "Translated from %@";
 "Translating selected text..." = "Translating selected text...";
 "Translation" = "Translation";
 "Translation failed" = "Translation failed";

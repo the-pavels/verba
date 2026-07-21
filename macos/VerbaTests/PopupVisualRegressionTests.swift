@@ -5,13 +5,21 @@ import XCTest
 
 @MainActor
 final class PopupVisualRegressionTests: XCTestCase {
-    func testTranslationPopupMatchesBaseline() throws {
+    func testTranslationPopupMatchesBaseline() async throws {
+        let targetLanguages = TargetLanguageSettingsController(
+            preferences: SnapshotTargetLanguagePreferences(),
+            languages: SnapshotSupportedLanguages(),
+            locale: Locale(identifier: "en")
+        )
+        await targetLanguages.load()
+
         try assertSnapshot(
             .translation(
                 originalText: "Guten Morgen! Können Sie mir bitte helfen?",
                 languagePair: LanguagePairViewModel(source: "de", target: "en"),
                 translatedText: "Good morning! Could you please help me?"
             ),
+            targetLanguages: targetLanguages,
             named: "translation-light"
         )
     }
@@ -58,6 +66,7 @@ final class PopupVisualRegressionTests: XCTestCase {
 
     private func assertSnapshot(
         _ presentation: PresentationViewModel,
+        targetLanguages: TargetLanguageSettingsController? = nil,
         named name: String,
         file: StaticString = #filePath,
         line: UInt = #line
@@ -68,7 +77,8 @@ final class PopupVisualRegressionTests: XCTestCase {
             copyText: { _ in },
             continueProofreading: {},
             cancelProofreading: {},
-            recover: { _, _ in }
+            recover: { _, _ in },
+            targetLanguages: targetLanguages
         )
         try assertSnapshot(content, size: size, named: name, file: file, line: line)
     }
@@ -241,4 +251,20 @@ final class PopupVisualRegressionTests: XCTestCase {
 private struct SnapshotComparison {
     let changedPixelRatio: Double
     let meanChannelError: Double
+}
+
+@MainActor
+private final class SnapshotTargetLanguagePreferences: TargetLanguagePreferenceManaging {
+    func configureSupportedTargetLanguages(_ identifiers: [String]) throws -> String {
+        "en"
+    }
+
+    func setTargetLanguage(_ identifier: String) throws {}
+}
+
+@MainActor
+private struct SnapshotSupportedLanguages: SupportedTranslationLanguagesProviding {
+    func supportedLanguages() async -> [Locale.Language] {
+        ["en", "fr", "zh-Hant"].map(Locale.Language.init(identifier:))
+    }
 }

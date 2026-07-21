@@ -508,6 +508,117 @@ fn explicit_cancellation_hides_loading_and_ignores_late_work() {
 }
 
 #[test]
+fn retranslate_uses_the_displayed_translation_text() {
+    let capture = Arc::new(FakeTextCapture::new(captured("Hallo")));
+    let processor = Arc::new(QueueProcessor::new([Ok(translation()), Ok(translation())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let coordinator =
+        ShortcutCoordinator::new(capture.clone(), processor.clone(), presenter.clone());
+
+    coordinator.on_shortcut(TextAction::Translate);
+    presenter.wait_for(2);
+
+    coordinator.retranslate(captured("Guten Tag").unwrap());
+
+    let updates = presenter.wait_for(4);
+    assert_eq!(
+        updates[2],
+        PresentationUpdate {
+            request_id: RequestId(2),
+            state: PresentationState::Loading {
+                action: TextAction::Translate,
+            },
+        }
+    );
+    assert_eq!(updates[3].state, translation_state());
+    assert_eq!(capture.call_count(), 1);
+    assert_eq!(presenter.capture_ids(), vec![RequestId(1), RequestId(2)]);
+    assert_eq!(
+        processor.requests(),
+        vec![
+            ProcessingRequest {
+                request_id: RequestId(1),
+                action: TextAction::Translate,
+                text: CapturedText::new("Hallo").unwrap(),
+            },
+            ProcessingRequest {
+                request_id: RequestId(2),
+                action: TextAction::Translate,
+                text: CapturedText::new("Guten Tag").unwrap(),
+            },
+        ]
+    );
+}
+
+#[test]
+fn retranslate_processes_supplied_text_without_capturing() {
+    let capture = Arc::new(FakeTextCapture::new(captured("Text")));
+    let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let coordinator =
+        ShortcutCoordinator::new(capture.clone(), processor.clone(), presenter.clone());
+
+    coordinator.retranslate(captured("Displayed text").unwrap());
+
+    let updates = presenter.wait_for(2);
+    assert_eq!(
+        updates[0].state,
+        PresentationState::Loading {
+            action: TextAction::Translate
+        }
+    );
+    assert_eq!(updates[1].state, translation_state());
+    assert_eq!(capture.call_count(), 0);
+    assert_eq!(presenter.capture_ids(), vec![RequestId(1)]);
+    assert_eq!(
+        processor.requests()[0].text,
+        captured("Displayed text").unwrap()
+    );
+}
+
+#[test]
+fn retranslate_cancels_an_active_request_and_reports_completed_capture() {
+    let capture = Arc::new(BlockingCapture::new());
+    let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let metrics = Arc::new(RecordingMetrics::default());
+    let coordinator = ShortcutCoordinator::with_metrics(
+        capture.clone(),
+        processor.clone(),
+        presenter.clone(),
+        metrics.clone(),
+    );
+    coordinator.on_shortcut(TextAction::Translate);
+    capture.wait_until_started();
+    let stale_request = coordinator.inner.active.lock().unwrap().clone().unwrap();
+
+    coordinator.retranslate(captured("Hallo").unwrap());
+    assert!(stale_request.cancellation.is_cancelled());
+
+    let updates = presenter.wait_for(3);
+    assert_eq!(
+        updates[1],
+        PresentationUpdate {
+            request_id: RequestId(2),
+            state: PresentationState::Loading {
+                action: TextAction::Translate,
+            },
+        }
+    );
+    assert_eq!(updates[2].request_id, RequestId(2));
+    assert_eq!(updates[2].state, translation_state());
+    let milestones = metrics.milestones();
+    assert!(milestones.contains(&WorkflowMilestone::RequestCancelled {
+        request_id: RequestId(1),
+    }));
+    assert!(milestones.contains(&WorkflowMilestone::CaptureCompleted {
+        request_id: RequestId(2),
+    }));
+
+    capture.release();
+}
+
+#[test]
 fn cancellation_wakes_pending_async_work() {
     #[derive(Default)]
     struct WakeCounter(AtomicUsize);

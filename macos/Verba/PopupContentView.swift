@@ -8,6 +8,8 @@ struct PopupContentView: View {
     let continueProofreading: () -> Void
     let cancelProofreading: () -> Void
     let recover: (RecoveryActionViewModel, PresentationAction?) -> Void
+    var targetLanguages: TargetLanguageSettingsController?
+    var selectTargetLanguage: (String, String) -> Void = { _, _ in }
 
     var body: some View {
         content
@@ -89,7 +91,11 @@ struct PopupContentView: View {
                 originalText: originalText,
                 languagePair: languagePair,
                 translatedText: translatedText,
-                copyText: copyText
+                copyText: copyText,
+                targetLanguages: targetLanguages,
+                selectTargetLanguage: { identifier in
+                    selectTargetLanguage(identifier, originalText)
+                }
             )
         case let .proofreading(originalText, correctedText):
             ProofreadingResultView(

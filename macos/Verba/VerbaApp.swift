@@ -62,6 +62,7 @@ struct VerbaApp: App {
             accessibilityPermission: accessibilityPermission
         )
         let targetLanguageSettings = TargetLanguageSettingsController(preferences: runtime)
+        popupController.targetLanguageSettings = targetLanguageSettings
         let apiKeySettings = ApiKeySettingsController(settings: runtime)
         let shortcutSettings = ShortcutSettingsController(settings: runtime)
         _targetLanguageSettings = StateObject(

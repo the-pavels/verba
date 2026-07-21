@@ -14,6 +14,8 @@ final class PopupController {
     private let pasteboardWriter: PasteboardWriter
     private let windowFocusRestorer = PopupFocusRestorer<NSWindow>()
     private var clickMonitors: [ClickMonitor] = []
+    private var menuTrackingMonitors: [NotificationMonitor] = []
+    private var menuTrackingDepth = 0
     private var copyableText: String?
     private var captureFocusState = PopupCaptureFocusState()
     private var sourceApplication: NSRunningApplication?
@@ -23,6 +25,8 @@ final class PopupController {
     var onRetry: ((PresentationAction) -> Void)?
     var onGrantAccessibility: (() -> Void)?
     var onDiagnosticCode: ((String) -> Void)?
+    var onTargetLanguageChanged: ((String) -> Void)?
+    var targetLanguageSettings: TargetLanguageSettingsController?
 
     init(
         translationSessions: SystemTranslationSessionProvider,
@@ -38,6 +42,8 @@ final class PopupController {
                 continueProofreading: {},
                 cancelProofreading: {},
                 recover: { _, _ in },
+                targetLanguages: nil,
+                selectTargetLanguage: { _, _ in },
                 translationSessions: translationSessions
             )
         )
@@ -93,6 +99,10 @@ final class PopupController {
             },
             recover: { [weak self] recovery, action in
                 self?.perform(recovery.command(for: action))
+            },
+            targetLanguages: targetLanguageSettings,
+            selectTargetLanguage: { [weak self] identifier, originalText in
+                self?.selectTargetLanguage(identifier, originalText: originalText)
             },
             translationSessions: hostingController.rootView.translationSessions
         )
@@ -249,10 +259,21 @@ final class PopupController {
         dismiss()
     }
 
+    func selectTargetLanguage(_ identifier: String, originalText: String) {
+        guard let targetLanguageSettings,
+              identifier != targetLanguageSettings.selectedIdentifier,
+              targetLanguageSettings.select(identifier)
+        else {
+            return
+        }
+        onTargetLanguageChanged?(originalText)
+    }
+
     private func startClickAwayMonitoring() {
         guard clickMonitors.isEmpty else {
             return
         }
+        startMenuTrackingMonitoring()
 
         if let localMonitor = NSEvent.addLocalMonitorForEvents(
             matching: Self.clickEventMask,
@@ -260,12 +281,16 @@ final class PopupController {
                 let screenLocation = event.window?.convertPoint(
                     toScreen: event.locationInWindow
                 ) ?? NSEvent.mouseLocation
+                let menuWasTracking = MainActor.assumeIsolated {
+                    (self?.menuTrackingDepth ?? 0) > 0
+                }
 
                 Task { @MainActor [weak self] in
                     guard let self,
                           PopupClickAwayPolicy.shouldDismiss(
                               clickLocation: screenLocation,
-                              popupFrame: self.panel.frame
+                              popupFrame: self.panel.frame,
+                              menuWasTracking: menuWasTracking
                           )
                     else {
                         return
@@ -292,6 +317,41 @@ final class PopupController {
 
     private func stopClickAwayMonitoring() {
         clickMonitors.removeAll()
+        menuTrackingMonitors.removeAll()
+        menuTrackingDepth = 0
+    }
+
+    private func startMenuTrackingMonitoring() {
+        guard menuTrackingMonitors.isEmpty else {
+            return
+        }
+
+        let center = NotificationCenter.default
+        let begin = center.addObserver(
+            forName: NSMenu.didBeginTrackingNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.menuTrackingDepth += 1
+            }
+        }
+        let end = center.addObserver(
+            forName: NSMenu.didEndTrackingNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else {
+                    return
+                }
+                self.menuTrackingDepth = max(0, self.menuTrackingDepth - 1)
+            }
+        }
+        menuTrackingMonitors = [
+            NotificationMonitor(center: center, token: begin),
+            NotificationMonitor(center: center, token: end),
+        ]
     }
 
     private static var preferredTextScale: CGFloat {
@@ -314,6 +374,20 @@ private final class ClickMonitor: @unchecked Sendable {
     }
 }
 
+private final class NotificationMonitor: @unchecked Sendable {
+    private let center: NotificationCenter
+    private let token: NSObjectProtocol
+
+    init(center: NotificationCenter, token: NSObjectProtocol) {
+        self.center = center
+        self.token = token
+    }
+
+    deinit {
+        center.removeObserver(token)
+    }
+}
+
 private struct TranslationPopupHost: View {
     let presentation: PresentationViewModel
     let contentSize: NSSize
@@ -321,6 +395,8 @@ private struct TranslationPopupHost: View {
     let continueProofreading: () -> Void
     let cancelProofreading: () -> Void
     let recover: (RecoveryActionViewModel, PresentationAction?) -> Void
+    let targetLanguages: TargetLanguageSettingsController?
+    let selectTargetLanguage: (String, String) -> Void
     @ObservedObject var translationSessions: SystemTranslationSessionProvider
 
     var body: some View {
@@ -329,7 +405,9 @@ private struct TranslationPopupHost: View {
             copyText: copyText,
             continueProofreading: continueProofreading,
             cancelProofreading: cancelProofreading,
-            recover: recover
+            recover: recover,
+            targetLanguages: targetLanguages,
+            selectTargetLanguage: selectTargetLanguage
         )
         .frame(width: contentSize.width, height: contentSize.height)
         .translationTask(translationSessions.configuration) { session in
@@ -470,8 +548,12 @@ struct PopupCaptureFocusState {
 }
 
 enum PopupClickAwayPolicy {
-    static func shouldDismiss(clickLocation: NSPoint, popupFrame: NSRect) -> Bool {
-        !popupFrame.contains(clickLocation)
+    static func shouldDismiss(
+        clickLocation: NSPoint,
+        popupFrame: NSRect,
+        menuWasTracking: Bool = false
+    ) -> Bool {
+        !menuWasTracking && !popupFrame.contains(clickLocation)
     }
 }
 
