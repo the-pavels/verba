@@ -1,8 +1,8 @@
-# Verba 1.0.0 release test matrix
+# Verba 1.0.1 release test matrix
 
-This is the manual sign-off record for the exact notarized Verba 1.0.0 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
+This is the manual sign-off record for the exact notarized Verba 1.0.1 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 12 status:** Superseded before manual qualification by the 2026-07-16 audit remediation. Preserve its provenance evidence, but do not publish it. Replace the candidate record below with build 13 or later after remediation is complete and a new notarized artifact exists.
+**Candidate 13 status:** Prepared for source qualification. Artifact-specific evidence remains pending until the release metadata is committed and the exact clean source revision is signed and notarized.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,14 +10,14 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.0-12-arm64-notarized.zip` |
-| SHA-256 | `7d3b891ebebb69f102dbce32cd1f1030d47d99dc24820161ed732fa43c2f385b` |
-| Source revision | `edba52dcfca3d1d91c403ac752b8ac16ded1d8de` |
-| Source state in manifest | `clean` |
-| Notarization submission ID | `545628ac-055e-4922-bef4-14d8254e4d22` |
-| Build date | 2026-07-15 |
-| Build host | Mac14,6 (arm64), macOS 26.5.2 (25F84) |
-| Xcode | 26.2 (17C52) |
+| Artifact | `Verba-1.0.1-13-arm64-notarized.zip` |
+| SHA-256 | Pending |
+| Source revision | Pending owner-approved release commit |
+| Source state in manifest | Pending; must be `clean` |
+| Notarization submission ID | Pending |
+| Build date | Pending |
+| Build host | Pending |
+| Xcode | Pending |
 | Tester | Pending |
 | Test date | Pending |
 | macOS version | Pending |
@@ -40,17 +40,18 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.0 (8) | `faa8eefe4da896deca2e8d0b235131f1b3bbc0f3d5bf7b90d38f66cd02116808` | Accepted, submission `fe6ec3ee-a3d6-4802-aa7b-2ecebdb94c64` | Superseded before qualification: the word-level diff made the separate explanation redundant, and a live model comparison supported switching proofreading from Terra to the lower-cost Luna model. |
 | 1.0.0 (9) | `e7f17d7de1b23c4a70e3d903473b9c41181796716e54ba0e88c0d03f682ed201` | Accepted, submission `f1e670f2-4246-454e-954a-01e6762ba47a` | Superseded before qualification by the final popup visual, focus, sizing, click-away, and copy-and-dismiss refinements. |
 | 1.0.0 (11) | `d091b26781611ab190b520268b73756db1b9719cac8644f59b5ee515e1f215c3` | Invalid, submission `00b31509-2e92-4cdc-ba99-94e0bef2e58b` | Sparkle's nested updater, autoupdate tool, and XPC services retained ad-hoc signatures without secure timestamps. Build 12 added the required Xcode Developer ID export step. |
+| 1.0.0 (12) | `7d3b891ebebb69f102dbce32cd1f1030d47d99dc24820161ed732fa43c2f385b` | Accepted, submission `545628ac-055e-4922-bef4-14d8254e4d22` | Superseded before manual qualification by the audit remediation and subsequent translation-window language-selection work; preserve the provenance evidence but do not publish it. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh`; includes consecutive same-pair Translation invalidation and bounded transient-empty capture retry regressions. |
-| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh`; advisories, bans, licenses, sources, and notices passed. The accepted transitive `winnow` duplicate remains. |
-| Developer ID signing | Pass | Strict signature, team `623J248H3K`, secure timestamp, hardened runtime, and empty entitlements verified. |
-| Apple notarization | Pass | Accepted submission `545628ac-055e-4922-bef4-14d8254e4d22`; submitted hash and null issue list verified. |
-| Stapling and Gatekeeper | Pass | Stapler validation passed; `spctl` reports `Notarized Developer ID`. |
-| Final artifact checksum | Pass | Local ZIP matches `7d3b891ebebb69f102dbce32cd1f1030d47d99dc24820161ed732fa43c2f385b`; the archive contains no AppleDouble entries, and both native and portable extraction pass strict signature and notarization checks. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.1 (13), including the result-language picker, menu-tracking, and displayed-text retranslation regressions. |
+| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-07-21; the reviewed transitive `winnow` duplicate remains the only warning. |
+| Developer ID signing | Pending | Require strict signature, team `623J248H3K`, secure timestamp, hardened runtime, and empty entitlements. |
+| Apple notarization | Pending | Record the accepted submission and verify the submitted hash and issue list. |
+| Stapling and Gatekeeper | Pending | Require Stapler validation and `spctl` source `Notarized Developer ID`. |
+| Final artifact checksum | Pending | Record and reverify the final notarized ZIP SHA-256 after native and portable extraction checks pass. |
 
 ## Artifact and clean installation
 
@@ -58,9 +59,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.0-12-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-13-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.0, build is 12, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.1, build is 13, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
@@ -113,6 +114,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | TR-04 | Translate text already in the target language. | The same-language outcome is clear and non-destructive. | Not run | |
 | TR-05 | Attempt an unsupported pair. | Verba shows an actionable target-language error without stale output. | Not run | |
 | TR-06 | Change the target language in Settings and invoke Translate without relaunching. | The next action uses the new persisted target. | Not run | |
+| TR-07 | Change the target language from an open translation result using both pointer and keyboard. | The popup remains open, immediately retranslates the same displayed original text without recapturing, and shows visible loading or persistence feedback. | Not run | Record both target languages. |
 
 ## Proofreading and Keychain
 
@@ -157,7 +159,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | --- | --- | --- | --- | --- |
 | LIFE-01 | Remove only `Verba.app`, then reinstall the same candidate. | Preferences, disclosure, and Keychain key survive normal reinstall. | Not run | |
 | LIFE-02 | Perform every complete-cleanup step in `PRIVACY.md`, then reinstall. | Defaults, key, and Accessibility grant are absent; Verba behaves as a first launch. | Not run | |
-| LIFE-03 | Replace 1.0.0 with the last qualified pre-release build, then restore 1.0.0. | Both notarized apps open normally; compatible preferences and Keychain scope survive replacement. | Not run | |
+| LIFE-03 | Replace 1.0.1 with the last qualified release build, then restore 1.0.1. | Both notarized apps open normally; compatible preferences and Keychain scope survive replacement. | Not run | |
 
 ## Performance and final inspection
 

@@ -6,7 +6,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-verba-core = { path = "../verba-core", version = "=1.0.0" }
+verba-core = { path = "../verba-core", version = "=1.0.1" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.4"

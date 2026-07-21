@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1 - 2026-07-21
+
+### Added
+
+- Change the target language directly from a translation result and immediately translate the same displayed text again without recapturing it.
+- Show loading and persistence failures beside the result language control, including an in-place retry for supported-language discovery.
+
+### Reliability and security
+
+- Keep picker menu interaction from triggering popup click-away dismissal or cancelling the replacement translation.
+- Scope retranslation to the displayed result instead of retaining a separate long-lived copy of selected text.
+- Fail closed when source-field security cannot be determined and strengthen clipboard restoration against concurrent changes and partial writes.
+- Tie popup focus to the capture lifecycle and harden provider output, token, transport, endpoint, settings-persistence, CI, and release checks.
+
 ## 1.0.0 - 2026-07-14
 
 Initial direct-distribution release for macOS 15 or later on Apple silicon.

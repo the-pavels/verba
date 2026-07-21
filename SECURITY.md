@@ -1,6 +1,6 @@
 # Security review
 
-This document records the release security review completed on 2026-07-14. Rerun `./scripts/security-check.sh` and review this document whenever dependencies, signing, entitlements, networking, secret storage, logging, or generated bindings change.
+This document records the release security review completed on 2026-07-21 for candidate 1.0.1 (13). Rerun `./scripts/security-check.sh` and review this document whenever dependencies, signing, entitlements, networking, secret storage, logging, or generated bindings change.
 
 ## Reviewed controls
 

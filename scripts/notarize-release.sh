@@ -9,7 +9,7 @@ workspace_version="$(/usr/bin/awk '
     in_package && /^version = / { gsub(/[\" ]/, "", $3); print $3; exit }
 ' "${repo_root}/Cargo.toml")"
 version="${1:-${workspace_version}}"
-build_number="${2:-12}"
+build_number="${2:-13}"
 release_arch="arm64"
 team_id="${VERBA_DEVELOPMENT_TEAM:-}"
 notary_profile="${VERBA_NOTARY_KEYCHAIN_PROFILE:-verba-notary}"

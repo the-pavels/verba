@@ -2,7 +2,7 @@
 
 Verba is built with the Rust packages listed below. This is a conservative inventory of all external packages in the locked workspace dependency graph, including build and development dependencies.
 
-Generated from `Cargo.lock` SHA-256 `43458f3a065bcc487c45530cf441224be7a78f32911a0a2295912714e9f6a153`. Package count: 176. Regenerate with `./scripts/generate-third-party-notices.sh`.
+Generated from `Cargo.lock` SHA-256 `e6270b1e7cd73d3cb296583a9e40c83f1718aeedfcc21769d981e21608f84c71`. Package count: 176. Regenerate with `./scripts/generate-third-party-notices.sh`.
 
 Each package remains copyright its respective authors and is provided under the SPDX license expression shown. The linked crates.io source distribution contains the authoritative license and notice files for that version. Verba's inclusion of a package does not change its license terms.
 
