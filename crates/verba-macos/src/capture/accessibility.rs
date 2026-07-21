@@ -50,23 +50,36 @@ fn focused_element_security(reader: &impl AccessibilityReader) -> FocusedElement
     let Some(focused_element) = reader.attribute(&system_wide, &focused_attribute) else {
         return FocusedElementSecurity::Unknown;
     };
+    let Some(role_attribute) = reader.string(c"AXRole") else {
+        return FocusedElementSecurity::Unknown;
+    };
+    let Some(role) = reader.attribute(&focused_element, &role_attribute) else {
+        return FocusedElementSecurity::Unknown;
+    };
+    if !reader.is_string(&role) {
+        return FocusedElementSecurity::Unknown;
+    }
+    let Some(text_field_role) = reader.string(c"AXTextField") else {
+        return FocusedElementSecurity::Unknown;
+    };
     let Some(subrole_attribute) = reader.string(c"AXSubrole") else {
         return FocusedElementSecurity::Unknown;
     };
-    let Some(subrole) = reader.attribute(&focused_element, &subrole_attribute) else {
-        return FocusedElementSecurity::Unknown;
-    };
-    if !reader.is_string(&subrole) {
-        return FocusedElementSecurity::Unknown;
-    }
     let Some(secure_subrole) = reader.string(c"AXSecureTextField") else {
         return FocusedElementSecurity::Unknown;
     };
 
-    if reader.equal(&subrole, &secure_subrole) {
-        FocusedElementSecurity::Secure
-    } else {
-        FocusedElementSecurity::NotSecure
+    match reader.attribute(&focused_element, &subrole_attribute) {
+        Some(subrole) if reader.is_string(&subrole) => {
+            if reader.equal(&subrole, &secure_subrole) {
+                FocusedElementSecurity::Secure
+            } else {
+                FocusedElementSecurity::NotSecure
+            }
+        }
+        Some(_) => FocusedElementSecurity::Unknown,
+        None if reader.equal(&role, &text_field_role) => FocusedElementSecurity::Unknown,
+        None => FocusedElementSecurity::NotSecure,
     }
 }
 
@@ -171,6 +184,9 @@ mod tests {
         SystemWide,
         FocusedAttribute,
         FocusedElement,
+        RoleAttribute,
+        TextFieldRole,
+        OtherRole,
         SubroleAttribute,
         Subrole,
         SecureSubrole,
@@ -181,6 +197,10 @@ mod tests {
         SystemWide,
         FocusedAttribute,
         FocusedElement,
+        RoleAttribute,
+        Role,
+        RoleType,
+        TextFieldRole,
         SubroleAttribute,
         Subrole,
         SubroleType,
@@ -189,12 +209,17 @@ mod tests {
 
     struct FakeReader {
         failure: Option<FailurePoint>,
+        text_field: bool,
         secure: bool,
     }
 
     impl FakeReader {
-        fn new(failure: Option<FailurePoint>, secure: bool) -> Self {
-            Self { failure, secure }
+        fn new(failure: Option<FailurePoint>, text_field: bool, secure: bool) -> Self {
+            Self {
+                failure,
+                text_field,
+                secure,
+            }
         }
     }
 
@@ -209,6 +234,10 @@ mod tests {
             match value.to_bytes() {
                 b"AXFocusedUIElement" => (self.failure != Some(FailurePoint::FocusedAttribute))
                     .then_some(Value::FocusedAttribute),
+                b"AXRole" => (self.failure != Some(FailurePoint::RoleAttribute))
+                    .then_some(Value::RoleAttribute),
+                b"AXTextField" => (self.failure != Some(FailurePoint::TextFieldRole))
+                    .then_some(Value::TextFieldRole),
                 b"AXSubrole" => (self.failure != Some(FailurePoint::SubroleAttribute))
                     .then_some(Value::SubroleAttribute),
                 b"AXSecureTextField" => (self.failure != Some(FailurePoint::SecureSubrole))
@@ -222,6 +251,13 @@ mod tests {
                 (Value::SystemWide, Value::FocusedAttribute) => (self.failure
                     != Some(FailurePoint::FocusedElement))
                 .then_some(Value::FocusedElement),
+                (Value::FocusedElement, Value::RoleAttribute) => {
+                    (self.failure != Some(FailurePoint::Role)).then_some(if self.text_field {
+                        Value::TextFieldRole
+                    } else {
+                        Value::OtherRole
+                    })
+                }
                 (Value::FocusedElement, Value::SubroleAttribute) => {
                     (self.failure != Some(FailurePoint::Subrole)).then_some(Value::Subrole)
                 }
@@ -230,39 +266,68 @@ mod tests {
         }
 
         fn is_string(&self, value: &Self::Value) -> bool {
-            *value == Value::Subrole && self.failure != Some(FailurePoint::SubroleType)
+            match value {
+                Value::TextFieldRole | Value::OtherRole => {
+                    self.failure != Some(FailurePoint::RoleType)
+                }
+                Value::Subrole => self.failure != Some(FailurePoint::SubroleType),
+                _ => false,
+            }
         }
 
         fn equal(&self, first: &Self::Value, second: &Self::Value) -> bool {
-            *first == Value::Subrole && *second == Value::SecureSubrole && self.secure
+            match (first, second) {
+                (Value::Subrole, Value::SecureSubrole) => self.secure,
+                (Value::TextFieldRole, Value::TextFieldRole) => true,
+                _ => false,
+            }
         }
     }
 
     #[test]
     fn classifies_secure_and_non_secure_elements() {
         assert_eq!(
-            focused_element_security(&FakeReader::new(None, true)),
+            focused_element_security(&FakeReader::new(None, true, true)),
             FocusedElementSecurity::Secure
         );
         assert_eq!(
-            focused_element_security(&FakeReader::new(None, false)),
+            focused_element_security(&FakeReader::new(None, true, false)),
             FocusedElementSecurity::NotSecure
         );
     }
 
     #[test]
-    fn every_query_failure_is_unknown() {
+    fn missing_subrole_is_allowed_for_non_text_fields() {
+        assert_eq!(
+            focused_element_security(&FakeReader::new(Some(FailurePoint::Subrole), false, false)),
+            FocusedElementSecurity::NotSecure
+        );
+    }
+
+    #[test]
+    fn missing_subrole_fails_closed_for_text_fields() {
+        assert_eq!(
+            focused_element_security(&FakeReader::new(Some(FailurePoint::Subrole), true, false)),
+            FocusedElementSecurity::Unknown
+        );
+    }
+
+    #[test]
+    fn mandatory_query_failures_are_unknown() {
         for failure in [
             FailurePoint::SystemWide,
             FailurePoint::FocusedAttribute,
             FailurePoint::FocusedElement,
+            FailurePoint::RoleAttribute,
+            FailurePoint::Role,
+            FailurePoint::RoleType,
+            FailurePoint::TextFieldRole,
             FailurePoint::SubroleAttribute,
-            FailurePoint::Subrole,
             FailurePoint::SubroleType,
             FailurePoint::SecureSubrole,
         ] {
             assert_eq!(
-                focused_element_security(&FakeReader::new(Some(failure), false)),
+                focused_element_security(&FakeReader::new(Some(failure), false, false)),
                 FocusedElementSecurity::Unknown,
                 "{failure:?} should fail closed"
             );

@@ -11,6 +11,7 @@
 
 - Keep picker menu interaction from triggering popup click-away dismissal or cancelling the replacement translation.
 - Scope retranslation to the displayed result instead of retaining a separate long-lived copy of selected text.
+- Capture selected text from accessible document surfaces that omit optional subrole metadata while continuing to reject secure and unverifiable text fields.
 - Fail closed when source-field security cannot be determined and strengthen clipboard restoration against concurrent changes and partial writes.
 - Tie popup focus to the capture lifecycle and harden provider output, token, transport, endpoint, settings-persistence, CI, and release checks.
 
