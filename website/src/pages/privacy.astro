@@ -1,0 +1,129 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const repositoryPolicy =
+  "https://github.com/the-pavels/verba/blob/main/PRIVACY.md";
+---
+
+<Layout
+  title="Privacy — Verba"
+  description="How Verba handles selected text, translation, proofreading, permissions, storage, and updates."
+  path="/privacy/"
+>
+  <header class="site-header">
+    <div class="shell nav-shell">
+      <a class="brand" href="/" aria-label="Verba home">
+        <img src="/images/verba-icon.png" alt="" width="36" height="36" />
+        <span>Verba</span>
+      </a>
+      <a class="button button-small button-dark" href="/">
+        Back to Verba
+        <span aria-hidden="true">↖</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="legal-page">
+    <div class="shell legal-shell">
+      <header class="legal-hero">
+        <p class="eyebrow">Privacy and data handling</p>
+        <h1>Your words stay yours.</h1>
+        <p>
+          Verba has no accounts, analytics, advertising, telemetry, or
+          Verba-operated cloud synchronization.
+        </p>
+      </header>
+
+      <div class="legal-summary-grid">
+        <article>
+          <span>Translation</span>
+          <h2>On your Mac</h2>
+          <p>
+            Selected text is processed through Apple’s Translation framework.
+            Verba does not send translations to a Verba-operated server.
+          </p>
+        </article>
+        <article>
+          <span>Proofreading</span>
+          <h2>Only when requested</h2>
+          <p>
+            Selected text is sent to OpenAI with your own API key only after an
+            explicit proofreading command.
+          </p>
+        </article>
+        <article>
+          <span>Storage</span>
+          <h2>No text history</h2>
+          <p>
+            Verba does not keep selected text or results. Your API key is stored
+            as a password item in macOS Keychain.
+          </p>
+        </article>
+      </div>
+
+      <article class="legal-copy">
+        <section>
+          <p class="legal-kicker">Selection capture</p>
+          <h2>Accessibility, with a narrow purpose.</h2>
+          <p>
+            Verba uses macOS Accessibility permission to copy the text currently
+            selected in the frontmost app. It snapshots your pasteboard,
+            performs a short copy transaction, and restores the previous
+            contents when it is safe to do so. Secure text fields and unsupported
+            content are rejected.
+          </p>
+        </section>
+
+        <section>
+          <p class="legal-kicker">Proofreading and OpenAI</p>
+          <h2>Your account. Your request. Your review.</h2>
+          <p>
+            Proofreading uses the OpenAI Responses API with the API key you
+            configure. Requests set storage off, have strict size and timeout
+            limits, and are not logged by Verba. Corrections are displayed for
+            review; Verba never automatically replaces your writing.
+          </p>
+        </section>
+
+        <section>
+          <p class="legal-kicker">What stays on your Mac</p>
+          <h2>Preferences, not prose.</h2>
+          <p>
+            Verba stores settings such as your target language, shortcuts, and
+            optional update preference. It does not store your selections,
+            translations, or proofreading results.
+          </p>
+        </section>
+
+        <section>
+          <p class="legal-kicker">Full technical policy</p>
+          <h2>Transparency down to the details.</h2>
+          <p>
+            The full policy documents clipboard behavior, provider data
+            handling, networking limits, update checks, local storage,
+            uninstall steps, and current limitations.
+          </p>
+          <a class="button button-dark" href={repositoryPolicy}>
+            Read the complete policy on GitHub
+            <span aria-hidden="true">↗</span>
+          </a>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-grid">
+      <a class="brand brand-footer" href="/">
+        <img src="/images/verba-icon.png" alt="" width="32" height="32" />
+        <span>Verba</span>
+      </a>
+      <p>Translate. Proofread. Carry on.</p>
+      <nav aria-label="Footer navigation">
+        <a href="https://github.com/the-pavels/verba">GitHub</a>
+        <a href="https://github.com/the-pavels/verba/releases/latest">Releases</a>
+        <a href="/">Home</a>
+      </nav>
+    </div>
+  </footer>
+</Layout>

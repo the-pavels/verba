@@ -50,6 +50,9 @@ xcuserdata/
 *.log
 /tmp/
 /coverage/
+/website/node_modules/
+/website/dist/
+/website/.astro/
 
 # Source planning artifact (kept locally, never committed)
 /docs

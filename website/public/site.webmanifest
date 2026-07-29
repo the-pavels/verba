@@ -1,0 +1,17 @@
+{
+  "name": "Verba",
+  "short_name": "Verba",
+  "description": "Translate and proofread selected text anywhere on your Mac.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f7f4",
+  "theme_color": "#2879f6",
+  "icons": [
+    {
+      "src": "/images/verba-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
