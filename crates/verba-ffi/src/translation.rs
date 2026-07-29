@@ -1,5 +1,8 @@
-use std::{error::Error, fmt, sync::Arc};
+use std::{error::Error, fmt};
 
+#[cfg(any(test, target_os = "macos"))]
+use std::sync::Arc;
+#[cfg(any(test, target_os = "macos"))]
 use verba_core::{
     coordinator::CancellationToken,
     translation::{
@@ -50,16 +53,19 @@ pub trait NativeTranslator: Send + Sync {
     ) -> Result<NativeTranslationResponse, NativeTranslationError>;
 }
 
+#[cfg(any(test, target_os = "macos"))]
 pub(crate) struct ForeignTranslator {
     translator: Arc<dyn NativeTranslator>,
 }
 
+#[cfg(any(test, target_os = "macos"))]
 impl ForeignTranslator {
     pub(crate) fn new(translator: Arc<dyn NativeTranslator>) -> Self {
         Self { translator }
     }
 }
 
+#[cfg(any(test, target_os = "macos"))]
 #[async_trait::async_trait]
 impl Translator for ForeignTranslator {
     async fn translate(
