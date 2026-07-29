@@ -18,6 +18,7 @@
 - Fail closed when source-field security cannot be determined and strengthen clipboard restoration against concurrent changes and partial writes.
 - Tie popup focus to the capture lifecycle and harden provider output, token, transport, endpoint, settings-persistence, CI, and release checks.
 - Keep Linux quality checks and the Xcode 16.4 macOS host build compatible with platform- and SDK-specific translation adapters.
+- Remove obsolete internal APIs and stale localization entries without changing user-facing behavior.
 
 ## 1.0.0 - 2026-07-14
 
