@@ -508,6 +508,39 @@ fn explicit_cancellation_hides_loading_and_ignores_late_work() {
 }
 
 #[test]
+fn dismissing_a_completed_presentation_does_not_capture_again() {
+    let capture = Arc::new(FakeTextCapture::new(captured("Hallo")));
+    let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let coordinator = ShortcutCoordinator::new(capture.clone(), processor, presenter.clone());
+
+    coordinator.on_shortcut(TextAction::Translate);
+    presenter.wait_for(2);
+    coordinator.dismiss_presentation();
+
+    assert_eq!(
+        presenter.wait_for(3),
+        vec![
+            PresentationUpdate {
+                request_id: RequestId(1),
+                state: PresentationState::Loading {
+                    action: TextAction::Translate,
+                },
+            },
+            PresentationUpdate {
+                request_id: RequestId(1),
+                state: translation_state(),
+            },
+            PresentationUpdate {
+                request_id: RequestId(2),
+                state: PresentationState::Idle,
+            },
+        ]
+    );
+    assert_eq!(capture.call_count(), 1);
+}
+
+#[test]
 fn retranslate_uses_the_displayed_translation_text() {
     let capture = Arc::new(FakeTextCapture::new(captured("Hallo")));
     let processor = Arc::new(QueueProcessor::new([Ok(translation()), Ok(translation())]));

@@ -285,6 +285,10 @@ impl ShortcutCoordinator {
         self.inner.cancel_active(true)
     }
 
+    pub fn dismiss_presentation(&self) {
+        self.inner.dismiss_presentation();
+    }
+
     /// Translates already-captured text again using the current translation settings.
     pub fn retranslate(&self, captured: CapturedText) {
         self.inner.retranslate(captured);
@@ -627,6 +631,31 @@ impl CoordinatorInner {
             });
         }
         true
+    }
+
+    fn dismiss_presentation(&self) {
+        let _presentation_guard = self
+            .presentation_order
+            .lock()
+            .expect("presentation order lock poisoned");
+        let request = self
+            .active
+            .lock()
+            .expect("active request lock poisoned")
+            .take();
+        let request_id = if let Some(request) = request {
+            request.cancellation.cancel();
+            self.metrics.record(WorkflowMilestone::RequestCancelled {
+                request_id: request.id,
+            });
+            request.id
+        } else {
+            RequestId(self.next_request_id.fetch_add(1, Ordering::Relaxed))
+        };
+        self.presenter.present(PresentationUpdate {
+            request_id,
+            state: PresentationState::Idle,
+        });
     }
 }
 

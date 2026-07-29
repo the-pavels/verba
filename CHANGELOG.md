@@ -10,6 +10,7 @@
 ### Reliability and security
 
 - Keep picker menu interaction from triggering popup click-away dismissal or cancelling the replacement translation.
+- Treat a global shortcut pressed while Verba owns keyboard focus as a toggle that closes the popup without attempting another selection capture.
 - Scope retranslation to the displayed result instead of retaining a separate long-lived copy of selected text.
 - Capture rendered text when the frontmost app explicitly reports that no source field is focused, while continuing to reject secure fields and fail closed on Accessibility query errors.
 - Capture selected text from accessible document surfaces that omit optional subrole metadata while continuing to reject secure and unverifiable text fields.

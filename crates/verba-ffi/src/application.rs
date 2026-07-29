@@ -15,7 +15,7 @@ use verba_core::{
 };
 use verba_macos::{
     MacOsProofreadingConsentStore, MacOsShortcutRegistry, MacOsShortcutSettingsStore,
-    MacOsTextCapture, MacOsTranslationSettingsStore,
+    MacOsTextCapture, MacOsTranslationSettingsStore, current_application_is_active,
 };
 use verba_openai::{OpenAiClient, OpenAiConfig, OpenAiProofreader};
 
@@ -40,6 +40,7 @@ pub trait PresentationObserver: Send + Sync {
 #[derive(uniffi::Object)]
 pub struct ApplicationRuntime {
     coordinator: Arc<ShortcutCoordinator>,
+    shortcut_handler: Arc<dyn ShortcutEventHandler>,
     shortcut_registry: Mutex<MacOsShortcutRegistry>,
     shortcut_configuration: Mutex<ShortcutConfiguration>,
     shortcut_settings_store: Arc<dyn ShortcutSettingsStore>,
@@ -97,12 +98,17 @@ impl ApplicationRuntime {
             .map_err(|_| ApplicationRuntimeError::SettingsUnavailable)?
             .unwrap_or_default();
         let mut shortcut_registry = MacOsShortcutRegistry::new();
-        coordinator
-            .register_shortcuts(&mut shortcut_registry, &shortcut_configuration)
+        let shortcut_handler: Arc<dyn ShortcutEventHandler> =
+            Arc::new(ApplicationShortcutHandler {
+                coordinator: Arc::clone(&coordinator),
+            });
+        shortcut_registry
+            .register(&shortcut_configuration, Arc::clone(&shortcut_handler))
             .map_err(|_| ApplicationRuntimeError::ShortcutRegistrationFailed)?;
 
         Ok(Arc::new(Self {
             coordinator,
+            shortcut_handler,
             shortcut_registry: Mutex::new(shortcut_registry),
             shortcut_configuration: Mutex::new(shortcut_configuration),
             shortcut_settings_store,
@@ -135,8 +141,8 @@ impl ApplicationRuntime {
             .shortcut_registry
             .lock()
             .expect("shortcut registry lock poisoned");
-        self.coordinator
-            .register_shortcuts(&mut *registry, &configuration)
+        registry
+            .register(&configuration, Arc::clone(&self.shortcut_handler))
             .map_err(|_| RuntimeLifecycleError::ShortcutRegistrationFailed)?;
         *lifecycle = ApplicationLifecycle::Running;
         Ok(())
@@ -214,10 +220,9 @@ impl ApplicationRuntime {
             .shortcut_registry
             .lock()
             .expect("shortcut registry lock poisoned");
-        let event_handler: Arc<dyn ShortcutEventHandler> = self.coordinator.clone();
         register_and_save(
             &mut *registry,
-            event_handler,
+            Arc::clone(&self.shortcut_handler),
             self.shortcut_settings_store.as_ref(),
             *configuration,
             replacement,
@@ -250,6 +255,33 @@ impl ApplicationRuntime {
             .map_err(|_| RuntimeLifecycleError::ShortcutUnregistrationFailed);
         *lifecycle = target;
         result
+    }
+}
+
+struct ApplicationShortcutHandler {
+    coordinator: Arc<ShortcutCoordinator>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ShortcutDisposition {
+    Capture,
+    Dismiss,
+}
+
+fn shortcut_disposition(application_is_active: bool) -> ShortcutDisposition {
+    if application_is_active {
+        ShortcutDisposition::Dismiss
+    } else {
+        ShortcutDisposition::Capture
+    }
+}
+
+impl ShortcutEventHandler for ApplicationShortcutHandler {
+    fn on_shortcut(&self, action: verba_core::presentation::TextAction) {
+        match shortcut_disposition(current_application_is_active()) {
+            ShortcutDisposition::Capture => self.coordinator.on_shortcut(action),
+            ShortcutDisposition::Dismiss => self.coordinator.dismiss_presentation(),
+        }
     }
 }
 
@@ -355,5 +387,16 @@ impl ResultPresenter for ForeignPresenter {
 
     fn capture_completed(&self, request_id: verba_core::coordinator::RequestId) {
         self.observer.capture_completed(request_id.value());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ShortcutDisposition, shortcut_disposition};
+
+    #[test]
+    fn shortcuts_toggle_the_presentation_when_verba_is_active() {
+        assert_eq!(shortcut_disposition(true), ShortcutDisposition::Dismiss);
+        assert_eq!(shortcut_disposition(false), ShortcutDisposition::Capture);
     }
 }

@@ -6,6 +6,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use objc2_app_kit::NSRunningApplication;
 use verba_core::{
     presentation::TextAction,
     shortcut::{
@@ -19,6 +20,11 @@ use keycodes::{key_code, modifier_flags};
 const HOT_KEY_SIGNATURE: u32 = u32::from_be_bytes(*b"Vrba");
 const TRANSLATE_HOT_KEY_ID: u32 = 1;
 const PROOFREAD_HOT_KEY_ID: u32 = 2;
+
+#[must_use]
+pub fn current_application_is_active() -> bool {
+    NSRunningApplication::currentApplication().isActive()
+}
 
 pub struct MacOsShortcutRegistry {
     inner: Registry<CarbonSystem>,

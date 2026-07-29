@@ -24,4 +24,4 @@ pub use settings::{
     MacOsProofreadingConsentStore, MacOsShortcutSettingsStore, MacOsTranslationSettingsStore,
 };
 #[cfg(target_os = "macos")]
-pub use shortcut::MacOsShortcutRegistry;
+pub use shortcut::{MacOsShortcutRegistry, current_application_is_active};
