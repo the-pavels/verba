@@ -49,7 +49,6 @@ jobs:
     timeout-minutes: 30
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
-      VERBA_DERIVED_DATA_PATH: ${{ runner.temp }}/verba-check-derived-data
     steps:
       - name: Check out source
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -73,4 +72,6 @@ jobs:
           xcodebuild -version | grep -F "Xcode 16.4"
 
       - name: Run complete macOS quality gate
+        env:
+          VERBA_DERIVED_DATA_PATH: ${{ runner.temp }}/verba-check-derived-data
         run: ./scripts/check.sh
