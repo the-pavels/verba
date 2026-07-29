@@ -51,12 +51,6 @@ pub enum PresentationViewModel {
     },
 }
 
-/// Returns the presentation state used when the application starts.
-#[uniffi::export]
-pub fn initial_presentation() -> PresentationViewModel {
-    core::PresentationState::Idle.into()
-}
-
 impl From<core::TextAction> for PresentationAction {
     fn from(action: core::TextAction) -> Self {
         match action {
@@ -201,11 +195,6 @@ mod tests {
         for (core_state, expected_view_model) in cases {
             assert_eq!(PresentationViewModel::from(core_state), expected_view_model);
         }
-    }
-
-    #[test]
-    fn initial_presentation_is_idle() {
-        assert_eq!(super::initial_presentation(), PresentationViewModel::Idle);
     }
 
     #[test]

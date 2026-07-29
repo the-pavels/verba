@@ -9,7 +9,7 @@ use verba_openai::{
     ApiKeyProvider, ApiKeyProviderError, OpenAiClient, OpenAiConfig, OpenAiProofreader,
 };
 
-pub fn run_proofreading(
+pub(crate) fn run_proofreading(
     base_url: &str,
     model: &str,
     api_key: &str,

@@ -1,15 +1,15 @@
-pub enum ExpectedOutcome {
+pub(crate) enum ExpectedOutcome {
     NoIssues,
     Corrected { text: &'static str },
 }
 
-pub struct PromptFixture {
-    pub name: &'static str,
-    pub input: &'static str,
-    pub expected: ExpectedOutcome,
+pub(crate) struct PromptFixture {
+    pub(crate) name: &'static str,
+    pub(crate) input: &'static str,
+    pub(crate) expected: ExpectedOutcome,
 }
 
-pub const FIXTURES: &[PromptFixture] = &[
+pub(crate) const FIXTURES: &[PromptFixture] = &[
     PromptFixture {
         name: "no changes",
         input: "This sentence is already correct.",

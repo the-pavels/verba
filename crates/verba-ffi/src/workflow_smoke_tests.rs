@@ -390,8 +390,9 @@ fn workflow(
         popup.clone(),
     ));
     let mut registry = WorkflowShortcutRegistry::default();
-    coordinator
-        .register_shortcuts(&mut registry, &ShortcutConfiguration::default())
+    let handler: Arc<dyn ShortcutEventHandler> = coordinator.clone();
+    registry
+        .register(&ShortcutConfiguration::default(), handler)
         .unwrap();
 
     (coordinator, registry, popup)
@@ -603,8 +604,9 @@ fn shortcuts_still_drive_the_workflow_after_sleep_and_wake_registration() {
     );
 
     registry.unregister_all().unwrap();
-    coordinator
-        .register_shortcuts(&mut registry, &ShortcutConfiguration::default())
+    let handler: Arc<dyn ShortcutEventHandler> = coordinator.clone();
+    registry
+        .register(&ShortcutConfiguration::default(), handler)
         .unwrap();
     registry.trigger(TextAction::Translate);
 

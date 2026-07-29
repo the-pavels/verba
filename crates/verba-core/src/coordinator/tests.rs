@@ -15,8 +15,24 @@ use super::*;
 use crate::{
     presentation::{LanguagePair, ProofreadingPresentation, TranslationPresentation},
     proofreading::ProofreadingPolicyViolation,
+    shortcut::{ShortcutConfiguration, ShortcutRegistry},
     testing::{FakeShortcutRegistry, FakeTextCapture},
 };
+
+fn coordinator_with_metrics(
+    capture: Arc<dyn TextCapture>,
+    processor: Arc<dyn TextActionProcessor>,
+    presenter: Arc<dyn ResultPresenter>,
+    metrics: Arc<dyn WorkflowMetrics>,
+) -> ShortcutCoordinator {
+    ShortcutCoordinator::with_proofreading_consent_and_metrics(
+        capture,
+        processor,
+        presenter,
+        Arc::new(AlwaysGrantedProofreadingConsent),
+        metrics,
+    )
+}
 
 #[test]
 fn registered_shortcut_captures_processes_and_presents_a_result() {
@@ -30,8 +46,9 @@ fn registered_shortcut_captures_processes_and_presents_a_result() {
     ));
     let mut registry = FakeShortcutRegistry::default();
 
-    coordinator
-        .register_shortcuts(&mut registry, &ShortcutConfiguration::default())
+    let handler: Arc<dyn ShortcutEventHandler> = coordinator.clone();
+    registry
+        .register(&ShortcutConfiguration::default(), handler)
         .unwrap();
     assert!(registry.trigger(TextAction::Translate));
 
@@ -71,7 +88,7 @@ fn workflow_metrics_report_ordered_metadata_without_selected_text() {
     let presenter = Arc::new(RecordingPresenter::default());
     let metrics = Arc::new(RecordingMetrics::default());
     let coordinator =
-        ShortcutCoordinator::with_metrics(capture, processor, presenter.clone(), metrics.clone());
+        coordinator_with_metrics(capture, processor, presenter.clone(), metrics.clone());
 
     coordinator.on_shortcut(TextAction::Translate);
     presenter.wait_for(2);
@@ -479,7 +496,7 @@ fn explicit_cancellation_hides_loading_and_ignores_late_work() {
     let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
     let presenter = Arc::new(RecordingPresenter::default());
     let metrics = Arc::new(RecordingMetrics::default());
-    let coordinator = ShortcutCoordinator::with_metrics(
+    let coordinator = coordinator_with_metrics(
         capture.clone(),
         processor,
         presenter.clone(),
@@ -633,7 +650,7 @@ fn retranslate_cancels_an_active_request_and_reports_completed_capture() {
     let processor = Arc::new(QueueProcessor::new([Ok(translation())]));
     let presenter = Arc::new(RecordingPresenter::default());
     let metrics = Arc::new(RecordingMetrics::default());
-    let coordinator = ShortcutCoordinator::with_metrics(
+    let coordinator = coordinator_with_metrics(
         capture.clone(),
         processor.clone(),
         presenter.clone(),

@@ -63,16 +63,12 @@ fn builds_a_responses_request_without_retaining_server_state() {
 }
 
 #[test]
-fn rejects_invalid_configuration_before_building_the_transport() {
+fn rejects_an_empty_model_before_building_the_transport() {
     let executor = Arc::new(FakeExecutor::new(Ok(success_response(json!({})))));
 
     assert_eq!(
-        development_responses_endpoint("not a URL").err(),
-        Some(OpenAiClientBuildError::InvalidBaseUrl)
-    );
-    assert_eq!(
         OpenAiClient::with_executor(
-            development_responses_endpoint("https://example.test").unwrap(),
+            Url::parse("https://example.test/v1/responses").unwrap(),
             OpenAiConfig::new("  "),
             executor,
         )
@@ -82,38 +78,11 @@ fn rejects_invalid_configuration_before_building_the_transport() {
 }
 
 #[test]
-fn production_is_pinned_and_nonproduction_endpoints_require_named_constructors() {
+fn production_is_pinned_and_loopback_testing_requires_a_numeric_address() {
     assert_eq!(
         production_responses_endpoint().unwrap().as_str(),
         "https://api.openai.com/v1/responses"
     );
-    assert_eq!(
-        development_responses_endpoint("https://example.test/openai")
-            .unwrap()
-            .as_str(),
-        "https://example.test/openai/v1/responses"
-    );
-
-    for base_url in [
-        "http://example.test",
-        "http://localhost",
-        "ftp://example.test",
-    ] {
-        assert_eq!(
-            development_responses_endpoint(base_url).err(),
-            Some(OpenAiClientBuildError::InvalidBaseUrl)
-        );
-    }
-    for base_url in [
-        "https://user:password@example.test",
-        "https://example.test?secret=value",
-        "https://example.test#fragment",
-    ] {
-        assert_eq!(
-            development_responses_endpoint(base_url).err(),
-            Some(OpenAiClientBuildError::InvalidBaseUrl)
-        );
-    }
 
     assert!(loopback_responses_endpoint("http://127.0.0.1:8080").is_ok());
     assert!(loopback_responses_endpoint("http://[::1]:8080").is_ok());
@@ -245,7 +214,7 @@ fn cancellation_drops_an_in_flight_transport_request() {
 
 fn test_client(executor: Arc<dyn HttpExecutor>) -> OpenAiClient {
     OpenAiClient::with_executor(
-        development_responses_endpoint("https://example.test/openai").unwrap(),
+        Url::parse("https://example.test/openai/v1/responses").unwrap(),
         OpenAiConfig::new("test-model"),
         executor,
     )

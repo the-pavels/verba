@@ -19,9 +19,7 @@ use crate::{
         ProofreaderError, ProofreadingConsentGate, ProofreadingConsentStoreError,
         ProofreadingPolicyViolation,
     },
-    shortcut::{
-        ShortcutConfiguration, ShortcutEventHandler, ShortcutRegistry, ShortcutRegistryError,
-    },
+    shortcut::ShortcutEventHandler,
 };
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -234,22 +232,6 @@ impl ShortcutCoordinator {
     }
 
     #[must_use]
-    pub fn with_metrics(
-        capture: Arc<dyn TextCapture>,
-        processor: Arc<dyn TextActionProcessor>,
-        presenter: Arc<dyn ResultPresenter>,
-        metrics: Arc<dyn WorkflowMetrics>,
-    ) -> Self {
-        Self::with_proofreading_consent_and_metrics(
-            capture,
-            processor,
-            presenter,
-            Arc::new(AlwaysGrantedProofreadingConsent),
-            metrics,
-        )
-    }
-
-    #[must_use]
     pub fn with_proofreading_consent_and_metrics(
         capture: Arc<dyn TextCapture>,
         processor: Arc<dyn TextActionProcessor>,
@@ -270,15 +252,6 @@ impl ShortcutCoordinator {
                 presentation_order: Mutex::new(()),
             }),
         }
-    }
-
-    pub fn register_shortcuts<R: ShortcutRegistry + ?Sized>(
-        self: &Arc<Self>,
-        registry: &mut R,
-        shortcuts: &ShortcutConfiguration,
-    ) -> Result<(), ShortcutRegistryError> {
-        let handler: Arc<dyn ShortcutEventHandler> = self.clone();
-        registry.register(shortcuts, handler)
     }
 
     pub fn cancel_active(&self) -> bool {

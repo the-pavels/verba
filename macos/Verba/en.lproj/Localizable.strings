@@ -60,11 +60,9 @@
 "No internet connection is available. Reconnect and try again." = "No internet connection is available. Reconnect and try again.";
 "No issues found" = "No issues found";
 "No Issues Found" = "No Issues Found";
-"No text selected" = "No text selected";
 "No text to process" = "No text to process";
 "Not Enabled" = "Not Enabled";
 "Only languages supported by Apple Translation are shown." = "Only languages supported by Apple Translation are shown.";
-"Open Accessibility Settings..." = "Open Accessibility Settings...";
 "Open Accessibility Settings…" = "Open Accessibility Settings…";
 "Open Settings" = "Open Settings";
 "OpenAI API key" = "OpenAI API key";
@@ -80,18 +78,15 @@
 "OpenAI returned an unexpected response. Try again." = "OpenAI returned an unexpected response. Try again.";
 "OpenAI unavailable" = "OpenAI unavailable";
 "Open Login Items Settings…" = "Open Login Items Settings…";
-"Open Settings..." = "Open Settings...";
 "Original" = "Original";
 "Original text: %@" = "Original text: %@";
 "Press shortcut…" = "Press shortcut…";
 "Press the new shortcut. Press Escape to cancel." = "Press the new shortcut. Press Escape to cancel.";
 "Press to record a new shortcut. Press Escape to cancel." = "Press to record a new shortcut. Press Escape to cancel.";
 "Popup Previews" = "Popup Previews";
-"Preview Popup" = "Preview Popup";
 "Privacy" = "Privacy";
 "Proofread" = "Proofread";
 "Proofreading response was incomplete" = "Proofreading response was incomplete";
-"Proofread Selected Text" = "Proofread Selected Text";
 "Proofread shortcut" = "Proofread shortcut";
 "Proofreading" = "Proofreading";
 "Proofreading failed" = "Proofreading failed";
@@ -112,14 +107,12 @@
 "Recording" = "Recording";
 "Replace" = "Replace";
 "Replace the key before invoking Proofread again." = "Replace the key before invoking Proofread again.";
-"Request Accessibility Access..." = "Request Accessibility Access...";
 "Request Accessibility Access…" = "Request Accessibility Access…";
 "Request cancelled" = "Request cancelled";
 "Required to copy selected text from other applications." = "Required to copy selected text from other applications.";
 "Retry" = "Retry";
 "Review the proofreading settings, then try again." = "Review the proofreading settings, then try again.";
 "Rust core" = "Rust core";
-"Rust core %@ - %@" = "Rust core %1$@ - %2$@";
 "Save" = "Save";
 "Save an API key before testing the connection." = "Save an API key before testing the connection.";
 "Secure text can’t be captured" = "Secure text can’t be captured";
@@ -136,7 +129,6 @@
 "Selection too complex" = "Selection too complex";
 "Selection too long" = "Selection too long";
 "Send selected text to OpenAI?" = "Send selected text to OpenAI?";
-"Settings..." = "Settings...";
 "Settings…" = "Settings…";
 "Settings unavailable" = "Settings unavailable";
 "Shortcut error: %@" = "Shortcut error: %@";
@@ -165,7 +157,6 @@
 "The target language couldn’t be saved." = "The target language couldn’t be saved.";
 "This OpenAI account has no available quota. Check its billing and usage limits." = "This OpenAI account has no available quota. Check its billing and usage limits.";
 "Translate" = "Translate";
-"Translate Selected Text" = "Translate Selected Text";
 "Translate shortcut" = "Translate shortcut";
 "Translate into a different language" = "Translate into a different language";
 "Translate to" = "Translate to";
@@ -230,5 +221,4 @@
 "Approve Verba in System Settings to launch it at login." = "Approve Verba in System Settings to launch it at login.";
 "Write with less friction" = "Write with less friction";
 "You can change the language and shortcuts later in Settings." = "You can change the language and shortcuts later in Settings.";
-"%@ → %@" = "%1$@ → %2$@";
 "%@: %@" = "%1$@: %2$@";

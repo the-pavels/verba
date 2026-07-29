@@ -37,7 +37,7 @@ pub(crate) struct ReqwestExecutor {
 }
 
 impl ReqwestExecutor {
-    pub fn new(
+    pub(crate) fn new(
         connect_timeout: Duration,
         request_timeout: Duration,
     ) -> Result<Self, TransportError> {

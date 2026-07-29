@@ -60,12 +60,6 @@ pub enum PresentationState {
 }
 
 impl PresentationState {
-    /// Returns whether the popup should be visible for this state.
-    #[must_use]
-    pub fn is_visible(&self) -> bool {
-        !matches!(self, Self::Idle)
-    }
-
     /// Returns the operation responsible for this state, when one is known.
     #[must_use]
     pub fn action(&self) -> Option<TextAction> {
@@ -87,30 +81,6 @@ mod tests {
         ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation,
         RecoveryAction, TextAction, TranslationPresentation,
     };
-
-    #[test]
-    fn idle_is_the_only_hidden_state() {
-        assert!(!PresentationState::Idle.is_visible());
-
-        let visible_states = [
-            PresentationState::Loading {
-                action: TextAction::Translate,
-            },
-            PresentationState::ProofreadingDisclosure,
-            translation_state(),
-            proofreading_state(),
-            PresentationState::NoIssues,
-            PresentationState::Error(ErrorPresentation {
-                action: None,
-                title: "Something went wrong".to_owned(),
-                message: "Try again.".to_owned(),
-                recovery: RecoveryAction::Retry,
-                diagnostic_code: "test.failure".to_owned(),
-            }),
-        ];
-
-        assert!(visible_states.iter().all(PresentationState::is_visible));
-    }
 
     #[test]
     fn states_report_their_action_context() {

@@ -33,17 +33,6 @@ impl OpenAiConfig {
     }
 
     #[must_use]
-    pub const fn with_timeouts(
-        mut self,
-        connect_timeout: Duration,
-        request_timeout: Duration,
-    ) -> Self {
-        self.connect_timeout = connect_timeout;
-        self.request_timeout = request_timeout;
-        self
-    }
-
-    #[must_use]
     pub fn model(&self) -> &str {
         &self.model
     }
@@ -69,7 +58,6 @@ impl Default for OpenAiConfig {
 pub enum OpenAiClientBuildError {
     InvalidBaseUrl,
     EmptyModel,
-    InvalidTimeout,
     Transport,
 }
 
@@ -182,13 +170,6 @@ impl OpenAiClient {
         Self::with_endpoint(production_responses_endpoint()?, config)
     }
 
-    pub fn new_for_development(
-        base_url: &str,
-        config: OpenAiConfig,
-    ) -> Result<Self, OpenAiClientBuildError> {
-        Self::with_endpoint(development_responses_endpoint(base_url)?, config)
-    }
-
     #[doc(hidden)]
     #[cfg(any(test, debug_assertions))]
     pub fn new_for_loopback_testing(
@@ -203,10 +184,6 @@ impl OpenAiClient {
         if model.is_empty() {
             return Err(OpenAiClientBuildError::EmptyModel);
         }
-        if config.connect_timeout.is_zero() || config.request_timeout.is_zero() {
-            return Err(OpenAiClientBuildError::InvalidTimeout);
-        }
-
         let executor = ReqwestExecutor::new(config.connect_timeout, config.request_timeout)
             .map_err(|_| OpenAiClientBuildError::Transport)?;
         Ok(Self {
@@ -270,10 +247,6 @@ impl OpenAiClient {
         if model.is_empty() {
             return Err(OpenAiClientBuildError::EmptyModel);
         }
-        if config.connect_timeout.is_zero() || config.request_timeout.is_zero() {
-            return Err(OpenAiClientBuildError::InvalidTimeout);
-        }
-
         Ok(Self {
             endpoint,
             model: model.to_owned(),
@@ -303,10 +276,6 @@ fn production_responses_endpoint() -> Result<Url, OpenAiClientBuildError> {
     responses_endpoint(OPENAI_BASE_URL, EndpointPolicy::Production)
 }
 
-fn development_responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
-    responses_endpoint(base_url, EndpointPolicy::Development)
-}
-
 #[cfg(any(test, debug_assertions))]
 fn loopback_responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildError> {
     responses_endpoint(base_url, EndpointPolicy::LoopbackTest)
@@ -315,7 +284,6 @@ fn loopback_responses_endpoint(base_url: &str) -> Result<Url, OpenAiClientBuildE
 #[derive(Clone, Copy)]
 enum EndpointPolicy {
     Production,
-    Development,
     #[cfg(any(test, debug_assertions))]
     LoopbackTest,
 }
@@ -345,7 +313,6 @@ fn responses_endpoint(
 fn has_allowed_endpoint(url: &Url, policy: EndpointPolicy) -> bool {
     match policy {
         EndpointPolicy::Production => url.as_str() == OPENAI_BASE_URL,
-        EndpointPolicy::Development => url.scheme() == "https" && url.host().is_some(),
         #[cfg(any(test, debug_assertions))]
         EndpointPolicy::LoopbackTest => {
             if url.scheme() != "http" {

@@ -9,13 +9,13 @@ use std::{
 
 use serde_json::Value;
 
-pub struct MockResponse {
+pub(crate) struct MockResponse {
     status: u16,
     body: Vec<u8>,
 }
 
 impl MockResponse {
-    pub fn json(status: u16, body: Value) -> Self {
+    pub(crate) fn json(status: u16, body: Value) -> Self {
         Self {
             status,
             body: serde_json::to_vec(&body).expect("mock response should serialize"),
@@ -23,21 +23,21 @@ impl MockResponse {
     }
 }
 
-pub struct RecordedRequest {
-    pub method: String,
-    pub path: String,
-    pub headers: HashMap<String, String>,
-    pub body: Value,
+pub(crate) struct RecordedRequest {
+    pub(crate) method: String,
+    pub(crate) path: String,
+    pub(crate) headers: HashMap<String, String>,
+    pub(crate) body: Value,
 }
 
-pub struct MockServer {
+pub(crate) struct MockServer {
     base_url: String,
     request: Receiver<RecordedRequest>,
     worker: JoinHandle<()>,
 }
 
 impl MockServer {
-    pub fn start(response: MockResponse) -> Self {
+    pub(crate) fn start(response: MockResponse) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("mock server should bind");
         let address = listener
             .local_addr()
@@ -64,11 +64,11 @@ impl MockServer {
         }
     }
 
-    pub fn base_url(&self) -> &str {
+    pub(crate) fn base_url(&self) -> &str {
         &self.base_url
     }
 
-    pub fn received(self) -> RecordedRequest {
+    pub(crate) fn received(self) -> RecordedRequest {
         let request = self
             .request
             .recv_timeout(Duration::from_secs(5))
