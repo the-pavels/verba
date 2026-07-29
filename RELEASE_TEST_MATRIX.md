@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.1 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 20 status:** Signed, notarized, source-qualified, and approved for publication. Public-download verification remains pending.
+**Candidate 20 status:** Published and fully qualified.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -16,6 +16,10 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | Source state in manifest | `clean` |
 | Notarization submission ID | `13305a27-6a7a-4736-8ee8-0c4f73834da7` |
 | Build date | 2026-07-30 |
+| GitHub release | [Verba 1.0.1](https://github.com/the-pavels/verba/releases/tag/v1.0.1) |
+| Public ZIP | [Verba-1.0.1-20-arm64-notarized.zip](https://github.com/the-pavels/verba/releases/download/v1.0.1/Verba-1.0.1-20-arm64-notarized.zip) |
+| Public checksum | [Verba-1.0.1-20-arm64-notarized.zip.sha256](https://github.com/the-pavels/verba/releases/download/v1.0.1/Verba-1.0.1-20-arm64-notarized.zip.sha256) |
+| Public appcast | [appcast.xml](https://github.com/the-pavels/verba/releases/download/v1.0.1/appcast.xml) |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pavels Sisojevs |
@@ -174,7 +178,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
 | FINAL-01 | Measure 20 cold launches and 20 invocations per action on the oldest supported Mac using the documented signposts. | Every p95 budget in [PERFORMANCE.md](PERFORMANCE.md) passes. | Pass | Attach the Instruments summary; never attach selected text. |
-| FINAL-02 | Download the published candidate and checksum into a new directory and verify again. | Its SHA-256 matches this record and the tested local candidate. | Pending publication | Complete immediately after publishing the public assets. |
+| FINAL-02 | Download the published candidate and checksum into a new directory and verify again. | Its SHA-256 matches this record and the tested local candidate. | Pass | Downloaded all five public assets into a fresh directory; the checksum passed and every asset matched the qualified local file byte-for-byte. |
 | FINAL-03 | Inspect the extracted bundle and public release assets. | No source PDF, API key, signing/notary credential, dSYM, archive, source path, or unintended generated file is present. | Pass | |
 | FINAL-04 | Review `CHANGELOG.md`, `PRIVACY.md`, `SECURITY.md`, third-party notices, installation instructions, limitations, and rollback guidance. | Published documentation matches the candidate behavior. | Pass | |
 
@@ -185,6 +189,6 @@ I confirm that every release-blocking row above passed against the exact artifac
 | Field | Value |
 | --- | --- |
 | Project owner | Pavels Sisojevs |
-| Decision | Approved for publication |
+| Decision | Approved and published |
 | Date | 2026-07-30 |
-| Notes / linked evidence | All pre-publication release-blocking rows passed against build 20. The project owner confirmed completion in the Codex task; `FINAL-02` will be recorded after downloading the public assets. |
+| Notes / linked evidence | All release-blocking rows passed against build 20. The project owner confirmed manual completion in the Codex task. The [public release](https://github.com/the-pavels/verba/releases/tag/v1.0.1), downloaded checksum, signed appcast, notices, and provenance manifest were verified after publication. |
