@@ -90,6 +90,11 @@ final class PopupVisualRegressionTests: XCTestCase {
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
+        try XCTSkipIf(
+            visualSnapshotsAreDisabled,
+            "Pixel baselines are enforced on the matching release-host macOS version."
+        )
+
         let imageData = try render(content: content, size: size)
 
         if FileManager.default.fileExists(atPath: snapshotRecordMarkerURL.path) {
@@ -124,6 +129,14 @@ final class PopupVisualRegressionTests: XCTestCase {
             )
             return
         }
+    }
+
+    private var visualSnapshotsAreDisabled: Bool {
+        #if VERBA_SKIP_VISUAL_SNAPSHOTS
+            true
+        #else
+            false
+        #endif
     }
 
     private func render<Content: View>(

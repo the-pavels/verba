@@ -49,6 +49,10 @@ jobs:
     timeout-minutes: 30
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      # SwiftUI materials, native controls, fonts, and SF Symbols render
+      # differently across macOS releases. The release host enforces the
+      # pixel baselines; this job validates macOS 15 compatibility.
+      VERBA_SKIP_VISUAL_SNAPSHOTS: "1"
     steps:
       - name: Check out source
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.1 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 19 status:** Source-qualified. Signing, notarization, manual artifact qualification, and project-owner sign-off remain pending.
+**Candidate 20 status:** Source-qualified. Signing, notarization, manual artifact qualification, and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,7 +10,7 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.1-19-arm64-notarized.zip` |
+| Artifact | `Verba-1.0.1-20-arm64-notarized.zip` |
 | SHA-256 | Pending |
 | Source revision | Pending |
 | Source state in manifest | Pending |
@@ -47,17 +47,18 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.1 (16) | `4f3ff39519ec84c8dea1e5de11c6188f94fb53750aaaec5ff7baf3355b9d3968` | Accepted, submission `27739260-c389-4b56-8fad-29dd78f781e8` | Rejected during manual repeated-shortcut testing: after a result took keyboard focus, pressing the same shortcut attempted capture against Verba and timed out instead of toggling the popup closed. |
 | 1.0.1 (17) | `52f683c2f68eab84cba94ac1d743bd81d9292a7dc6f42970199463f25fe4f7d6` | Accepted, submission `36d1689f-4643-41f5-b3dc-08a0759bcccd` | Superseded during manual no-selection UX review: invoking an action without selected text waited for the pasteboard deadline and reported a timeout instead of directing the user to select text. |
 | 1.0.1 (18) | `08a7219fc52a0e78ecb5339d64483d385e65654ab749b9e3f0883525cd226201` | Accepted, submission `676459e4-e353-41db-89a8-525dd45a8885` | Superseded before publication by removal of obsolete internal APIs and stale localization entries; no user-facing behavior changed. |
+| 1.0.1 (19) | `d6417b8f4ae1a18841f0bb2b41c81f806da7986f41e94911212fb6965190d391` | Accepted, submission `a968f029-4196-4eff-8997-fa7b826fbd9f` | Superseded before publication because OS-version-dependent popup pixel snapshots were incorrectly enforced by the macOS 15 compatibility job; build 20 keeps those baselines in release-host qualification while preserving the complete nonvisual CI suite. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.1 (19), including the dead-code cleanup, no-selection prompt, focused-popup shortcut toggle, clipboard restoration, isolated AppKit pasteboard integration, provider transport contracts, and all Rust and macOS host suites. |
-| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-07-29; the reviewed transitive `winnow` duplicate remains the only warning. |
-| Developer ID signing | Pending | Verify the exact build 19 artifact and every nested Sparkle code object. |
-| Apple notarization | Pending | Record the accepted build 19 submission and submitted-archive checksum. |
-| Stapling and Gatekeeper | Pending | Validate the stapled build 19 artifact after native and portable extraction. |
-| Final artifact checksum | Pending | Record and reverify the final build 19 notarized ZIP checksum. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.1 (20), including release-host popup baselines, the dead-code cleanup, clipboard restoration, isolated AppKit pasteboard integration, provider transport contracts, and all Rust and macOS host suites. The compatibility mode also passed with only the three OS-dependent pixel snapshots skipped. |
+| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-07-30; the reviewed transitive `winnow` duplicate remains the only warning. |
+| Developer ID signing | Pending | Verify the exact build 20 artifact and every nested Sparkle code object. |
+| Apple notarization | Pending | Record the accepted build 20 submission and submitted-archive checksum. |
+| Stapling and Gatekeeper | Pending | Validate the stapled build 20 artifact after native and portable extraction. |
+| Final artifact checksum | Pending | Record and reverify the final build 20 notarized ZIP checksum. |
 
 ## Artifact and clean installation
 
@@ -65,9 +66,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-19-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-20-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.1, build is 19, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.1, build is 20, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
