@@ -99,10 +99,10 @@ fn rejects_unknown_field_security_without_posting_copy() {
 }
 
 #[test]
-fn times_out_at_the_configured_deadline() {
+fn unchanged_clipboard_after_copy_means_no_selection() {
     let fixture = Fixture::without_copy_change(Some("original"));
 
-    assert_eq!(fixture.capture.capture(), Err(CaptureFailure::TimedOut));
+    assert_eq!(fixture.capture.capture(), Err(CaptureFailure::NoSelection));
     assert_eq!(fixture.elapsed(), COPY_TIMEOUT);
     assert_eq!(fixture.clipboard_text(), Some("original".to_owned()));
     assert_eq!(fixture.restore_calls(), 0);

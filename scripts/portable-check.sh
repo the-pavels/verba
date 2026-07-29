@@ -46,4 +46,11 @@ cargo clippy --locked --workspace --all-targets -- -D warnings
 echo "Testing Rust"
 cargo test --locked --workspace
 
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "Testing AppKit pasteboard integration in a fresh process"
+    cargo test --locked -p verba-macos \
+        pasteboard::tests::appkit_round_trips_large_multi_item_data_on_an_isolated_pasteboard \
+        -- --exact --ignored --test-threads=1
+fi
+
 echo "Portable checks passed"

@@ -106,7 +106,10 @@ where
 
         let Some(mut copy_change_count) = self.wait_for_change(initial_change_count, started)
         else {
-            return Err(CaptureFailure::TimedOut);
+            // Copy leaves the pasteboard unchanged when the focused source has
+            // no selection. Treat that normal user state as actionable guidance
+            // instead of presenting it as an infrastructure timeout.
+            return Err(CaptureFailure::NoSelection);
         };
 
         let mut result = self.read_selection();

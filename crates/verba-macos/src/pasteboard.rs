@@ -576,8 +576,14 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "run in a fresh process because AppKit pasteboard services are process-global"]
     fn appkit_round_trips_large_multi_item_data_on_an_isolated_pasteboard() {
-        let pasteboard = NSPasteboard::pasteboardWithUniqueName();
+        let pasteboard_name = NSString::from_str(&format!(
+            "io.github.the-pavels.verba.tests.{}",
+            std::process::id()
+        ));
+        let pasteboard = NSPasteboard::pasteboardWithName(&pasteboard_name);
+        pasteboard.clearContents();
         let backend = AppKitPasteboardWriter {
             pasteboard: &pasteboard,
         };

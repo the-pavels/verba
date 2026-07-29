@@ -694,8 +694,15 @@ impl ProofreadingConsentGate for AlwaysGrantedProofreadingConsent {
 fn capture_failure_presentation(action: TextAction, failure: CaptureFailure) -> PresentationState {
     let (title, message, recovery, diagnostic_code) = match failure {
         CaptureFailure::NoSelection => (
-            "No text selected",
-            "Select some text, then invoke the action again.",
+            "Select text first",
+            match action {
+                TextAction::Translate => {
+                    "Select the text you want to translate, then use the shortcut again."
+                }
+                TextAction::Proofread => {
+                    "Select the text you want to proofread, then use the shortcut again."
+                }
+            },
             RecoveryAction::Dismiss,
             "capture.no-selection",
         ),

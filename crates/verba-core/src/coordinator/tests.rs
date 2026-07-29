@@ -100,7 +100,7 @@ fn capture_failures_become_actionable_presentations_without_processing() {
     let cases = [
         (
             CaptureFailure::NoSelection,
-            "No text selected",
+            "Select text first",
             RecoveryAction::Dismiss,
             "capture.no-selection",
         ),
@@ -158,6 +158,24 @@ fn capture_failures_become_actionable_presentations_without_processing() {
         assert!(!error.message.is_empty());
         assert_eq!(error.recovery, expected_recovery);
         assert_eq!(error.diagnostic_code, expected_code);
+    }
+
+    for (action, expected_message) in [
+        (
+            TextAction::Translate,
+            "Select the text you want to translate, then use the shortcut again.",
+        ),
+        (
+            TextAction::Proofread,
+            "Select the text you want to proofread, then use the shortcut again.",
+        ),
+    ] {
+        let PresentationState::Error(error) =
+            capture_failure_presentation(action, CaptureFailure::NoSelection)
+        else {
+            panic!("no selection should produce an error presentation");
+        };
+        assert_eq!(error.message, expected_message);
     }
 
     let capture = Arc::new(FakeTextCapture::new(Err(CaptureFailure::PermissionDenied)));
