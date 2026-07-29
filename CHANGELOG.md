@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.1 - 2026-07-21
+## 1.0.1 - 2026-07-29
 
 ### Added
 
@@ -14,6 +14,7 @@
 - Capture selected text from accessible document surfaces that omit optional subrole metadata while continuing to reject secure and unverifiable text fields.
 - Fail closed when source-field security cannot be determined and strengthen clipboard restoration against concurrent changes and partial writes.
 - Tie popup focus to the capture lifecycle and harden provider output, token, transport, endpoint, settings-persistence, CI, and release checks.
+- Keep Linux quality checks and the Xcode 16.4 macOS host build compatible with platform- and SDK-specific translation adapters.
 
 ## 1.0.0 - 2026-07-14
 

@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.1 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 14 status:** Prepared for source qualification. Artifact-specific evidence remains pending until the capture compatibility fix and release metadata are committed and the exact clean source revision is signed and notarized.
+**Candidate 15 status:** Source-qualified. Artifact-specific evidence remains pending until the release metadata is committed and the exact clean source revision is signed and notarized.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,7 +10,7 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.1-14-arm64-notarized.zip` |
+| Artifact | `Verba-1.0.1-15-arm64-notarized.zip` |
 | SHA-256 | Pending |
 | Source revision | Pending owner-approved release commit |
 | Source state in manifest | Pending; must be `clean` |
@@ -42,13 +42,14 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.0 (11) | `d091b26781611ab190b520268b73756db1b9719cac8644f59b5ee515e1f215c3` | Invalid, submission `00b31509-2e92-4cdc-ba99-94e0bef2e58b` | Sparkle's nested updater, autoupdate tool, and XPC services retained ad-hoc signatures without secure timestamps. Build 12 added the required Xcode Developer ID export step. |
 | 1.0.0 (12) | `7d3b891ebebb69f102dbce32cd1f1030d47d99dc24820161ed732fa43c2f385b` | Accepted, submission `545628ac-055e-4922-bef4-14d8254e4d22` | Superseded before manual qualification by the audit remediation and subsequent translation-window language-selection work; preserve the provenance evidence but do not publish it. |
 | 1.0.1 (13) | `956a8962ebc54673d95ff9aa98c63c0cf22a6873c421e7cbafbe80b14e03721b` | Accepted, submission `9b2c7e30-5442-43b4-9734-468fdb11061a` | Rejected during manual Chromium/Electron rendered-text testing: ordinary document content without the optional `AXSubrole` attribute was treated as unverifiable field security, preventing capture. |
+| 1.0.1 (14) | `3c8e2b9c1b0ea13e6c992101948ab29720e5477e67bb61adbec7ddfb5c42ab3a` | Accepted, submission `75d3b9b1-d492-4641-925c-33e56317f119` | Superseded before publication by the Linux and Xcode 16.4 translation-build compatibility fixes; preserve the provenance evidence but do not publish it. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.1 (14), including document surfaces without optional subrole metadata, secure and unverifiable text-field regressions, the result-language picker, menu tracking, and displayed-text retranslation. |
-| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-07-21; the reviewed transitive `winnow` duplicate remains the only warning. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.1 (15), including document surfaces without optional subrole metadata, secure and unverifiable text-field regressions, the result-language picker, menu tracking, displayed-text retranslation, and translation adapter compatibility. |
+| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-07-29; the reviewed transitive `winnow` duplicate remains the only warning. |
 | Developer ID signing | Pending | Require strict signature, team `623J248H3K`, secure timestamp, hardened runtime, and empty entitlements. |
 | Apple notarization | Pending | Record the accepted submission and verify the submitted hash and issue list. |
 | Stapling and Gatekeeper | Pending | Require Stapler validation and `spctl` source `Notarized Developer ID`. |
@@ -60,9 +61,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-14-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-15-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.1, build is 13, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.1, build is 15, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
