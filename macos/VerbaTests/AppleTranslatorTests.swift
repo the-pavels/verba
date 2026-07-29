@@ -157,6 +157,7 @@ final class AppleTranslatorTests: XCTestCase {
         }
     }
 
+#if compiler(>=6.2)
     func testNotInstalledSessionErrorRetriesWithPreparation() async throws {
         guard #available(macOS 26.0, *) else {
             return
@@ -188,6 +189,7 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertEqual(result.translatedText, "Hello")
         XCTAssertEqual(sessions.requests.map(\.preparation), [.none, .required])
     }
+#endif
 
     func testSessionBrokerConfiguresIdentifiedSourceAndCancelsPendingWork() async {
         let sessions = SystemTranslationSessionProvider()

@@ -147,9 +147,11 @@ private func translationRequiresPreparation(_ error: any Error) -> Bool {
     if case .languageAssetsRequired = error as? AppleTranslationError {
         return true
     }
+#if compiler(>=6.2)
     if #available(macOS 26.0, *), TranslationError.notInstalled ~= error {
         return true
     }
+#endif
     return false
 }
 
@@ -163,6 +165,7 @@ private func mapTranslationError(
     if error is CancellationError {
         return .cancelled
     }
+#if compiler(>=6.2)
     if #available(macOS 26.0, *), TranslationError.alreadyCancelled ~= error {
         return .cancelled
     }
@@ -171,6 +174,7 @@ private func mapTranslationError(
             targetLanguageIdentifier: target.minimalIdentifier
         )
     }
+#endif
     if TranslationError.unsupportedSourceLanguage ~= error
         || TranslationError.unsupportedTargetLanguage ~= error
         || TranslationError.unsupportedLanguagePairing ~= error
