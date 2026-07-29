@@ -2,7 +2,7 @@
 
 Verba is built with the Rust packages listed below. This is a conservative inventory of all external packages in the locked workspace dependency graph, including build and development dependencies.
 
-Generated from `Cargo.lock` SHA-256 `e6270b1e7cd73d3cb296583a9e40c83f1718aeedfcc21769d981e21608f84c71`. Package count: 176. Regenerate with `./scripts/generate-third-party-notices.sh`.
+Generated from `Cargo.lock` SHA-256 `db978fd8ef86d71921e225a25a9da0116d3f9ea3e04475c267a2145ad6e765bd`. Package count: 178. Regenerate with `./scripts/generate-third-party-notices.sh`.
 
 Each package remains copyright its respective authors and is provided under the SPDX license expression shown. The linked crates.io source distribution contains the authoritative license and notice files for that version. Verba's inclusion of a package does not change its license terms.
 
@@ -32,6 +32,7 @@ Each package remains copyright its respective authors and is provided under the 
 | `clap_lex` | `1.1.0` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/clap_lex/1.1.0) |
 | `core-foundation` | `0.10.1` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/core-foundation/0.10.1) |
 | `core-foundation-sys` | `0.8.7` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/core-foundation-sys/0.8.7) |
+| `dispatch2` | `0.3.0` | `Zlib OR Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/dispatch2/0.3.0) |
 | `displaydoc` | `0.2.6` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/displaydoc/0.2.6) |
 | `equivalent` | `1.0.2` | `Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/equivalent/1.0.2) |
 | `errno` | `0.3.14` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/errno/0.3.14) |
@@ -86,6 +87,7 @@ Each package remains copyright its respective authors and is provided under the 
 | `nom` | `7.1.3` | `MIT` | [crates.io](https://crates.io/crates/nom/7.1.3) |
 | `objc2` | `0.6.4` | `MIT` | [crates.io](https://crates.io/crates/objc2/0.6.4) |
 | `objc2-app-kit` | `0.3.2` | `Zlib OR Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/objc2-app-kit/0.3.2) |
+| `objc2-core-foundation` | `0.3.2` | `Zlib OR Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/objc2-core-foundation/0.3.2) |
 | `objc2-encode` | `4.1.0` | `MIT` | [crates.io](https://crates.io/crates/objc2-encode/4.1.0) |
 | `objc2-foundation` | `0.3.2` | `MIT` | [crates.io](https://crates.io/crates/objc2-foundation/0.3.2) |
 | `once_cell` | `1.21.4` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/once_cell/1.21.4) |

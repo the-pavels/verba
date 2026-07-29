@@ -3,14 +3,23 @@ use std::{
     ptr,
 };
 
+use objc2_app_kit::NSWorkspace;
+
 const CF_STRING_ENCODING_UTF8: u32 = 0x0800_0100;
 const AX_SUCCESS: i32 = 0;
+const AX_ERROR_NO_VALUE: i32 = -25_212;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum FocusedElementSecurity {
     NotSecure,
     Secure,
     Unknown,
+}
+
+enum AttributeValue<T> {
+    Value(T),
+    NoValue,
+    Failed,
 }
 
 pub(super) trait AccessibilityStatus {
@@ -34,26 +43,47 @@ trait AccessibilityReader {
     type Value;
 
     fn system_wide_element(&self) -> Option<Self::Value>;
+    fn frontmost_application(&self) -> Option<Self::Value>;
     fn string(&self, value: &CStr) -> Option<Self::Value>;
-    fn attribute(&self, element: &Self::Value, attribute: &Self::Value) -> Option<Self::Value>;
+    fn attribute(
+        &self,
+        element: &Self::Value,
+        attribute: &Self::Value,
+    ) -> AttributeValue<Self::Value>;
     fn is_string(&self, value: &Self::Value) -> bool;
     fn equal(&self, first: &Self::Value, second: &Self::Value) -> bool;
 }
 
 fn focused_element_security(reader: &impl AccessibilityReader) -> FocusedElementSecurity {
-    let Some(system_wide) = reader.system_wide_element() else {
-        return FocusedElementSecurity::Unknown;
-    };
     let Some(focused_attribute) = reader.string(c"AXFocusedUIElement") else {
         return FocusedElementSecurity::Unknown;
     };
-    let Some(focused_element) = reader.attribute(&system_wide, &focused_attribute) else {
-        return FocusedElementSecurity::Unknown;
+    let system_focused_element = reader
+        .system_wide_element()
+        .map(|system_wide| reader.attribute(&system_wide, &focused_attribute))
+        .unwrap_or(AttributeValue::Failed);
+    let focused_element = match system_focused_element {
+        AttributeValue::Value(focused_element) => focused_element,
+        AttributeValue::NoValue | AttributeValue::Failed => {
+            let frontmost_focused_element = reader
+                .frontmost_application()
+                .map(|application| reader.attribute(&application, &focused_attribute))
+                .unwrap_or(AttributeValue::Failed);
+            match frontmost_focused_element {
+                AttributeValue::Value(focused_element) => focused_element,
+                AttributeValue::NoValue => {
+                    // An explicit no-value response from the frontmost app means
+                    // there is no source field. Other AX errors remain fail-closed.
+                    return FocusedElementSecurity::NotSecure;
+                }
+                AttributeValue::Failed => return FocusedElementSecurity::Unknown,
+            }
+        }
     };
     let Some(role_attribute) = reader.string(c"AXRole") else {
         return FocusedElementSecurity::Unknown;
     };
-    let Some(role) = reader.attribute(&focused_element, &role_attribute) else {
+    let AttributeValue::Value(role) = reader.attribute(&focused_element, &role_attribute) else {
         return FocusedElementSecurity::Unknown;
     };
     if !reader.is_string(&role) {
@@ -68,18 +98,21 @@ fn focused_element_security(reader: &impl AccessibilityReader) -> FocusedElement
     let Some(secure_subrole) = reader.string(c"AXSecureTextField") else {
         return FocusedElementSecurity::Unknown;
     };
+    let is_text_field = reader.equal(&role, &text_field_role);
 
     match reader.attribute(&focused_element, &subrole_attribute) {
-        Some(subrole) if reader.is_string(&subrole) => {
+        AttributeValue::Value(subrole) if reader.is_string(&subrole) => {
             if reader.equal(&subrole, &secure_subrole) {
                 FocusedElementSecurity::Secure
             } else {
                 FocusedElementSecurity::NotSecure
             }
         }
-        Some(_) => FocusedElementSecurity::Unknown,
-        None if reader.equal(&role, &text_field_role) => FocusedElementSecurity::Unknown,
-        None => FocusedElementSecurity::NotSecure,
+        AttributeValue::Value(_) => FocusedElementSecurity::Unknown,
+        AttributeValue::NoValue | AttributeValue::Failed if is_text_field => {
+            FocusedElementSecurity::Unknown
+        }
+        AttributeValue::NoValue | AttributeValue::Failed => FocusedElementSecurity::NotSecure,
     }
 }
 
@@ -92,21 +125,36 @@ impl AccessibilityReader for SystemAccessibilityReader {
         OwnedAxValue::new(unsafe { ax_ui_element_create_system_wide() })
     }
 
+    fn frontmost_application(&self) -> Option<Self::Value> {
+        let process_identifier = NSWorkspace::sharedWorkspace()
+            .frontmostApplication()?
+            .processIdentifier();
+        OwnedAxValue::new(unsafe { ax_ui_element_create_application(process_identifier) })
+    }
+
     fn string(&self, value: &CStr) -> Option<Self::Value> {
         OwnedAxValue::new(unsafe {
             cf_string_create_with_c_string(ptr::null(), value.as_ptr(), CF_STRING_ENCODING_UTF8)
         })
     }
 
-    fn attribute(&self, element: &Self::Value, attribute: &Self::Value) -> Option<Self::Value> {
+    fn attribute(
+        &self,
+        element: &Self::Value,
+        attribute: &Self::Value,
+    ) -> AttributeValue<Self::Value> {
         let mut value = ptr::null();
         let result = unsafe {
             ax_ui_element_copy_attribute_value(element.as_ptr(), attribute.as_ptr(), &mut value)
         };
 
-        (result == AX_SUCCESS)
-            .then(|| OwnedAxValue::new(value))
-            .flatten()
+        match result {
+            AX_SUCCESS => OwnedAxValue::new(value)
+                .map(AttributeValue::Value)
+                .unwrap_or(AttributeValue::Failed),
+            AX_ERROR_NO_VALUE => AttributeValue::NoValue,
+            _ => AttributeValue::Failed,
+        }
     }
 
     fn is_string(&self, value: &Self::Value) -> bool {
@@ -144,6 +192,9 @@ unsafe extern "C" {
     #[link_name = "AXUIElementCreateSystemWide"]
     fn ax_ui_element_create_system_wide() -> *const c_void;
 
+    #[link_name = "AXUIElementCreateApplication"]
+    fn ax_ui_element_create_application(process_identifier: i32) -> *const c_void;
+
     #[link_name = "AXUIElementCopyAttributeValue"]
     fn ax_ui_element_copy_attribute_value(
         element: *const c_void,
@@ -176,12 +227,15 @@ unsafe extern "C" {
 
 #[cfg(test)]
 mod tests {
-    use super::{AccessibilityReader, FocusedElementSecurity, focused_element_security};
+    use super::{
+        AccessibilityReader, AttributeValue, FocusedElementSecurity, focused_element_security,
+    };
     use std::ffi::CStr;
 
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     enum Value {
         SystemWide,
+        FrontmostApplication,
         FocusedAttribute,
         FocusedElement,
         RoleAttribute,
@@ -195,8 +249,9 @@ mod tests {
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     enum FailurePoint {
         SystemWide,
+        FrontmostApplication,
+        FrontmostFocusedElement,
         FocusedAttribute,
-        FocusedElement,
         RoleAttribute,
         Role,
         RoleType,
@@ -211,6 +266,8 @@ mod tests {
         failure: Option<FailurePoint>,
         text_field: bool,
         secure: bool,
+        system_focus_available: bool,
+        frontmost_focus_available: bool,
     }
 
     impl FakeReader {
@@ -219,7 +276,20 @@ mod tests {
                 failure,
                 text_field,
                 secure,
+                system_focus_available: true,
+                frontmost_focus_available: true,
             }
+        }
+
+        fn without_system_focus(mut self) -> Self {
+            self.system_focus_available = false;
+            self
+        }
+
+        fn without_any_focus(mut self) -> Self {
+            self.system_focus_available = false;
+            self.frontmost_focus_available = false;
+            self
         }
     }
 
@@ -228,6 +298,11 @@ mod tests {
 
         fn system_wide_element(&self) -> Option<Self::Value> {
             (self.failure != Some(FailurePoint::SystemWide)).then_some(Value::SystemWide)
+        }
+
+        fn frontmost_application(&self) -> Option<Self::Value> {
+            (self.failure != Some(FailurePoint::FrontmostApplication))
+                .then_some(Value::FrontmostApplication)
         }
 
         fn string(&self, value: &CStr) -> Option<Self::Value> {
@@ -246,22 +321,46 @@ mod tests {
             }
         }
 
-        fn attribute(&self, element: &Self::Value, attribute: &Self::Value) -> Option<Self::Value> {
+        fn attribute(
+            &self,
+            element: &Self::Value,
+            attribute: &Self::Value,
+        ) -> AttributeValue<Self::Value> {
             match (element, attribute) {
-                (Value::SystemWide, Value::FocusedAttribute) => (self.failure
-                    != Some(FailurePoint::FocusedElement))
-                .then_some(Value::FocusedElement),
+                (Value::SystemWide, Value::FocusedAttribute) if self.system_focus_available => {
+                    AttributeValue::Value(Value::FocusedElement)
+                }
+                (Value::SystemWide, Value::FocusedAttribute) => AttributeValue::NoValue,
+                (Value::FrontmostApplication, Value::FocusedAttribute)
+                    if self.failure == Some(FailurePoint::FrontmostFocusedElement) =>
+                {
+                    AttributeValue::Failed
+                }
+                (Value::FrontmostApplication, Value::FocusedAttribute)
+                    if self.frontmost_focus_available =>
+                {
+                    AttributeValue::Value(Value::FocusedElement)
+                }
+                (Value::FrontmostApplication, Value::FocusedAttribute) => AttributeValue::NoValue,
                 (Value::FocusedElement, Value::RoleAttribute) => {
-                    (self.failure != Some(FailurePoint::Role)).then_some(if self.text_field {
-                        Value::TextFieldRole
+                    if self.failure == Some(FailurePoint::Role) {
+                        AttributeValue::Failed
                     } else {
-                        Value::OtherRole
-                    })
+                        AttributeValue::Value(if self.text_field {
+                            Value::TextFieldRole
+                        } else {
+                            Value::OtherRole
+                        })
+                    }
                 }
                 (Value::FocusedElement, Value::SubroleAttribute) => {
-                    (self.failure != Some(FailurePoint::Subrole)).then_some(Value::Subrole)
+                    if self.failure == Some(FailurePoint::Subrole) {
+                        AttributeValue::NoValue
+                    } else {
+                        AttributeValue::Value(Value::Subrole)
+                    }
                 }
-                _ => None,
+                _ => AttributeValue::Failed,
             }
         }
 
@@ -297,6 +396,50 @@ mod tests {
     }
 
     #[test]
+    fn falls_back_to_frontmost_application_when_system_focus_is_missing() {
+        assert_eq!(
+            focused_element_security(&FakeReader::new(None, true, true).without_system_focus()),
+            FocusedElementSecurity::Secure
+        );
+        assert_eq!(
+            focused_element_security(&FakeReader::new(None, true, false).without_system_focus()),
+            FocusedElementSecurity::NotSecure
+        );
+    }
+
+    #[test]
+    fn falls_back_to_frontmost_application_when_system_wide_element_is_missing() {
+        assert_eq!(
+            focused_element_security(&FakeReader::new(Some(FailurePoint::SystemWide), true, true)),
+            FocusedElementSecurity::Secure
+        );
+    }
+
+    #[test]
+    fn missing_focused_element_from_both_sources_is_unknown() {
+        for failure in [
+            FailurePoint::FrontmostApplication,
+            FailurePoint::FrontmostFocusedElement,
+        ] {
+            assert_eq!(
+                focused_element_security(
+                    &FakeReader::new(Some(failure), false, false).without_system_focus()
+                ),
+                FocusedElementSecurity::Unknown,
+                "{failure:?} should fail closed"
+            );
+        }
+    }
+
+    #[test]
+    fn no_focused_element_in_frontmost_application_means_no_source_field() {
+        assert_eq!(
+            focused_element_security(&FakeReader::new(None, false, false).without_any_focus()),
+            FocusedElementSecurity::NotSecure
+        );
+    }
+
+    #[test]
     fn missing_subrole_is_allowed_for_non_text_fields() {
         assert_eq!(
             focused_element_security(&FakeReader::new(Some(FailurePoint::Subrole), false, false)),
@@ -315,9 +458,7 @@ mod tests {
     #[test]
     fn mandatory_query_failures_are_unknown() {
         for failure in [
-            FailurePoint::SystemWide,
             FailurePoint::FocusedAttribute,
-            FailurePoint::FocusedElement,
             FailurePoint::RoleAttribute,
             FailurePoint::Role,
             FailurePoint::RoleType,
