@@ -178,11 +178,11 @@ h3 {
 .button-primary {
   color: var(--white);
   background: linear-gradient(135deg, #2a83f8 0%, #526be6 100%);
-  box-shadow: 0 16px 34px rgba(45, 112, 232, 0.28);
+  box-shadow: 0 7px 16px rgba(45, 112, 232, 0.18);
 }
 
 .button-primary:hover {
-  box-shadow: 0 20px 42px rgba(45, 112, 232, 0.37);
+  box-shadow: 0 9px 20px rgba(45, 112, 232, 0.24);
 }
 
 .download-arrow {
@@ -231,8 +231,7 @@ h3 {
   font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, monospace;
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .status-dot {
@@ -747,8 +746,7 @@ h3 {
   color: var(--blue);
   font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, monospace;
   font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .feature-copy h3 {
@@ -921,8 +919,7 @@ h3 {
   color: #aeb6c8;
   font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, monospace;
   font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .privacy-stat-word strong {
@@ -1093,8 +1090,7 @@ h3 {
   color: var(--blue);
   font-family: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, monospace;
   font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .legal-summary-grid h2 {
