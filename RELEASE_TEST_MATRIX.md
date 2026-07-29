@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.1 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 16 status:** Source-qualified. Signing, notarization, manual artifact qualification, and project-owner sign-off remain pending.
+**Candidate 16 status:** Signed, notarized, and source-qualified. Manual artifact qualification and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -11,11 +11,11 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | Field | Value |
 | --- | --- |
 | Artifact | `Verba-1.0.1-16-arm64-notarized.zip` |
-| SHA-256 | Pending |
-| Source revision | Pending |
-| Source state in manifest | Pending |
-| Notarization submission ID | Pending |
-| Build date | Pending |
+| SHA-256 | `4f3ff39519ec84c8dea1e5de11c6188f94fb53750aaaec5ff7baf3355b9d3968` |
+| Source revision | `4512a0216cfeeeb78c07e66efcd0833313b8076c` |
+| Source state in manifest | `clean` |
+| Notarization submission ID | `27739260-c389-4b56-8fad-29dd78f781e8` |
+| Build date | 2026-07-29 |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pending |
@@ -51,10 +51,10 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | --- | --- | --- |
 | Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.1 (16), including explicit no-focused-element handling, frontmost-app fallback, secure and unverifiable text-field regressions, document surfaces without optional subrole metadata, and all Rust and macOS host suites. |
 | RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-07-29 after refreshing notices for the AppKit dependency features; the reviewed transitive `winnow` duplicate remains the only warning. |
-| Developer ID signing | Pending | Verify the exact build 16 artifact and every nested Sparkle code object. |
-| Apple notarization | Pending | Record the accepted build 16 submission and submitted-archive checksum. |
-| Stapling and Gatekeeper | Pending | Validate the stapled build 16 artifact after native and portable extraction. |
-| Final artifact checksum | Pending | Record and reverify the final build 16 notarized ZIP checksum. |
+| Developer ID signing | Pass | Strict signature verification passed for team `623J248H3K`, including secure timestamps, Hardened Runtime, empty app entitlements, and every nested Sparkle code object. |
+| Apple notarization | Pass | Apple accepted submission `27739260-c389-4b56-8fad-29dd78f781e8` with no issues; the logged submitted-archive SHA-256 matched the exact Developer ID ZIP. |
+| Stapling and Gatekeeper | Pass | Stapler validation and Gatekeeper assessment passed with source `Notarized Developer ID` after native and portable extraction. |
+| Final artifact checksum | Pass | `Verba-1.0.1-16-arm64-notarized.zip` reverified as `4f3ff39519ec84c8dea1e5de11c6188f94fb53750aaaec5ff7baf3355b9d3968`. |
 
 ## Artifact and clean installation
 
@@ -62,7 +62,7 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-16-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.1-16-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Pass | Verified on the build host before qualification. |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
 | ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.1, build is 16, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
