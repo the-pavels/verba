@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 - 2026-08-03
+
+### Improved
+
+- Keep the popup fully inside the usable display area on smaller screens, with result content remaining scrollable when its preferred size does not fit.
+- Show the target-language dropdown directly when selected text is already in the current target language, then immediately retranslate the same text after another language is chosen.
+
 ## 1.0.1 - 2026-07-29
 
 ### Added
