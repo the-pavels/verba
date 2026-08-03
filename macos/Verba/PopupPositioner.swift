@@ -1,8 +1,56 @@
 import AppKit
 
+struct PopupPlacement: Equatable {
+    let size: NSSize
+    let origin: NSPoint
+}
+
 enum PopupPositioner {
     private static let pointerGap: CGFloat = 12
     private static let screenMargin: CGFloat = 8
+
+    static func placement(
+        popupSize: NSSize,
+        pointer: NSPoint,
+        screens: [NSScreen]
+    ) -> PopupPlacement {
+        guard let screen = screens.first(where: { $0.frame.contains(pointer) })
+            ?? NSScreen.main
+            ?? screens.first
+        else {
+            return PopupPlacement(size: popupSize, origin: pointer)
+        }
+
+        return placement(
+            popupSize: popupSize,
+            pointer: pointer,
+            visibleFrame: screen.visibleFrame
+        )
+    }
+
+    static func placement(
+        popupSize: NSSize,
+        pointer: NSPoint,
+        visibleFrame: NSRect
+    ) -> PopupPlacement {
+        let availableSize = NSSize(
+            width: max(0, visibleFrame.width - 2 * screenMargin),
+            height: max(0, visibleFrame.height - 2 * screenMargin)
+        )
+        let fittedSize = NSSize(
+            width: min(popupSize.width, availableSize.width),
+            height: min(popupSize.height, availableSize.height)
+        )
+
+        return PopupPlacement(
+            size: fittedSize,
+            origin: origin(
+                popupSize: fittedSize,
+                pointer: pointer,
+                visibleFrame: visibleFrame
+            )
+        )
+    }
 
     static func origin(
         popupSize: NSSize,

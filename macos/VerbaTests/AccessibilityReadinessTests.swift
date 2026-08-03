@@ -181,6 +181,33 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(panel.contentView?.frame.size, disclosureSize)
     }
 
+    func testPopupPlacementShrinksToTheVisibleScreenArea() {
+        let visibleFrame = NSRect(x: 0, y: 0, width: 400, height: 300)
+
+        let placement = PopupPositioner.placement(
+            popupSize: NSSize(width: 420, height: 480),
+            pointer: NSPoint(x: 390, y: 290),
+            visibleFrame: visibleFrame
+        )
+
+        XCTAssertEqual(placement.size, NSSize(width: 384, height: 284))
+        XCTAssertEqual(placement.origin, NSPoint(x: 8, y: 8))
+        XCTAssertTrue(visibleFrame.contains(NSRect(origin: placement.origin, size: placement.size)))
+    }
+
+    func testPopupPlacementKeepsPreferredSizeWhenItFits() {
+        let visibleFrame = NSRect(x: 100, y: 50, width: 1200, height: 800)
+
+        let placement = PopupPositioner.placement(
+            popupSize: NSSize(width: 420, height: 480),
+            pointer: NSPoint(x: 500, y: 500),
+            visibleFrame: visibleFrame
+        )
+
+        XCTAssertEqual(placement.size, NSSize(width: 420, height: 480))
+        XCTAssertTrue(visibleFrame.contains(NSRect(origin: placement.origin, size: placement.size)))
+    }
+
     func testPopupKeyboardCommandsRecognizeEscapeAndCommandC() throws {
         let escape = try XCTUnwrap(keyEvent(keyCode: 53, characters: "\u{1b}"))
         let copy = try XCTUnwrap(

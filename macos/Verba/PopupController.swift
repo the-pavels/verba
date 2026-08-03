@@ -19,6 +19,7 @@ final class PopupController {
     private var copyableText: String?
     private var captureFocusState = PopupCaptureFocusState()
     private var sourceApplication: NSRunningApplication?
+    private var preferredContentSize: NSSize
 
     var onDismiss: (() -> Void)?
     var onProofreadingDisclosureContinue: (() -> Void)?
@@ -34,6 +35,7 @@ final class PopupController {
     ) {
         let initialContentSize = PopupSizePolicy.size(for: .idle, textScale: 1)
         self.pasteboardWriter = pasteboardWriter
+        preferredContentSize = initialContentSize
         hostingController = NSHostingController(
             rootView: TranslationPopupHost(
                 presentation: .idle,
@@ -80,14 +82,21 @@ final class PopupController {
             onDiagnosticCode?(diagnosticCode)
         }
 
-        let contentSize = PopupSizePolicy.size(
+        let preferredContentSize = PopupSizePolicy.size(
             for: presentation,
             textScale: Self.preferredTextScale
+        )
+        self.preferredContentSize = preferredContentSize
+        let pointer = NSEvent.mouseLocation
+        let placement = PopupPositioner.placement(
+            popupSize: preferredContentSize,
+            pointer: pointer,
+            screens: NSScreen.screens
         )
         copyableText = presentation.copyableResultText
         hostingController.rootView = TranslationPopupHost(
             presentation: presentation,
-            contentSize: contentSize,
+            contentSize: placement.size,
             copyText: { [weak self] text in
                 self?.copyAndDismiss(text)
             },
@@ -106,17 +115,11 @@ final class PopupController {
             },
             translationSessions: hostingController.rootView.translationSessions
         )
-        panel.setFixedContentSize(contentSize)
+        panel.setFixedContentSize(placement.size)
         panel.animationBehavior = PopupAnimationPolicy.behavior(
             reduceMotion: NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         )
-        panel.setFrameOrigin(
-            PopupPositioner.origin(
-                popupSize: contentSize,
-                pointer: NSEvent.mouseLocation,
-                screens: NSScreen.screens
-            )
-        )
+        panel.setFrameOrigin(placement.origin)
         if !panel.isVisible {
             windowFocusRestorer.capture(NSApplication.shared.keyWindow, excluding: panel)
             let frontmostApplication = NSWorkspace.shared.frontmostApplication
@@ -173,13 +176,14 @@ final class PopupController {
         guard panel.isVisible else {
             return
         }
-        panel.setFrameOrigin(
-            PopupPositioner.origin(
-                popupSize: panel.frame.size,
-                pointer: NSEvent.mouseLocation,
-                screens: NSScreen.screens
-            )
+        let placement = PopupPositioner.placement(
+            popupSize: preferredContentSize,
+            pointer: NSEvent.mouseLocation,
+            screens: NSScreen.screens
         )
+        hostingController.rootView.contentSize = placement.size
+        panel.setFixedContentSize(placement.size)
+        panel.setFrameOrigin(placement.origin)
     }
 
     private func hide(focusDisposition: PopupFocusDisposition = .restoreSource) {
@@ -390,7 +394,7 @@ private final class NotificationMonitor: @unchecked Sendable {
 
 private struct TranslationPopupHost: View {
     let presentation: PresentationViewModel
-    let contentSize: NSSize
+    var contentSize: NSSize
     let copyText: (String) -> Void
     let continueProofreading: () -> Void
     let cancelProofreading: () -> Void
