@@ -121,7 +121,9 @@ fn translation_processing_failure(failure: TranslationFailure) -> ProcessingFail
         TranslationFailure::InvalidResult => ProcessingFailure::InvalidOutput,
         TranslationFailure::EmptyInput => ProcessingFailure::EmptyInput,
         TranslationFailure::InputTooLong { .. } => ProcessingFailure::InputTooLong,
-        TranslationFailure::SameLanguage { .. } => ProcessingFailure::SameLanguage,
+        TranslationFailure::SameLanguage { language } => ProcessingFailure::SameLanguage {
+            language: language.into_string(),
+        },
         TranslationFailure::Failed => ProcessingFailure::Failed,
         TranslationFailure::UnsupportedPair { .. } => ProcessingFailure::UnsupportedConfiguration,
     }
@@ -384,7 +386,9 @@ mod tests {
                 TranslationFailure::SameLanguage {
                     language: language("de"),
                 },
-                ProcessingFailure::SameLanguage,
+                ProcessingFailure::SameLanguage {
+                    language: "de".to_owned(),
+                },
             ),
             (
                 TranslationFailure::InvalidResult,

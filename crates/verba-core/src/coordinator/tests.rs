@@ -13,7 +13,10 @@ use futures::task::{ArcWake, waker_ref};
 
 use super::*;
 use crate::{
-    presentation::{LanguagePair, ProofreadingPresentation, TranslationPresentation},
+    presentation::{
+        LanguagePair, ProofreadingPresentation, TranslationLanguageSelectionPresentation,
+        TranslationPresentation,
+    },
     proofreading::ProofreadingPolicyViolation,
     shortcut::{ShortcutConfiguration, ShortcutRegistry},
     testing::{FakeShortcutRegistry, FakeTextCapture},
@@ -77,6 +80,29 @@ fn registered_shortcut_captures_processes_and_presents_a_result() {
             action: TextAction::Translate,
             text: CapturedText::new("Hallo").unwrap(),
         }]
+    );
+}
+
+#[test]
+fn same_language_failure_offers_inline_selection_for_the_captured_text() {
+    let capture = Arc::new(FakeTextCapture::new(captured("Hello")));
+    let processor = Arc::new(QueueProcessor::new([Err(
+        ProcessingFailure::SameLanguage {
+            language: "en".to_owned(),
+        },
+    )]));
+    let presenter = Arc::new(RecordingPresenter::default());
+    let coordinator = ShortcutCoordinator::new(capture, processor, presenter.clone());
+
+    coordinator.on_shortcut(TextAction::Translate);
+
+    let updates = presenter.wait_for(2);
+    assert_eq!(
+        updates[1].state,
+        PresentationState::TranslationLanguageSelection(TranslationLanguageSelectionPresentation {
+            original_text: "Hello".to_owned(),
+            language: "en".to_owned(),
+        })
     );
 }
 
@@ -774,13 +800,17 @@ fn non_provider_processing_failures_have_exhaustive_recovery_actions() {
         ),
         (
             TextAction::Translate,
-            ProcessingFailure::SameLanguage,
+            ProcessingFailure::SameLanguage {
+                language: "en".to_owned(),
+            },
             RecoveryAction::ChangeLanguage,
             "translation.same-language",
         ),
         (
             TextAction::Proofread,
-            ProcessingFailure::SameLanguage,
+            ProcessingFailure::SameLanguage {
+                language: "en".to_owned(),
+            },
             RecoveryAction::Retry,
             "proofreading.unexpected-same-language",
         ),

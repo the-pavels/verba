@@ -84,7 +84,7 @@ struct TranslationResultView: View {
 
 }
 
-private struct TranslationLanguageRow: View {
+struct TranslationLanguageRow: View {
     @ObservedObject var controller: TargetLanguageSettingsController
     let sourceLanguage: String
     let fallbackDetail: String

@@ -13,7 +13,7 @@ use crate::{
     capture::{CaptureFailure, CapturedText, TextCapture},
     presentation::{
         ErrorPresentation, PresentationState, ProofreadingPresentation, RecoveryAction, TextAction,
-        TranslationPresentation,
+        TranslationLanguageSelectionPresentation, TranslationPresentation,
     },
     proofreading::{
         ProofreaderError, ProofreadingConsentGate, ProofreadingConsentStoreError,
@@ -61,14 +61,14 @@ impl ProcessingOutcome {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ProcessingFailure {
     Failed,
     Cancelled,
     EmptyInput,
     InputTooLong,
     InputTokenLimit,
-    SameLanguage,
+    SameLanguage { language: String },
     InvalidOutput,
     ProofreadingPolicyViolation(ProofreadingPolicyViolation),
     UnsupportedConfiguration,
@@ -428,6 +428,7 @@ impl CoordinatorInner {
             return;
         }
 
+        let original_text = captured.as_str().to_owned();
         let processing_request = ProcessingRequest {
             request_id: request.id,
             action: request.action,
@@ -444,7 +445,9 @@ impl CoordinatorInner {
                 .into_presentation(request.action)
                 .unwrap_or_else(|failure| processing_failure_presentation(request.action, failure)),
             Err(ProcessingFailure::Cancelled) => PresentationState::Idle,
-            Err(failure) => processing_failure_presentation(request.action, failure),
+            Err(failure) => {
+                processing_failure_presentation_for_text(request.action, failure, original_text)
+            }
         };
 
         self.complete(&request, state);
@@ -632,6 +635,24 @@ impl CoordinatorInner {
     }
 }
 
+fn processing_failure_presentation_for_text(
+    action: TextAction,
+    failure: ProcessingFailure,
+    original_text: String,
+) -> PresentationState {
+    match (action, failure) {
+        (TextAction::Translate, ProcessingFailure::SameLanguage { language }) => {
+            PresentationState::TranslationLanguageSelection(
+                TranslationLanguageSelectionPresentation {
+                    original_text,
+                    language,
+                },
+            )
+        }
+        (action, failure) => processing_failure_presentation(action, failure),
+    }
+}
+
 #[derive(Clone)]
 struct ActiveRequest {
     id: RequestId,
@@ -806,13 +827,13 @@ fn processing_failure_presentation(
             RecoveryAction::Retry,
             "translation.unexpected-failure-kind",
         ),
-        (TextAction::Translate, ProcessingFailure::SameLanguage) => (
+        (TextAction::Translate, ProcessingFailure::SameLanguage { .. }) => (
             "Text is already in the target language",
             "Choose a different target language or select different text.",
             RecoveryAction::ChangeLanguage,
             "translation.same-language",
         ),
-        (TextAction::Proofread, ProcessingFailure::SameLanguage) => (
+        (TextAction::Proofread, ProcessingFailure::SameLanguage { .. }) => (
             "Proofreading failed",
             "Try proofreading the selection again.",
             RecoveryAction::Retry,

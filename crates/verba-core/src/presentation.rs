@@ -20,6 +20,13 @@ pub struct TranslationPresentation {
     pub translated_text: String,
 }
 
+/// Content displayed when the selected text already uses the target language.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TranslationLanguageSelectionPresentation {
+    pub original_text: String,
+    pub language: String,
+}
+
 /// Content displayed when proofreading produces a correction.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProofreadingPresentation {
@@ -54,6 +61,7 @@ pub enum PresentationState {
     Loading { action: TextAction },
     ProofreadingDisclosure,
     Translation(TranslationPresentation),
+    TranslationLanguageSelection(TranslationLanguageSelectionPresentation),
     Proofreading(ProofreadingPresentation),
     NoIssues,
     Error(ErrorPresentation),
@@ -66,7 +74,9 @@ impl PresentationState {
         match self {
             Self::Idle => None,
             Self::Loading { action } => Some(*action),
-            Self::Translation(_) => Some(TextAction::Translate),
+            Self::Translation(_) | Self::TranslationLanguageSelection(_) => {
+                Some(TextAction::Translate)
+            }
             Self::ProofreadingDisclosure | Self::Proofreading(_) | Self::NoIssues => {
                 Some(TextAction::Proofread)
             }
@@ -79,7 +89,8 @@ impl PresentationState {
 mod tests {
     use super::{
         ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation,
-        RecoveryAction, TextAction, TranslationPresentation,
+        RecoveryAction, TextAction, TranslationLanguageSelectionPresentation,
+        TranslationPresentation,
     };
 
     #[test]
@@ -93,6 +104,15 @@ mod tests {
                 Some(TextAction::Proofread),
             ),
             (translation_state(), Some(TextAction::Translate)),
+            (
+                PresentationState::TranslationLanguageSelection(
+                    TranslationLanguageSelectionPresentation {
+                        original_text: "Hello".to_owned(),
+                        language: "en".to_owned(),
+                    },
+                ),
+                Some(TextAction::Translate),
+            ),
             (proofreading_state(), Some(TextAction::Proofread)),
             (PresentationState::NoIssues, Some(TextAction::Proofread)),
             (

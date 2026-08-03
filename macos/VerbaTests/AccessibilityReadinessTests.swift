@@ -116,6 +116,18 @@ final class AccessibilityReadinessTests: XCTestCase {
         )
     }
 
+    func testSameLanguagePopupHasRoomForInlineLanguageSelection() {
+        let presentation = PresentationViewModel.translationLanguageSelection(
+            originalText: "Hello",
+            language: "en"
+        )
+
+        XCTAssertEqual(
+            PopupSizePolicy.size(for: presentation, textScale: 1),
+            NSSize(width: 420, height: 190)
+        )
+    }
+
     func testExplicitLineBreaksContributeToPopupHeight() {
         let languagePair = LanguagePairViewModel(source: "German", target: "English")
         let singleLine = PresentationViewModel.translation(

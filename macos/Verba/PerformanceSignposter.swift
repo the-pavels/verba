@@ -221,6 +221,8 @@ private extension PresentationViewModel {
             .proofreadingDisclosure
         case .translation:
             .translation
+        case .translationLanguageSelection:
+            .error
         case .proofreading:
             .proofreading
         case .noIssues:

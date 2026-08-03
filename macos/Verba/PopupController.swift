@@ -80,6 +80,8 @@ final class PopupController {
 
         if case let .error(_, _, _, _, diagnosticCode) = presentation {
             onDiagnosticCode?(diagnosticCode)
+        } else if case .translationLanguageSelection = presentation {
+            onDiagnosticCode?("translation.same-language")
         }
 
         let preferredContentSize = PopupSizePolicy.size(
@@ -425,6 +427,8 @@ enum PopupSizePolicy {
         let baseSize = switch presentation {
         case let .translation(originalText, _, translatedText):
             resultSize(originalText: originalText, resultText: translatedText)
+        case .translationLanguageSelection:
+            NSSize(width: 420, height: 190)
         case let .proofreading(originalText, correctedText):
             resultSize(originalText: originalText, resultText: correctedText)
         case .proofreadingDisclosure:

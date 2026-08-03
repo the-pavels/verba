@@ -37,6 +37,10 @@ pub enum PresentationViewModel {
         language_pair: LanguagePairViewModel,
         translated_text: String,
     },
+    TranslationLanguageSelection {
+        original_text: String,
+        language: String,
+    },
     Proofreading {
         original_text: String,
         corrected_text: String,
@@ -103,6 +107,12 @@ impl From<core::PresentationState> for PresentationViewModel {
                 language_pair: translation.language_pair.into(),
                 translated_text: translation.translated_text,
             },
+            core::PresentationState::TranslationLanguageSelection(selection) => {
+                Self::TranslationLanguageSelection {
+                    original_text: selection.original_text,
+                    language: selection.language,
+                }
+            }
             core::PresentationState::Proofreading(proofreading) => Self::Proofreading {
                 original_text: proofreading.original_text,
                 corrected_text: proofreading.corrected_text,
@@ -126,7 +136,8 @@ mod tests {
     };
     use verba_core::presentation::{
         ErrorPresentation, LanguagePair, PresentationState, ProofreadingPresentation,
-        RecoveryAction, TextAction, TranslationPresentation,
+        RecoveryAction, TextAction, TranslationLanguageSelectionPresentation,
+        TranslationPresentation,
     };
 
     #[test]
@@ -161,6 +172,18 @@ mod tests {
                         target: "English".to_owned(),
                     },
                     translated_text: "Hello".to_owned(),
+                },
+            ),
+            (
+                PresentationState::TranslationLanguageSelection(
+                    TranslationLanguageSelectionPresentation {
+                        original_text: "Hello".to_owned(),
+                        language: "en".to_owned(),
+                    },
+                ),
+                PresentationViewModel::TranslationLanguageSelection {
+                    original_text: "Hello".to_owned(),
+                    language: "en".to_owned(),
                 },
             ),
             (

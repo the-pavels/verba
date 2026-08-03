@@ -101,6 +101,27 @@ struct PerformanceSignposterTests {
         )
     }
 
+    @Test("same-language selection is a terminal error without logging its text")
+    func recordsSameLanguageSelectionWithoutContents() {
+        let records = LockedPerformanceRecords()
+        let signposter = PerformanceSignposter(signposter: .disabled) { record in
+            records.append(record)
+        }
+        let selectedText = "private selected text"
+
+        signposter.requestStarted(requestId: 42, action: .translate)
+        signposter.presentationDidPresent(
+            requestID: 42,
+            presentation: .translationLanguageSelection(
+                originalText: selectedText,
+                language: "en"
+            )
+        )
+
+        #expect(records.snapshot().last?.milestone == .popupPresented(.error))
+        #expect(!String(describing: records.snapshot()).contains(selectedText))
+    }
+
     @Test("budgets match the documented thresholds")
     func documentedBudgets() {
         #expect(PerformanceBudget.appInitializationMilliseconds == 750)

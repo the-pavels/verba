@@ -97,6 +97,14 @@ struct PopupContentView: View {
                     selectTargetLanguage(identifier, originalText)
                 }
             )
+        case let .translationLanguageSelection(originalText, language):
+            TranslationLanguageSelectionView(
+                language: language,
+                targetLanguages: targetLanguages,
+                selectTargetLanguage: { identifier in
+                    selectTargetLanguage(identifier, originalText)
+                }
+            )
         case let .proofreading(originalText, correctedText):
             ProofreadingResultView(
                 originalText: originalText,
@@ -135,6 +143,46 @@ struct PopupContentView: View {
                 }
             }
         }
+    }
+}
+
+private struct TranslationLanguageSelectionView: View {
+    let language: String
+    var targetLanguages: TargetLanguageSettingsController?
+    let selectTargetLanguage: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            PopupStatusHeader(
+                title: LocalizedCopy.text("Text is already in the target language"),
+                systemImage: "character.bubble.fill"
+            )
+
+            Text(LocalizedCopy.text(
+                "Choose a different target language or select different text."
+            ))
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+
+            if let targetLanguages {
+                TranslationLanguageRow(
+                    controller: targetLanguages,
+                    sourceLanguage: localizedLanguage,
+                    fallbackDetail: "\(localizedLanguage)  →  \(localizedLanguage)",
+                    fallbackAccessibilityLabel: LocalizedCopy.format(
+                        "From %@ to %@",
+                        localizedLanguage,
+                        localizedLanguage
+                    ),
+                    select: selectTargetLanguage
+                )
+            }
+        }
+    }
+
+    private var localizedLanguage: String {
+        Locale.current.localizedString(forIdentifier: language) ?? language
     }
 }
 
