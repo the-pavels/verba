@@ -86,7 +86,7 @@ struct TranslationResultView: View {
 
 struct TranslationLanguageRow: View {
     @ObservedObject var controller: TargetLanguageSettingsController
-    let sourceLanguage: String
+    let sourceLanguage: String?
     let fallbackDetail: String
     let fallbackAccessibilityLabel: String
     let select: (String) -> Void
@@ -108,12 +108,18 @@ struct TranslationLanguageRow: View {
                             )
                     }
                 } else {
-                    Text("\(sourceLanguage)  →")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .accessibilityLabel(
-                            LocalizedCopy.format("Translated from %@", sourceLanguage)
-                        )
+                    if let sourceLanguage {
+                        Text("\(sourceLanguage)  →")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel(
+                                LocalizedCopy.format("Translated from %@", sourceLanguage)
+                            )
+                    } else {
+                        Text(LocalizedCopy.text("Target language"))
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
 
                     Picker(
                         LocalizedCopy.text("Target language"),

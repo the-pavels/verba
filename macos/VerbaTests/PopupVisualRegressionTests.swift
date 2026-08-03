@@ -64,6 +64,27 @@ final class PopupVisualRegressionTests: XCTestCase {
         )
     }
 
+    func testLanguagePairUnavailablePopupMatchesBaseline() async throws {
+        let targetLanguages = TargetLanguageSettingsController(
+            preferences: SnapshotTargetLanguagePreferences(),
+            languages: SnapshotSupportedLanguages(),
+            locale: Locale(identifier: "en")
+        )
+        await targetLanguages.load()
+
+        try assertSnapshot(
+            .error(
+                action: .translate,
+                title: "Language pair unavailable",
+                message: "Choose a different target language.",
+                recovery: .changeLanguage,
+                diagnosticCode: "translation.unsupported-configuration"
+            ),
+            targetLanguages: targetLanguages,
+            named: "language-pair-unavailable-light"
+        )
+    }
+
     private func assertSnapshot(
         _ presentation: PresentationViewModel,
         targetLanguages: TargetLanguageSettingsController? = nil,

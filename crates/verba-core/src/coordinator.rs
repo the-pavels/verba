@@ -787,7 +787,7 @@ fn processing_failure_presentation(
         ),
         (TextAction::Translate, ProcessingFailure::UnsupportedConfiguration) => (
             "Language pair unavailable",
-            "Choose a different target language, then try again.",
+            "Choose a different target language.",
             RecoveryAction::ChangeLanguage,
             "translation.unsupported-configuration",
         ),

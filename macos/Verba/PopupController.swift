@@ -265,14 +265,18 @@ final class PopupController {
         dismiss()
     }
 
-    func selectTargetLanguage(_ identifier: String, originalText: String) {
+    func selectTargetLanguage(_ identifier: String, originalText: String?) {
         guard let targetLanguageSettings,
               identifier != targetLanguageSettings.selectedIdentifier,
               targetLanguageSettings.select(identifier)
         else {
             return
         }
-        onTargetLanguageChanged?(originalText)
+        if let originalText {
+            onTargetLanguageChanged?(originalText)
+        } else {
+            perform(.retry(.translate))
+        }
     }
 
     private func startClickAwayMonitoring() {
@@ -402,7 +406,7 @@ private struct TranslationPopupHost: View {
     let cancelProofreading: () -> Void
     let recover: (RecoveryActionViewModel, PresentationAction?) -> Void
     let targetLanguages: TargetLanguageSettingsController?
-    let selectTargetLanguage: (String, String) -> Void
+    let selectTargetLanguage: (String, String?) -> Void
     @ObservedObject var translationSessions: SystemTranslationSessionProvider
 
     var body: some View {

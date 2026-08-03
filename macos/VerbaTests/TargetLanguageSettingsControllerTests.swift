@@ -125,6 +125,28 @@ final class TargetLanguageSettingsControllerTests: XCTestCase {
         XCTAssertEqual(controller.selectedIdentifier, "en")
         XCTAssertEqual(retranslations, 0)
     }
+
+    func testPopupSelectionWithoutCapturedTextRetriesTranslation() async {
+        let preferences = FakeTargetLanguagePreferences(selected: "en")
+        let controller = TargetLanguageSettingsController(
+            preferences: preferences,
+            languages: FakeSupportedLanguages(identifiers: ["en", "fr"]),
+            locale: Locale(identifier: "en")
+        )
+        await controller.load()
+        let popup = PopupController(
+            translationSessions: SystemTranslationSessionProvider()
+        )
+        popup.targetLanguageSettings = controller
+        var retriedActions: [PresentationAction] = []
+        popup.onRetry = { retriedActions.append($0) }
+
+        popup.selectTargetLanguage("fr", originalText: nil)
+
+        XCTAssertEqual(controller.selectedIdentifier, "fr")
+        XCTAssertEqual(preferences.selections, ["fr"])
+        XCTAssertEqual(retriedActions, [.translate])
+    }
 }
 
 @MainActor

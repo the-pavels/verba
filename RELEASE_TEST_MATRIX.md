@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.2 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 21 status:** Source-qualified, Developer ID signed, notarized, stapled, Gatekeeper-accepted, and update-feed signed. Manual exact-artifact qualification and project-owner sign-off remain pending.
+**Candidate 22 status:** Source-qualified. Signing, notarization, manual exact-artifact qualification, and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,12 +10,12 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.2-21-arm64-notarized.zip` |
-| SHA-256 | `753de898dee1e23f966a2b373441b437288edc701c21af13eba2a893561cfa15` |
-| Source revision | `e8e05b012aabab4cf98c6645926452e0b91828d7` |
-| Source state in manifest | `clean` |
-| Notarization submission ID | `64042632-d676-4b0b-8753-f2d2329e5140` |
-| Build date | 2026-08-03 |
+| Artifact | `Verba-1.0.2-22-arm64-notarized.zip` |
+| SHA-256 | Pending |
+| Source revision | Pending owner-approved release commit |
+| Source state in manifest | Pending; must be `clean` |
+| Notarization submission ID | Pending |
+| Build date | Pending |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pending |
@@ -48,17 +48,18 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.1 (17) | `52f683c2f68eab84cba94ac1d743bd81d9292a7dc6f42970199463f25fe4f7d6` | Accepted, submission `36d1689f-4643-41f5-b3dc-08a0759bcccd` | Superseded during manual no-selection UX review: invoking an action without selected text waited for the pasteboard deadline and reported a timeout instead of directing the user to select text. |
 | 1.0.1 (18) | `08a7219fc52a0e78ecb5339d64483d385e65654ab749b9e3f0883525cd226201` | Accepted, submission `676459e4-e353-41db-89a8-525dd45a8885` | Superseded before publication by removal of obsolete internal APIs and stale localization entries; no user-facing behavior changed. |
 | 1.0.1 (19) | `d6417b8f4ae1a18841f0bb2b41c81f806da7986f41e94911212fb6965190d391` | Accepted, submission `a968f029-4196-4eff-8997-fa7b826fbd9f` | Superseded before publication because OS-version-dependent popup pixel snapshots were incorrectly enforced by the macOS 15 compatibility job; build 20 keeps those baselines in release-host qualification while preserving the complete nonvisual CI suite. |
+| 1.0.2 (21) | `753de898dee1e23f966a2b373441b437288edc701c21af13eba2a893561cfa15` | Accepted, submission `64042632-d676-4b0b-8753-f2d2329e5140` | Superseded before manual qualification: the unsupported language-pair screen still opened Settings through a Change Language button instead of offering the target-language list inline. Build 22 replaces it with the dropdown and retries translation after selection. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.2 (21), including release-host popup pixel baselines, visible-screen fitting, inline same-language selection, clipboard restoration, isolated AppKit pasteboard integration, provider transport contracts, and all Rust and macOS host suites. |
-| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-03; the reviewed transitive `winnow` duplicate remains the only warning. The regenerated notices contain the same 178 Rust packages and Sparkle 2.9.2. |
-| Developer ID signing | Pass | The release pipeline verified the exact build 21 app and every nested Sparkle code object before submission and again after extraction. |
-| Apple notarization | Pass | Apple accepted submission `64042632-d676-4b0b-8753-f2d2329e5140`; the submitted Developer ID ZIP SHA-256 is `7241541f6d5c57b6b3ad34868c6ab538bef7c02d86233e84e3494a1cb36b7167`. |
-| Stapling and Gatekeeper | Pass | Stapling and ticket validation passed; `spctl` accepted the app as Notarized Developer ID after native and portable extraction. |
-| Final artifact checksum | Pass | The final notarized ZIP SHA-256 is `753de898dee1e23f966a2b373441b437288edc701c21af13eba2a893561cfa15`; the pipeline reverified it before generating the signed v1.0.2 appcast entry. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.2 (22), including all four release-host popup pixel baselines, unsupported-pair inline target selection and retry, visible-screen fitting, same-language retranslation, clipboard restoration, isolated AppKit pasteboard integration, provider transport contracts, and all Rust and macOS host suites. |
+| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-03; the reviewed transitive `winnow` duplicate remains the only warning. Notices still contain the same 178 Rust packages and Sparkle 2.9.2. |
+| Developer ID signing | Pending | Verify the exact build 22 artifact and every nested Sparkle code object. |
+| Apple notarization | Pending | Record the accepted build 22 submission and submitted-archive checksum. |
+| Stapling and Gatekeeper | Pending | Validate the stapled build 22 artifact after native and portable extraction. |
+| Final artifact checksum | Pending | Record and reverify the final build 22 notarized ZIP checksum. |
 
 ## Artifact and clean installation
 
@@ -66,9 +67,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.2-21-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.2-22-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.2, build is 21, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.2, build is 22, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
@@ -119,7 +120,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | TR-02 | Select a supported target whose language assets are absent. | macOS prepares/downloads resources and the action recovers without losing the request. | Not run | Record languages and network state. |
 | TR-03 | Disable network after required assets are installed and translate again. | Translation succeeds offline. | Not run | |
 | TR-04 | Translate text already in the target language, then choose another language from the inline dropdown. | No Change Language button is shown; the dropdown remains usable and immediately retranslates the same selected text without recapturing it. | Not run | Record both target languages. |
-| TR-05 | Attempt an unsupported pair. | Verba shows an actionable target-language error without stale output. | Not run | |
+| TR-05 | Attempt an unsupported pair, then choose another target from the inline dropdown. | No Change Language button is shown; Verba persists the chosen target, restores source focus, and immediately retries translation without stale output. | Not run | Record both target languages. |
 | TR-06 | Change the target language in Settings and invoke Translate without relaunching. | The next action uses the new persisted target. | Not run | |
 | TR-07 | Change the target language from an open translation result using both pointer and keyboard. | The popup remains open, immediately retranslates the same displayed original text without recapturing, and shows visible loading or persistence feedback. | Not run | Record both target languages. |
 

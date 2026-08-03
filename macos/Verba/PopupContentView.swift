@@ -9,7 +9,7 @@ struct PopupContentView: View {
     let cancelProofreading: () -> Void
     let recover: (RecoveryActionViewModel, PresentationAction?) -> Void
     var targetLanguages: TargetLanguageSettingsController?
-    var selectTargetLanguage: (String, String) -> Void = { _, _ in }
+    var selectTargetLanguage: (String, String?) -> Void = { _, _ in }
 
     var body: some View {
         content
@@ -134,12 +134,26 @@ struct PopupContentView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack {
-                    Spacer()
-                    Button(recovery.buttonTitle) {
-                        recover(recovery, action)
+                if recovery == .changeLanguage, action == .translate {
+                    if let targetLanguages {
+                        TranslationLanguageRow(
+                            controller: targetLanguages,
+                            sourceLanguage: nil,
+                            fallbackDetail: LocalizedCopy.text("Target language"),
+                            fallbackAccessibilityLabel: LocalizedCopy.text("Target language"),
+                            select: { identifier in
+                                selectTargetLanguage(identifier, nil)
+                            }
+                        )
                     }
-                    .keyboardShortcut(.defaultAction)
+                } else {
+                    HStack {
+                        Spacer()
+                        Button(recovery.buttonTitle) {
+                            recover(recovery, action)
+                        }
+                        .keyboardShortcut(.defaultAction)
+                    }
                 }
             }
         }
