@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.3 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 25 status:** Source-qualified. Developer ID signing, notarization, exact-artifact qualification, and project-owner sign-off remain pending.
+**Candidate 25 status:** Source-qualified, Developer ID signed, notarized, stapled, Gatekeeper-accepted, and update-feed signed. Manual exact-artifact qualification and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -11,11 +11,11 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | Field | Value |
 | --- | --- |
 | Artifact | `Verba-1.0.3-25-arm64-notarized.zip` |
-| SHA-256 | Pending |
-| Source revision | Pending local release-candidate commit |
-| Source state in manifest | Pending; must be `clean` |
-| Notarization submission ID | Pending |
-| Build date | Pending |
+| SHA-256 | `22e3ebd7a7489d632e725904df6cd0204931b246e4f48ef16539ed6ab0c470cb` |
+| Source revision | `db8c023f7070c50cd5adaf5858315acfe552a2f4` |
+| Source state in manifest | `clean` |
+| Notarization submission ID | `2ec33849-76aa-4fad-9727-b91fbb74d831` |
+| Build date | 2026-08-05 |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pending |
@@ -59,10 +59,10 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | --- | --- | --- |
 | Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.3 (25), including static-web Accessibility-ancestor context lookup, preferred single-word detection, installed-candidate-before-download behavior, and all four release-host popup pixel baselines. All Rust and macOS host suites passed. |
 | RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-05; the reviewed transitive `winnow` duplicate remains the only warning. Notices contain 178 Rust packages and Sparkle 2.9.2. |
-| Developer ID signing | Pending | Verify the exact build 25 app and every nested Sparkle code object. |
-| Apple notarization | Pending | Record the accepted build 25 submission and submitted-archive checksum. |
-| Stapling and Gatekeeper | Pending | Validate the stapled build 25 artifact after native and portable extraction. |
-| Final artifact checksum | Pending | Record and reverify the final build 25 notarized ZIP checksum. |
+| Developer ID signing | Pass | The release pipeline verified the exact build 25 app and every nested Sparkle code object before submission and again after extraction. |
+| Apple notarization | Pass | Apple accepted submission `2ec33849-76aa-4fad-9727-b91fbb74d831`; the submitted Developer ID ZIP SHA-256 is `40048a05b24c8c8493e23c9796732ca96e3168012d405e219939ec1471c852d2`. |
+| Stapling and Gatekeeper | Pass | Stapling and ticket validation passed; `spctl` accepted the app as Notarized Developer ID after native and portable extraction. |
+| Final artifact checksum | Pass | The final notarized ZIP SHA-256 is `22e3ebd7a7489d632e725904df6cd0204931b246e4f48ef16539ed6ab0c470cb`; the checksum and signed v1.0.3 appcast were reverified after packaging. |
 
 ## Artifact and clean installation
 
