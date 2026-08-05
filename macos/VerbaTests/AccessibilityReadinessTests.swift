@@ -104,6 +104,52 @@ final class AccessibilityReadinessTests: XCTestCase {
         XCTAssertEqual(long, NSSize(width: 420, height: 480))
     }
 
+    func testTranslationDisplayRemovesOnlySurroundingWhitespace() {
+        XCTAssertEqual(
+            TranslationDisplayText.normalized("  First line\n\nSecond line\t\n"),
+            "First line\n\nSecond line"
+        )
+    }
+
+    func testSurroundingWhitespaceDoesNotAddTranslationHeight() {
+        let languagePair = LanguagePairViewModel(source: "German", target: "English")
+        let compact = PresentationViewModel.translation(
+            originalText: "One\nTwo\nThree",
+            languagePair: languagePair,
+            translatedText: "One\nTwo\nThree"
+        )
+        let padded = PresentationViewModel.translation(
+            originalText: "\n  One\nTwo\nThree  \n\n",
+            languagePair: languagePair,
+            translatedText: "\nOne\nTwo\nThree\n\n"
+        )
+
+        XCTAssertEqual(
+            PopupSizePolicy.size(for: padded, textScale: 1),
+            PopupSizePolicy.size(for: compact, textScale: 1)
+        )
+    }
+
+    func testResultHeightBuildsOnMinimumHeightForWrappedText() {
+        let presentation = PresentationViewModel.translation(
+            originalText: String(repeating: "word ", count: 24),
+            languagePair: LanguagePairViewModel(source: "German", target: "English"),
+            translatedText: String(repeating: "word ", count: 24)
+        )
+
+        XCTAssertGreaterThan(
+            PopupSizePolicy.size(for: presentation, textScale: 1).height,
+            PopupSizePolicy.size(
+                for: .translation(
+                    originalText: "One line",
+                    languagePair: LanguagePairViewModel(source: "German", target: "English"),
+                    translatedText: "One line"
+                ),
+                textScale: 1
+            ).height
+        )
+    }
+
     func testResultPopupRespectsAbsoluteHeightCapAtLargeTextSizes() {
         let presentation = PresentationViewModel.proofreading(
             originalText: String(repeating: "Original text ", count: 100),

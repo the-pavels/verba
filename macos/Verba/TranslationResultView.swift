@@ -10,6 +10,9 @@ struct TranslationResultView: View {
     var selectTargetLanguage: (String) -> Void = { _ in }
 
     var body: some View {
+        let displayedOriginalText = TranslationDisplayText.normalized(originalText)
+        let displayedTranslation = TranslationDisplayText.normalized(translatedText)
+
         VStack(alignment: .leading, spacing: 14) {
             PopupResultHeader(
                 title: LocalizedCopy.text("Translation"),
@@ -18,7 +21,7 @@ struct TranslationResultView: View {
                 detailAccessibilityLabel: languagePairAccessibilityLabel,
                 copyHelpText: LocalizedCopy.text("Copy translation"),
                 copyAction: {
-                    copyText(translatedText)
+                    copyText(displayedTranslation)
                 }
             )
 
@@ -35,23 +38,25 @@ struct TranslationResultView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     PopupResultSection(title: LocalizedCopy.text("Original")) {
-                        Text(originalText)
+                        Text(displayedOriginalText)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
-                            .accessibilityLabel(AccessibilityCopy.originalText(originalText))
+                            .accessibilityLabel(
+                                AccessibilityCopy.originalText(displayedOriginalText)
+                            )
                     }
 
                     PopupResultSection(
                         title: LocalizedCopy.text("Translation"),
                         isEmphasized: true
                     ) {
-                        Text(translatedText)
+                        Text(displayedTranslation)
                             .foregroundStyle(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                             .accessibilityLabel(
-                                AccessibilityCopy.translationText(translatedText)
+                                AccessibilityCopy.translationText(displayedTranslation)
                             )
                     }
                 }
@@ -82,6 +87,12 @@ struct TranslationResultView: View {
             ?? languagePair.target
     }
 
+}
+
+enum TranslationDisplayText {
+    static func normalized(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 struct TranslationLanguageRow: View {

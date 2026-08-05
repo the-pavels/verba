@@ -430,7 +430,10 @@ enum PopupSizePolicy {
     static func size(for presentation: PresentationViewModel, textScale: CGFloat) -> NSSize {
         let baseSize = switch presentation {
         case let .translation(originalText, _, translatedText):
-            resultSize(originalText: originalText, resultText: translatedText)
+            resultSize(
+                originalText: TranslationDisplayText.normalized(originalText),
+                resultText: TranslationDisplayText.normalized(translatedText)
+            )
         case .translationLanguageSelection:
             NSSize(width: 420, height: 190)
         case let .proofreading(originalText, correctedText):
@@ -461,7 +464,7 @@ enum PopupSizePolicy {
     private static func resultSize(originalText: String, resultText: String) -> NSSize {
         let lineCount = estimatedLineCount(in: originalText, columns: resultColumns)
             + estimatedLineCount(in: resultText, columns: resultColumns)
-        let height = 210 + CGFloat(max(0, lineCount - 2)) * 20
+        let height = resultMinimumHeight + CGFloat(max(0, lineCount - 2)) * 20
 
         return NSSize(
             width: 420,
@@ -612,7 +615,7 @@ private extension PresentationViewModel {
     var copyableResultText: String? {
         switch self {
         case let .translation(_, _, translatedText):
-            translatedText
+            TranslationDisplayText.normalized(translatedText)
         case let .proofreading(_, correctedText):
             correctedText
         default:
