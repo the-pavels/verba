@@ -394,7 +394,10 @@ impl CoordinatorInner {
             if request.cancellation.is_cancelled() {
                 return;
             }
-            self.capture.capture()
+            match request.action {
+                TextAction::Translate => self.capture.capture_with_language_detection_context(),
+                TextAction::Proofread => self.capture.capture(),
+            }
         };
         self.presenter.capture_completed(request.id);
         self.metrics.record(WorkflowMilestone::CaptureCompleted {

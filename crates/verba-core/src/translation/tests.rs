@@ -44,7 +44,29 @@ fn translates_valid_text_and_preserves_the_request_context() {
         vec![TranslationRequest {
             text: " Hallo\n".to_owned(),
             target_language: language("en"),
+            language_detection_context: None,
         }]
+    );
+}
+
+#[test]
+fn carries_language_context_to_the_translator_but_not_the_result() {
+    let translator = Arc::new(FakeTranslator::new(Ok(response("de", "retten"))));
+    let use_case = TranslateText::new(translator.clone());
+
+    let result = block_on(use_case.execute_with_language_detection_context(
+        "bergen",
+        Some("Rega muss sie bergen, bevor Hilfe eintrifft.".to_owned()),
+        &TranslationSettings::default(),
+        &CancellationToken::default(),
+    ))
+    .unwrap();
+
+    assert_eq!(result.original_text(), "bergen");
+    assert_eq!(result.translated_text(), "retten");
+    assert_eq!(
+        translator.requests()[0].language_detection_context(),
+        Some("Rega muss sie bergen, bevor Hilfe eintrifft.")
     );
 }
 

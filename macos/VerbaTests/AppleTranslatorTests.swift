@@ -69,6 +69,80 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertEqual(availability.requests.first?.source.minimalIdentifier, "de")
     }
 
+    func testSystemLanguageIdentifierIncludesPreferredFallbackForAmbiguousWord() {
+        let identifier = SystemTranslationLanguageIdentifier(
+            preferredLanguageIdentifiers: ["de"]
+        )
+
+        let candidates = identifier.identify("bergen")
+
+        XCTAssertTrue(candidates.contains {
+            $0.minimalIdentifier == "de"
+        })
+    }
+
+    func testSurroundingContextIdentifiesGermanButOnlyTranslatesSelectedWord() async throws {
+        let availability = FakeTranslationAvailability(status: .installed)
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "de",
+                    targetLanguageIdentifier: "ru",
+                    translatedText: "спасать"
+                )
+            )
+        )
+        let translator = AppleTranslator(
+            availability: availability,
+            sessions: sessions
+        )
+
+        _ = try await translator.translate(
+            "bergen",
+            languageDetectionContext: "Rega muss sie bergen, bevor Hilfe eintrifft.",
+            targetLanguageIdentifier: "ru"
+        )
+
+        XCTAssertEqual(availability.requests[0].source.minimalIdentifier, "de")
+        XCTAssertEqual(sessions.requests[0].text, "bergen")
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "de")
+    }
+
+    func testAmbiguousWordUsesPreferredCandidateWhenDominantPairIsUnsupported() async throws {
+        let availability = FakeTranslationAvailability(
+            statuses: [.unsupported, .installed]
+        )
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "de",
+                    targetLanguageIdentifier: "ru",
+                    translatedText: "спасать"
+                )
+            )
+        )
+        let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(
+                identifiers: ["nb", "de"]
+            ),
+            availability: availability,
+            sessions: sessions
+        )
+
+        let result = try await translator.translate(
+            "bergen",
+            targetLanguageIdentifier: "ru"
+        )
+
+        XCTAssertEqual(result.sourceLanguageIdentifier, "de")
+        XCTAssertEqual(
+            availability.requests.map(\.source.minimalIdentifier),
+            ["nb", "de"]
+        )
+        XCTAssertEqual(sessions.requests.count, 1)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "de")
+    }
+
     func testSupportedPairPreparesAndResumesTranslation() async throws {
         let sessions = FakeTranslationSessions(
             result: .success(
@@ -292,7 +366,8 @@ final class AppleTranslatorTests: XCTestCase {
         let result = try await adapter.translate(
             request: NativeTranslationRequest(
                 text: "Hallo",
-                targetLanguageIdentifier: "en"
+                targetLanguageIdentifier: "en",
+                languageDetectionContext: nil
             )
         )
 
@@ -318,7 +393,8 @@ final class AppleTranslatorTests: XCTestCase {
             _ = try await adapter.translate(
                 request: NativeTranslationRequest(
                     text: "Hello",
-                    targetLanguageIdentifier: "ga"
+                    targetLanguageIdentifier: "ga",
+                    languageDetectionContext: nil
                 )
             )
             XCTFail("Expected the native adapter to reject the language pair")
@@ -346,16 +422,22 @@ final class AppleTranslatorTests: XCTestCase {
 
 @MainActor
 private final class FakeTranslationLanguageIdentifier: TranslationLanguageIdentifying {
-    private let language: Locale.Language?
+    private let languages: [Locale.Language]
     private(set) var requests: [String] = []
 
     init(identifier: String?) {
-        language = identifier.map(Locale.Language.init(identifier:))
+        languages = identifier.map {
+            [Locale.Language(identifier: $0)]
+        } ?? []
     }
 
-    func identify(_ text: String) -> Locale.Language? {
+    init(identifiers: [String]) {
+        languages = identifiers.map(Locale.Language.init(identifier:))
+    }
+
+    func identify(_ text: String) -> [Locale.Language] {
         requests.append(text)
-        return language
+        return languages
     }
 }
 
@@ -366,7 +448,7 @@ private final class FakeTranslationAvailability: TranslationAvailabilityChecking
         let target: Locale.Language
     }
 
-    private let result: Result<TranslationPairStatus, any Error>
+    private var results: [Result<TranslationPairStatus, any Error>]
     private(set) var requests: [Request] = []
 
     convenience init(status: TranslationPairStatus) {
@@ -374,7 +456,12 @@ private final class FakeTranslationAvailability: TranslationAvailabilityChecking
     }
 
     init(result: Result<TranslationPairStatus, any Error>) {
-        self.result = result
+        results = [result]
+    }
+
+    init(statuses: [TranslationPairStatus]) {
+        precondition(!statuses.isEmpty)
+        results = statuses.map(Result.success)
     }
 
     func status(
@@ -382,6 +469,10 @@ private final class FakeTranslationAvailability: TranslationAvailabilityChecking
         target: Locale.Language
     ) async throws -> TranslationPairStatus {
         requests.append(Request(source: source, target: target))
+        let result = results[0]
+        if results.count > 1 {
+            results.removeFirst()
+        }
         return try result.get()
     }
 }

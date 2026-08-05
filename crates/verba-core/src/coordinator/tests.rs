@@ -84,6 +84,47 @@ fn registered_shortcut_captures_processes_and_presents_a_result() {
 }
 
 #[test]
+fn surrounding_context_is_requested_only_for_translation() {
+    let translation_capture = Arc::new(PurposeRecordingCapture::default());
+    let translation_processor = Arc::new(QueueProcessor::new([Ok(translation())]));
+    let translation_presenter = Arc::new(RecordingPresenter::default());
+    let translation_coordinator = ShortcutCoordinator::new(
+        translation_capture.clone(),
+        translation_processor.clone(),
+        translation_presenter.clone(),
+    );
+
+    translation_coordinator.on_shortcut(TextAction::Translate);
+    translation_presenter.wait_for(2);
+
+    assert_eq!(translation_capture.context_calls.load(Ordering::Relaxed), 1);
+    assert_eq!(translation_capture.plain_calls.load(Ordering::Relaxed), 0);
+    assert_eq!(
+        translation_processor.requests()[0]
+            .text
+            .language_detection_context(),
+        Some("Rega muss sie bergen")
+    );
+
+    let proofreading_capture = Arc::new(PurposeRecordingCapture::default());
+    let proofreading_presenter = Arc::new(RecordingPresenter::default());
+    let proofreading_coordinator = ShortcutCoordinator::new(
+        proofreading_capture.clone(),
+        Arc::new(QueueProcessor::new([Ok(proofreading())])),
+        proofreading_presenter.clone(),
+    );
+
+    proofreading_coordinator.on_shortcut(TextAction::Proofread);
+    proofreading_presenter.wait_for(2);
+
+    assert_eq!(proofreading_capture.plain_calls.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        proofreading_capture.context_calls.load(Ordering::Relaxed),
+        0
+    );
+}
+
+#[test]
 fn same_language_failure_offers_inline_selection_for_the_captured_text() {
     let capture = Arc::new(FakeTextCapture::new(captured("Hello")));
     let processor = Arc::new(QueueProcessor::new([Err(
@@ -1028,6 +1069,25 @@ struct BlockingCapture {
     started: (Mutex<bool>, Condvar),
     released: (Mutex<bool>, Condvar),
     call_count: AtomicUsize,
+}
+
+#[derive(Default)]
+struct PurposeRecordingCapture {
+    plain_calls: AtomicUsize,
+    context_calls: AtomicUsize,
+}
+
+impl TextCapture for PurposeRecordingCapture {
+    fn capture(&self) -> Result<CapturedText, CaptureFailure> {
+        self.plain_calls.fetch_add(1, Ordering::Relaxed);
+        captured("bergen")
+    }
+
+    fn capture_with_language_detection_context(&self) -> Result<CapturedText, CaptureFailure> {
+        self.context_calls.fetch_add(1, Ordering::Relaxed);
+        captured("bergen")
+            .map(|captured| captured.with_language_detection_context("Rega muss sie bergen"))
+    }
 }
 
 struct TestProofreadingConsent {

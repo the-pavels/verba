@@ -45,6 +45,10 @@ impl TextCapture for MacOsTextCapture {
     fn capture(&self) -> Result<CapturedText, CaptureFailure> {
         self.inner.capture()
     }
+
+    fn capture_with_language_detection_context(&self) -> Result<CapturedText, CaptureFailure> {
+        self.inner.capture_with_language_detection_context()
+    }
 }
 
 struct SelectionCapture<P, A, C, K> {
@@ -84,6 +88,17 @@ where
     K: Clock,
 {
     fn capture(&self) -> Result<CapturedText, CaptureFailure> {
+        self.capture_selection(false)
+    }
+
+    fn capture_with_language_detection_context(&self) -> Result<CapturedText, CaptureFailure> {
+        self.capture_selection(true)
+    }
+
+    fn capture_selection(
+        &self,
+        include_language_detection_context: bool,
+    ) -> Result<CapturedText, CaptureFailure> {
         if !self.accessibility.is_trusted() {
             return Err(CaptureFailure::PermissionDenied);
         }
@@ -147,7 +162,26 @@ where
             .restore(&snapshot, copy_change_count)
             .map_err(|_| CaptureFailure::ClipboardUnavailable)?;
 
-        result
+        if !include_language_detection_context {
+            return result;
+        }
+
+        result.map(|captured| {
+            let is_single_short_word = captured.as_str().split_whitespace().count() == 1
+                && captured.as_str().chars().count() <= 128;
+            if !is_single_short_word {
+                return captured;
+            }
+
+            let selected_text = captured.as_str().trim();
+            match self.accessibility.selected_text_context() {
+                Some(context) if context.contains(selected_text) => {
+                    captured.with_language_detection_context(context)
+                }
+                None => captured,
+                Some(_) => captured,
+            }
+        })
     }
 
     fn wait_for_change(&self, initial_change_count: i64, started: K::Instant) -> Option<i64> {
@@ -184,6 +218,10 @@ where
 {
     fn capture(&self) -> Result<CapturedText, CaptureFailure> {
         SelectionCapture::capture(self)
+    }
+
+    fn capture_with_language_detection_context(&self) -> Result<CapturedText, CaptureFailure> {
+        SelectionCapture::capture_with_language_detection_context(self)
     }
 }
 

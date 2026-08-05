@@ -37,14 +37,20 @@ impl ApplicationProcessor {
         }
     }
 
-    fn translate(
+    fn translate_with_language_detection_context(
         &self,
         text: String,
+        language_detection_context: Option<String>,
         cancellation: &CancellationToken,
     ) -> Result<ProcessingOutcome, ProcessingFailure> {
         let settings = self.translation_preferences.settings();
         let result = block_on(async {
-            let translation = Box::pin(self.translation.execute(text, &settings, cancellation));
+            let translation = Box::pin(self.translation.execute_with_language_detection_context(
+                text,
+                language_detection_context,
+                &settings,
+                cancellation,
+            ));
             let cancelled = Box::pin(cancellation.cancelled());
 
             match select(translation, cancelled).await {
@@ -107,10 +113,16 @@ impl TextActionProcessor for ApplicationProcessor {
             return Err(ProcessingFailure::Cancelled);
         }
 
-        let text = request.text.into_string();
         match request.action {
-            TextAction::Translate => self.translate(text, cancellation),
-            TextAction::Proofread => self.proofread(text, cancellation),
+            TextAction::Translate => {
+                let (text, language_detection_context) = request.text.into_parts();
+                self.translate_with_language_detection_context(
+                    text,
+                    language_detection_context,
+                    cancellation,
+                )
+            }
+            TextAction::Proofread => self.proofread(request.text.into_string(), cancellation),
         }
     }
 }
@@ -240,7 +252,11 @@ mod tests {
         );
 
         let first_outcome = processor
-            .translate("Hallo".to_owned(), &CancellationToken::default())
+            .translate_with_language_detection_context(
+                "Hallo".to_owned(),
+                Some("Der freundliche Nachbar sagt Hallo.".to_owned()),
+                &CancellationToken::default(),
+            )
             .unwrap();
 
         preferences
@@ -248,7 +264,11 @@ mod tests {
             .unwrap();
         preferences.set_target_language(language("fr")).unwrap();
         let second_outcome = processor
-            .translate("Hallo".to_owned(), &CancellationToken::default())
+            .translate_with_language_detection_context(
+                "Hallo".to_owned(),
+                None,
+                &CancellationToken::default(),
+            )
             .unwrap();
 
         assert_eq!(
@@ -275,10 +295,14 @@ mod tests {
                 NativeTranslationRequest {
                     text: "Hallo".to_owned(),
                     target_language_identifier: "en".to_owned(),
+                    language_detection_context: Some(
+                        "Der freundliche Nachbar sagt Hallo.".to_owned()
+                    ),
                 },
                 NativeTranslationRequest {
                     text: "Hallo".to_owned(),
                     target_language_identifier: "fr".to_owned(),
+                    language_detection_context: None,
                 },
             ]
         );

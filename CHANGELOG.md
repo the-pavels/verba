@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Reliability
+
+- Detect ambiguous single-word languages from bounded nearby text when the source app exposes it, without changing the selection or sending the context for translation; use preferred languages as a fallback.
+
 ## 1.0.2 - 2026-08-03
 
 ### Improved

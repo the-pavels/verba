@@ -14,6 +14,7 @@ final class NativeAppleTranslator: NativeTranslator {
         do {
             let result = try await translator.translate(
                 request.text,
+                languageDetectionContext: request.languageDetectionContext,
                 targetLanguageIdentifier: request.targetLanguageIdentifier
             )
             return NativeTranslationResponse(

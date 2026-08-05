@@ -29,7 +29,7 @@ enum AppleTranslationError: Error, Equatable, Sendable {
 
 @MainActor
 protocol TranslationLanguageIdentifying {
-    func identify(_ text: String) -> Locale.Language?
+    func identify(_ text: String) -> [Locale.Language]
 }
 
 @MainActor
@@ -68,44 +68,61 @@ struct AppleTranslator {
 
     func translate(
         _ text: String,
+        languageDetectionContext: String? = nil,
         targetLanguageIdentifier: String
     ) async throws -> AppleTranslationResult {
         let target = Locale.Language(identifier: targetLanguageIdentifier)
 
         do {
-            guard let source = languageIdentifier.identify(text) else {
+            let context = languageDetectionContext.flatMap {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0
+            }
+            var sources: [Locale.Language] = []
+            for detectionText in [context, text].compactMap({ $0 }) {
+                for source in languageIdentifier.identify(detectionText)
+                where !sources.contains(where: {
+                    $0.minimalIdentifier == source.minimalIdentifier
+                }) {
+                    sources.append(source)
+                }
+            }
+            guard !sources.isEmpty else {
                 throw AppleTranslationError.unableToIdentifyLanguage
             }
 
-            switch try await availability.status(from: source, target: target) {
-            case .installed:
-                do {
-                    return try await sessions.translate(
-                        text,
-                        source: source,
-                        target: target,
-                        preparation: .none
-                    )
-                } catch where translationRequiresPreparation(error) {
+            for source in sources {
+                switch try await availability.status(from: source, target: target) {
+                case .installed:
+                    do {
+                        return try await sessions.translate(
+                            text,
+                            source: source,
+                            target: target,
+                            preparation: .none
+                        )
+                    } catch where translationRequiresPreparation(error) {
+                        return try await sessions.translate(
+                            text,
+                            source: source,
+                            target: target,
+                            preparation: .required
+                        )
+                    }
+                case .supported:
                     return try await sessions.translate(
                         text,
                         source: source,
                         target: target,
                         preparation: .required
                     )
+                case .unsupported:
+                    continue
                 }
-            case .supported:
-                return try await sessions.translate(
-                    text,
-                    source: source,
-                    target: target,
-                    preparation: .required
-                )
-            case .unsupported:
-                throw AppleTranslationError.unsupportedPair(
-                    targetLanguageIdentifier: target.minimalIdentifier
-                )
             }
+
+            throw AppleTranslationError.unsupportedPair(
+                targetLanguageIdentifier: target.minimalIdentifier
+            )
         } catch {
             throw mapTranslationError(error, target: target)
         }
@@ -113,14 +130,72 @@ struct AppleTranslator {
 }
 
 @MainActor
-private struct SystemTranslationLanguageIdentifier: TranslationLanguageIdentifying {
-    func identify(_ text: String) -> Locale.Language? {
-        guard let language = NLLanguageRecognizer.dominantLanguage(for: text),
+struct SystemTranslationLanguageIdentifier: TranslationLanguageIdentifying {
+    private let preferredLanguageIdentifiers: [String]
+
+    init(preferredLanguageIdentifiers: [String] = Locale.preferredLanguages) {
+        self.preferredLanguageIdentifiers = preferredLanguageIdentifiers
+    }
+
+    func identify(_ text: String) -> [Locale.Language] {
+        var candidates: [Locale.Language] = []
+
+        if let language = dominantLanguage(for: text) {
+            candidates.append(language)
+        }
+        if containsSingleWord(text),
+           let preferredLanguage = dominantLanguage(
+               for: text,
+               hints: preferredLanguageHints()
+           ),
+           !candidates.contains(where: {
+               $0.minimalIdentifier == preferredLanguage.minimalIdentifier
+           })
+        {
+            candidates.append(preferredLanguage)
+        }
+
+        return candidates
+    }
+
+    private func dominantLanguage(
+        for text: String,
+        hints: [NLLanguage: Double] = [:]
+    ) -> Locale.Language? {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageHints = hints
+        recognizer.processString(text)
+
+        guard let language = recognizer.dominantLanguage,
               language != .undetermined
         else {
             return nil
         }
         return Locale.Language(identifier: language.rawValue)
+    }
+
+    private func preferredLanguageHints() -> [NLLanguage: Double] {
+        var hints: [NLLanguage: Double] = [:]
+        for identifier in preferredLanguageIdentifiers {
+            guard let languageCode = Locale.Language(identifier: identifier)
+                .languageCode?.identifier
+            else {
+                continue
+            }
+            hints[NLLanguage(rawValue: languageCode)] = 1
+        }
+        return hints
+    }
+
+    private func containsSingleWord(_ text: String) -> Bool {
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        var wordCount = 0
+        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { _, _ in
+            wordCount += 1
+            return wordCount < 2
+        }
+        return wordCount == 1
     }
 }
 

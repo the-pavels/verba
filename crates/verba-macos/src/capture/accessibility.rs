@@ -6,8 +6,18 @@ use std::{
 use objc2_app_kit::NSWorkspace;
 
 const CF_STRING_ENCODING_UTF8: u32 = 0x0800_0100;
+const CF_NUMBER_CF_INDEX_TYPE: isize = 14;
+const AX_VALUE_CF_RANGE_TYPE: u32 = 4;
 const AX_SUCCESS: i32 = 0;
 const AX_ERROR_NO_VALUE: i32 = -25_212;
+const LANGUAGE_CONTEXT_RADIUS: isize = 192;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+struct CfRange {
+    location: isize,
+    length: isize,
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum FocusedElementSecurity {
@@ -25,6 +35,9 @@ enum AttributeValue<T> {
 pub(super) trait AccessibilityStatus {
     fn is_trusted(&self) -> bool;
     fn focused_element_security(&self) -> FocusedElementSecurity;
+    fn selected_text_context(&self) -> Option<String> {
+        None
+    }
 }
 
 pub(super) struct SystemAccessibility;
@@ -36,6 +49,10 @@ impl AccessibilityStatus for SystemAccessibility {
 
     fn focused_element_security(&self) -> FocusedElementSecurity {
         focused_element_security(&SystemAccessibilityReader)
+    }
+
+    fn selected_text_context(&self) -> Option<String> {
+        focused_selected_text_context(&SystemAccessibilityReader)
     }
 }
 
@@ -52,6 +69,29 @@ trait AccessibilityReader {
     ) -> AttributeValue<Self::Value>;
     fn is_string(&self, value: &Self::Value) -> bool;
     fn equal(&self, first: &Self::Value, second: &Self::Value) -> bool;
+    fn selected_text_context(&self, _element: &Self::Value) -> Option<String> {
+        None
+    }
+}
+
+fn focused_selected_text_context(reader: &impl AccessibilityReader) -> Option<String> {
+    let focused_attribute = reader.string(c"AXFocusedUIElement")?;
+    let system_focused_element = reader
+        .system_wide_element()
+        .map(|system_wide| reader.attribute(&system_wide, &focused_attribute))
+        .unwrap_or(AttributeValue::Failed);
+    let focused_element = match system_focused_element {
+        AttributeValue::Value(focused_element) => focused_element,
+        AttributeValue::NoValue | AttributeValue::Failed => {
+            let frontmost_application = reader.frontmost_application()?;
+            match reader.attribute(&frontmost_application, &focused_attribute) {
+                AttributeValue::Value(focused_element) => focused_element,
+                AttributeValue::NoValue | AttributeValue::Failed => return None,
+            }
+        }
+    };
+
+    reader.selected_text_context(&focused_element)
 }
 
 fn focused_element_security(reader: &impl AccessibilityReader) -> FocusedElementSecurity {
@@ -164,6 +204,197 @@ impl AccessibilityReader for SystemAccessibilityReader {
     fn equal(&self, first: &Self::Value, second: &Self::Value) -> bool {
         unsafe { cf_equal(first.as_ptr(), second.as_ptr()) }
     }
+
+    fn selected_text_context(&self, element: &Self::Value) -> Option<String> {
+        selected_text_context(element, self)
+    }
+}
+
+fn selected_text_context(
+    element: &OwnedAxValue,
+    reader: &SystemAccessibilityReader,
+) -> Option<String> {
+    let selected_range_attribute = reader.string(c"AXSelectedTextRange")?;
+    let AttributeValue::Value(selected_range_value) =
+        reader.attribute(element, &selected_range_attribute)
+    else {
+        return None;
+    };
+    let mut selected_range = CfRange::default();
+    if !unsafe {
+        ax_value_get_value(
+            selected_range_value.as_ptr(),
+            AX_VALUE_CF_RANGE_TYPE,
+            ptr::from_mut(&mut selected_range).cast(),
+        )
+    } {
+        return None;
+    }
+
+    if selected_range.location < 0
+        || selected_range.length <= 0
+        || selected_range
+            .location
+            .checked_add(selected_range.length)
+            .is_none()
+    {
+        return None;
+    }
+    let (context_start, context_end) = line_context_bounds(element, reader, selected_range)
+        .or_else(|| document_context_bounds(element, reader, selected_range))?;
+    let context_range = CfRange {
+        location: context_start,
+        length: context_end.checked_sub(context_start)?,
+    };
+    let range_value = OwnedAxValue::new(unsafe {
+        ax_value_create(AX_VALUE_CF_RANGE_TYPE, ptr::from_ref(&context_range).cast())
+    })?;
+    let string_for_range_attribute = reader.string(c"AXStringForRange")?;
+    let mut context_value = ptr::null();
+    if unsafe {
+        ax_ui_element_copy_parameterized_attribute_value(
+            element.as_ptr(),
+            string_for_range_attribute.as_ptr(),
+            range_value.as_ptr(),
+            &mut context_value,
+        )
+    } != AX_SUCCESS
+    {
+        return None;
+    }
+    let context_value = OwnedAxValue::new(context_value)?;
+    if !reader.is_string(&context_value) {
+        return None;
+    }
+
+    cf_string_to_string(context_value.as_ptr())
+}
+
+fn line_context_bounds(
+    element: &OwnedAxValue,
+    reader: &SystemAccessibilityReader,
+    selected_range: CfRange,
+) -> Option<(isize, isize)> {
+    let selected_end = selected_range.location.checked_add(selected_range.length)?;
+    let index_value = OwnedAxValue::new(unsafe {
+        cf_number_create(
+            ptr::null(),
+            CF_NUMBER_CF_INDEX_TYPE,
+            ptr::from_ref(&selected_range.location).cast(),
+        )
+    })?;
+    let line_for_index_attribute = reader.string(c"AXLineForIndex")?;
+    let line_value = parameterized_attribute(element, &line_for_index_attribute, &index_value)?;
+    let range_for_line_attribute = reader.string(c"AXRangeForLine")?;
+    let line_range_value =
+        parameterized_attribute(element, &range_for_line_attribute, &line_value)?;
+    let mut line_range = CfRange::default();
+    if !unsafe {
+        ax_value_get_value(
+            line_range_value.as_ptr(),
+            AX_VALUE_CF_RANGE_TYPE,
+            ptr::from_mut(&mut line_range).cast(),
+        )
+    } {
+        return None;
+    }
+    let line_end = line_range.location.checked_add(line_range.length)?;
+    if line_range.location < 0
+        || line_range.length <= 0
+        || selected_range.location < line_range.location
+        || selected_end > line_end
+    {
+        return None;
+    }
+
+    Some((
+        selected_range
+            .location
+            .saturating_sub(LANGUAGE_CONTEXT_RADIUS)
+            .max(line_range.location),
+        selected_end
+            .saturating_add(LANGUAGE_CONTEXT_RADIUS)
+            .min(line_end),
+    ))
+}
+
+fn document_context_bounds(
+    element: &OwnedAxValue,
+    reader: &SystemAccessibilityReader,
+    selected_range: CfRange,
+) -> Option<(isize, isize)> {
+    let character_count_attribute = reader.string(c"AXNumberOfCharacters")?;
+    let AttributeValue::Value(character_count_value) =
+        reader.attribute(element, &character_count_attribute)
+    else {
+        return None;
+    };
+    let mut character_count = 0_isize;
+    if !unsafe {
+        cf_number_get_value(
+            character_count_value.as_ptr(),
+            CF_NUMBER_CF_INDEX_TYPE,
+            ptr::from_mut(&mut character_count).cast(),
+        )
+    } {
+        return None;
+    }
+    let selected_end = selected_range.location.checked_add(selected_range.length)?;
+    if selected_end > character_count {
+        return None;
+    }
+
+    Some((
+        selected_range
+            .location
+            .saturating_sub(LANGUAGE_CONTEXT_RADIUS),
+        selected_end
+            .saturating_add(LANGUAGE_CONTEXT_RADIUS)
+            .min(character_count),
+    ))
+}
+
+fn parameterized_attribute(
+    element: &OwnedAxValue,
+    attribute: &OwnedAxValue,
+    parameter: &OwnedAxValue,
+) -> Option<OwnedAxValue> {
+    let mut value = ptr::null();
+    if unsafe {
+        ax_ui_element_copy_parameterized_attribute_value(
+            element.as_ptr(),
+            attribute.as_ptr(),
+            parameter.as_ptr(),
+            &mut value,
+        )
+    } != AX_SUCCESS
+    {
+        return None;
+    }
+    OwnedAxValue::new(value)
+}
+
+fn cf_string_to_string(value: *const c_void) -> Option<String> {
+    let length = unsafe { cf_string_get_length(value) };
+    let maximum_size =
+        unsafe { cf_string_get_maximum_size_for_encoding(length, CF_STRING_ENCODING_UTF8) };
+    if maximum_size < 0 {
+        return None;
+    }
+    let buffer_size = usize::try_from(maximum_size.checked_add(1)?).ok()?;
+    let mut buffer = vec![0_u8; buffer_size];
+    if !unsafe {
+        cf_string_get_c_string(
+            value,
+            buffer.as_mut_ptr().cast(),
+            isize::try_from(buffer.len()).ok()?,
+            CF_STRING_ENCODING_UTF8,
+        )
+    } {
+        return None;
+    }
+    let value = CStr::from_bytes_until_nul(&buffer).ok()?.to_str().ok()?;
+    (!value.trim().is_empty()).then(|| value.to_owned())
 }
 
 struct OwnedAxValue(*const c_void);
@@ -201,6 +432,20 @@ unsafe extern "C" {
         attribute: *const c_void,
         value: *mut *const c_void,
     ) -> i32;
+
+    #[link_name = "AXUIElementCopyParameterizedAttributeValue"]
+    fn ax_ui_element_copy_parameterized_attribute_value(
+        element: *const c_void,
+        attribute: *const c_void,
+        parameter: *const c_void,
+        value: *mut *const c_void,
+    ) -> i32;
+
+    #[link_name = "AXValueCreate"]
+    fn ax_value_create(value_type: u32, value: *const c_void) -> *const c_void;
+
+    #[link_name = "AXValueGetValue"]
+    fn ax_value_get_value(value: *const c_void, value_type: u32, output: *mut c_void) -> bool;
 }
 
 #[link(name = "CoreFoundation", kind = "framework")]
@@ -210,6 +455,30 @@ unsafe extern "C" {
         allocator: *const c_void,
         value: *const std::ffi::c_char,
         encoding: u32,
+    ) -> *const c_void;
+
+    #[link_name = "CFStringGetLength"]
+    fn cf_string_get_length(value: *const c_void) -> isize;
+
+    #[link_name = "CFStringGetMaximumSizeForEncoding"]
+    fn cf_string_get_maximum_size_for_encoding(length: isize, encoding: u32) -> isize;
+
+    #[link_name = "CFStringGetCString"]
+    fn cf_string_get_c_string(
+        value: *const c_void,
+        buffer: *mut std::ffi::c_char,
+        buffer_size: isize,
+        encoding: u32,
+    ) -> bool;
+
+    #[link_name = "CFNumberGetValue"]
+    fn cf_number_get_value(number: *const c_void, number_type: isize, value: *mut c_void) -> bool;
+
+    #[link_name = "CFNumberCreate"]
+    fn cf_number_create(
+        allocator: *const c_void,
+        number_type: isize,
+        value: *const c_void,
     ) -> *const c_void;
 
     #[link_name = "CFGetTypeID"]
@@ -229,6 +498,7 @@ unsafe extern "C" {
 mod tests {
     use super::{
         AccessibilityReader, AttributeValue, FocusedElementSecurity, focused_element_security,
+        focused_selected_text_context,
     };
     use std::ffi::CStr;
 
@@ -381,6 +651,28 @@ mod tests {
                 _ => false,
             }
         }
+
+        fn selected_text_context(&self, element: &Self::Value) -> Option<String> {
+            (*element == Value::FocusedElement).then(|| "Die Rega muss sie bergen".to_owned())
+        }
+    }
+
+    #[test]
+    fn reads_context_without_changing_the_focused_selection() {
+        assert_eq!(
+            focused_selected_text_context(&FakeReader::new(None, false, false)),
+            Some("Die Rega muss sie bergen".to_owned())
+        );
+        assert_eq!(
+            focused_selected_text_context(
+                &FakeReader::new(None, false, false).without_system_focus()
+            ),
+            Some("Die Rega muss sie bergen".to_owned())
+        );
+        assert_eq!(
+            focused_selected_text_context(&FakeReader::new(None, false, false).without_any_focus()),
+            None
+        );
     }
 
     #[test]

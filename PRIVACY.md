@@ -6,7 +6,7 @@ This document describes Verba 1.0.0. Verba has no accounts, analytics, advertisi
 
 | Action | Data used | Where processing happens |
 | --- | --- | --- |
-| Translate | The selected plain text and chosen target language | Apple's Translation framework on the Mac. macOS may download language resources managed by Apple. Verba does not send translation text to a Verba-operated server. |
+| Translate | The selected plain text, chosen target language, and—only for a short single-word selection—a bounded nearby excerpt when the source app exposes one | Source-language detection and Apple's Translation framework run on the Mac. Only the selected plain text is given to Apple's Translation framework. The nearby excerpt is used locally for language detection, then discarded. macOS may download language resources managed by Apple. Verba does not send translation text to a Verba-operated server. |
 | Proofread | The selected plain text, fixed proofreading instructions, and a strict response schema | OpenAI's Responses API at `https://api.openai.com/v1/responses`, using the API key configured by the user. The action runs only after an explicit Proofread command and first-use disclosure. |
 
 Verba does not automatically replace text. It displays the result and lets the user copy it.
@@ -14,6 +14,8 @@ Verba does not automatically replace text. It displays the result and lets the u
 ## Selection capture and Accessibility
 
 Verba asks for macOS Accessibility access only after the user explicitly starts the permission flow. It uses that permission to send a synthetic Copy command to the frontmost application so it can read the current selection. Verba does not request Apple Events, Automation, or Input Monitoring permission.
+
+For a Translate command on a short single-word selection, Verba also makes a read-only Accessibility query for up to 192 UTF-16 units on either side of the selection when the source application supports text-range queries. This does not expand, replace, or otherwise change the selection. The bounded excerpt is used only by Apple's on-device Natural Language framework to identify the source language. It is not sent to Apple's Translation framework, OpenAI, Verba-operated services, logs, diagnostics, or history, and it is discarded when the action finishes. If the application does not expose the range, Verba translates using the selected word and its local language fallback.
 
 Selection capture is a bounded clipboard transaction:
 
@@ -23,7 +25,7 @@ Selection capture is a bounded clipboard transaction:
 
 If another clipboard change wins the race, Verba cancels restoration instead of overwriting newer content. Before clearing the clipboard for restoration, Verba builds every replacement item in memory. After writing, it verifies the change count, item count, and original representation types. It retries once only when the same clipboard ownership is still current and the failed write left it empty.
 
-macOS does not provide an atomic multi-item clipboard replacement operation: clearing and writing are separate calls. A rare system write failure after the clear can therefore leave the clipboard empty or partially restored. Verba reports the failure and does not retry over a newer clipboard value. Empty selections, unsupported content, secure text fields, and fields whose security cannot be verified are rejected. The selected text and result exist transiently in process memory while the action runs.
+macOS does not provide an atomic multi-item clipboard replacement operation: clearing and writing are separate calls. A rare system write failure after the clear can therefore leave the clipboard empty or partially restored. Verba reports the failure and does not retry over a newer clipboard value. Empty selections, unsupported content, secure text fields, and fields whose security cannot be verified are rejected. The selected text, optional bounded language-detection excerpt, and result exist transiently in process memory while the action runs.
 
 ## Proofreading and OpenAI
 

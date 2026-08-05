@@ -25,6 +25,53 @@ fn captures_text_and_restores_the_original_clipboard() {
 }
 
 #[test]
+fn captures_surrounding_context_without_replacing_the_selected_word() {
+    let mut fixture = Fixture::new(Some("original"), Some("bergen"));
+    fixture.capture.accessibility.context =
+        Some("Rega muss sie bergen, bevor Hilfe eintrifft.".to_owned());
+
+    let captured = fixture
+        .capture
+        .capture_with_language_detection_context()
+        .unwrap();
+
+    assert_eq!(captured.as_str(), "bergen");
+    assert_eq!(
+        captured.language_detection_context(),
+        Some("Rega muss sie bergen, bevor Hilfe eintrifft.")
+    );
+    assert_eq!(fixture.clipboard_text(), Some("original".to_owned()));
+}
+
+#[test]
+fn skips_surrounding_context_for_multi_word_selections() {
+    let mut fixture = Fixture::new(Some("original"), Some("zwei Männer"));
+    fixture.capture.accessibility.context = Some("Private surrounding text".to_owned());
+
+    let captured = fixture
+        .capture
+        .capture_with_language_detection_context()
+        .unwrap();
+
+    assert_eq!(captured.as_str(), "zwei Männer");
+    assert_eq!(captured.language_detection_context(), None);
+}
+
+#[test]
+fn rejects_context_that_does_not_contain_the_selection() {
+    let mut fixture = Fixture::new(Some("original"), Some("bergen"));
+    fixture.capture.accessibility.context = Some("Unrelated focused content".to_owned());
+
+    let captured = fixture
+        .capture
+        .capture_with_language_detection_context()
+        .unwrap();
+
+    assert_eq!(captured.as_str(), "bergen");
+    assert_eq!(captured.language_detection_context(), None);
+}
+
+#[test]
 fn restores_after_empty_selected_text() {
     let fixture = Fixture::new(Some("original"), Some("  \n"));
 
@@ -188,6 +235,7 @@ impl Fixture {
             FakeAccessibility {
                 trusted: true,
                 security: FocusedElementSecurity::NotSecure,
+                context: None,
             },
             copy,
             FakeClock {
@@ -306,6 +354,7 @@ impl CapturePasteboard for FakePasteboard {
 struct FakeAccessibility {
     trusted: bool,
     security: FocusedElementSecurity,
+    context: Option<String>,
 }
 
 impl AccessibilityStatus for FakeAccessibility {
@@ -315,6 +364,10 @@ impl AccessibilityStatus for FakeAccessibility {
 
     fn focused_element_security(&self) -> FocusedElementSecurity {
         self.security
+    }
+
+    fn selected_text_context(&self) -> Option<String> {
+        self.context.clone()
     }
 }
 

@@ -10,6 +10,7 @@ pub use preferences::{
 };
 
 pub const MAX_TRANSLATION_CHARACTERS: usize = 10_000;
+pub const MAX_LANGUAGE_DETECTION_CONTEXT_CHARACTERS: usize = 512;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LanguageIdentifier(String);
@@ -82,6 +83,7 @@ impl Default for TranslationSettings {
 pub struct TranslationRequest {
     text: String,
     target_language: LanguageIdentifier,
+    language_detection_context: Option<String>,
 }
 
 impl TranslationRequest {
@@ -93,6 +95,11 @@ impl TranslationRequest {
     #[must_use]
     pub const fn target_language(&self) -> &LanguageIdentifier {
         &self.target_language
+    }
+
+    #[must_use]
+    pub fn language_detection_context(&self) -> Option<&str> {
+        self.language_detection_context.as_deref()
     }
 }
 
@@ -196,6 +203,17 @@ impl TranslateText {
         settings: &TranslationSettings,
         cancellation: &CancellationToken,
     ) -> Result<TranslationResult, TranslationFailure> {
+        self.execute_with_language_detection_context(text, None, settings, cancellation)
+            .await
+    }
+
+    pub async fn execute_with_language_detection_context(
+        &self,
+        text: impl Into<String>,
+        language_detection_context: Option<String>,
+        settings: &TranslationSettings,
+        cancellation: &CancellationToken,
+    ) -> Result<TranslationResult, TranslationFailure> {
         if cancellation.is_cancelled() {
             return Err(TranslationFailure::Cancelled);
         }
@@ -216,6 +234,10 @@ impl TranslateText {
         let request = TranslationRequest {
             text,
             target_language: settings.target_language.clone(),
+            language_detection_context: language_detection_context.filter(|context| {
+                !context.trim().is_empty()
+                    && context.chars().count() <= MAX_LANGUAGE_DETECTION_CONTEXT_CHARACTERS
+            }),
         };
         let response = self.translator.translate(&request, cancellation).await?;
 

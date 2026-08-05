@@ -14,6 +14,7 @@ use verba_core::{
 pub struct NativeTranslationRequest {
     pub text: String,
     pub target_language_identifier: String,
+    pub language_detection_context: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, uniffi::Record)]
@@ -78,6 +79,7 @@ impl Translator for ForeignTranslator {
             .translate(NativeTranslationRequest {
                 text: request.text().to_owned(),
                 target_language_identifier: request.target_language().as_str().to_owned(),
+                language_detection_context: request.language_detection_context().map(str::to_owned),
             })
             .await
             .map_err(|error| match error {
@@ -135,12 +137,14 @@ mod tests {
         let translator = Arc::new(ForeignTranslator::new(native.clone()));
         let use_case = TranslateText::new(translator);
 
-        let response = futures::executor::block_on(use_case.execute(
-            "Hallo",
-            &TranslationSettings::default(),
-            &CancellationToken::default(),
-        ))
-        .unwrap();
+        let response =
+            futures::executor::block_on(use_case.execute_with_language_detection_context(
+                "Hallo",
+                Some("Der freundliche Nachbar sagt Hallo.".to_owned()),
+                &TranslationSettings::default(),
+                &CancellationToken::default(),
+            ))
+            .unwrap();
 
         assert_eq!(response.source_language().as_str(), "de");
         assert_eq!(response.translated_text(), "Hello");
@@ -149,6 +153,7 @@ mod tests {
             &[NativeTranslationRequest {
                 text: "Hallo".to_owned(),
                 target_language_identifier: "en".to_owned(),
+                language_detection_context: Some("Der freundliche Nachbar sagt Hallo.".to_owned()),
             }]
         );
     }

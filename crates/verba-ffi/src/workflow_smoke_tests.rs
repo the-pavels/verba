@@ -438,6 +438,7 @@ fn translation_runs_from_shortcut_through_the_popup_view_model() {
         &[NativeTranslationRequest {
             text: "Hallo Welt".to_owned(),
             target_language_identifier: "en".to_owned(),
+            language_detection_context: None,
         }]
     );
     coordinator.shutdown();

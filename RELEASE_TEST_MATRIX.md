@@ -123,6 +123,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | TR-05 | Attempt an unsupported pair, then choose another target from the inline dropdown. | No Change Language button is shown; Verba persists the chosen target, restores source focus, and immediately retries translation without stale output. | Not run | Record both target languages. |
 | TR-06 | Change the target language in Settings and invoke Translate without relaunching. | The next action uses the new persisted target. | Not run | |
 | TR-07 | Change the target language from an open translation result using both pointer and keyboard. | The popup remains open, immediately retranslates the same displayed original text without recapturing, and shows visible loading or persistence feedback. | Not run | Record both target languages. |
+| TR-08 | Translate the German word `bergen` to Russian from the article sentence shown in the regression fixture. | The selection remains exactly `bergen`; the word translates from German instead of failing because the isolated detector identifies Norwegian. | Not run | Record the displayed source language and verify the source selection is unchanged. |
 
 ## Proofreading and Keychain
 

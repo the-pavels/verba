@@ -40,7 +40,9 @@ const repositoryPolicy =
           <h2>On your Mac</h2>
           <p>
             Selected text is processed through Apple’s Translation framework.
-            Verba does not send translations to a Verba-operated server.
+            For short single words, a bounded nearby excerpt may be read and
+            used only for on-device language detection. Verba does not send
+            translations to a Verba-operated server.
           </p>
         </article>
         <article>
@@ -71,6 +73,13 @@ const repositoryPolicy =
             performs a short copy transaction, and restores the previous
             contents when it is safe to do so. Secure text fields and unsupported
             content are rejected.
+          </p>
+          <p>
+            When translating a short single word, Verba may use a read-only text
+            range query to inspect a small amount of nearby text. This does not
+            alter the selection. The excerpt is used locally to identify the
+            language, is never sent to Apple Translation or OpenAI, and is
+            discarded when the action finishes.
           </p>
         </section>
 
