@@ -1,8 +1,8 @@
-# Verba 1.0.2 release test matrix
+# Verba 1.0.3 release test matrix
 
-This is the manual sign-off record for the exact notarized Verba 1.0.2 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
+This is the manual sign-off record for the exact notarized Verba 1.0.3 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 22 status:** Source-qualified, Developer ID signed, notarized, stapled, Gatekeeper-accepted, and update-feed signed. Manual exact-artifact qualification and project-owner sign-off remain pending.
+**Candidate 23 status:** Source-qualified. Signing, notarization, exact-artifact qualification, and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,12 +10,12 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.2-22-arm64-notarized.zip` |
-| SHA-256 | `9eeb4c4973e822cfa8651c795ae4a7d5714098d612b8a8738443846c83dc5bb0` |
-| Source revision | `d061c3371d5764381abec912fc4fa89d1bc368df` |
-| Source state in manifest | `clean` |
-| Notarization submission ID | `0f4de1fe-d853-4886-832b-01c147269b42` |
-| Build date | 2026-08-03 |
+| Artifact | `Verba-1.0.3-23-arm64-notarized.zip` |
+| SHA-256 | Pending |
+| Source revision | Pending local release-candidate commit |
+| Source state in manifest | Pending; must be `clean` |
+| Notarization submission ID | Pending |
+| Build date | Pending |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pending |
@@ -49,17 +49,18 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.1 (18) | `08a7219fc52a0e78ecb5339d64483d385e65654ab749b9e3f0883525cd226201` | Accepted, submission `676459e4-e353-41db-89a8-525dd45a8885` | Superseded before publication by removal of obsolete internal APIs and stale localization entries; no user-facing behavior changed. |
 | 1.0.1 (19) | `d6417b8f4ae1a18841f0bb2b41c81f806da7986f41e94911212fb6965190d391` | Accepted, submission `a968f029-4196-4eff-8997-fa7b826fbd9f` | Superseded before publication because OS-version-dependent popup pixel snapshots were incorrectly enforced by the macOS 15 compatibility job; build 20 keeps those baselines in release-host qualification while preserving the complete nonvisual CI suite. |
 | 1.0.2 (21) | `753de898dee1e23f966a2b373441b437288edc701c21af13eba2a893561cfa15` | Accepted, submission `64042632-d676-4b0b-8753-f2d2329e5140` | Superseded before manual qualification: the unsupported language-pair screen still opened Settings through a Change Language button instead of offering the target-language list inline. Build 22 replaces it with the dropdown and retries translation after selection. |
+| 1.0.2 (22) | `9eeb4c4973e822cfa8651c795ae4a7d5714098d612b8a8738443846c83dc5bb0` | Accepted, submission `0f4de1fe-d853-4886-832b-01c147269b42` | Superseded before manual qualification: isolated language detection can classify the German word `bergen` as Norwegian and reject an otherwise valid translation. Build 23 uses bounded local context for detection while translating only the exact selection. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.2 (22), including all four release-host popup pixel baselines, unsupported-pair inline target selection and retry, visible-screen fitting, same-language retranslation, clipboard restoration, isolated AppKit pasteboard integration, provider transport contracts, and all Rust and macOS host suites. |
-| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-03; the reviewed transitive `winnow` duplicate remains the only warning. Notices still contain the same 178 Rust packages and Sparkle 2.9.2. |
-| Developer ID signing | Pass | The release pipeline verified the exact build 22 app and every nested Sparkle code object before submission and again after extraction. |
-| Apple notarization | Pass | Apple accepted submission `0f4de1fe-d853-4886-832b-01c147269b42`; the submitted Developer ID ZIP SHA-256 is `2888f9ef30a00096a0a019275db4c964af80e598b1009f70ef8c1dfa5723a692`. |
-| Stapling and Gatekeeper | Pass | Stapling and ticket validation passed; `spctl` accepted the app as Notarized Developer ID after native and portable extraction. |
-| Final artifact checksum | Pass | The final notarized ZIP SHA-256 is `9eeb4c4973e822cfa8651c795ae4a7d5714098d612b8a8738443846c83dc5bb0`; the pipeline reverified it before generating the signed v1.0.2 appcast entry. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.3 (23), including all four release-host popup pixel baselines, context-aware single-word detection with exact-selection translation, unsupported-pair inline target selection and retry, visible-screen fitting, same-language retranslation, clipboard restoration, isolated AppKit pasteboard integration, provider transport contracts, and all Rust and macOS host suites. |
+| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-05; the reviewed transitive `winnow` duplicate remains the only warning. Notices contain 178 Rust packages and Sparkle 2.9.2. |
+| Developer ID signing | Pending | Verify the exact build 23 app and every nested Sparkle code object. |
+| Apple notarization | Pending | Record the accepted build 23 submission and submitted-archive checksum. |
+| Stapling and Gatekeeper | Pending | Validate the stapled build 23 artifact after native and portable extraction. |
+| Final artifact checksum | Pending | Record and reverify the final build 23 notarized ZIP checksum. |
 
 ## Artifact and clean installation
 
@@ -67,9 +68,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.2-22-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.3-23-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.2, build is 22, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.3, build is 23, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
@@ -169,7 +170,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | --- | --- | --- | --- | --- |
 | LIFE-01 | Remove only `Verba.app`, then reinstall the same candidate. | Preferences, disclosure, and Keychain key survive normal reinstall. | Not run | |
 | LIFE-02 | Perform every complete-cleanup step in `PRIVACY.md`, then reinstall. | Defaults, key, and Accessibility grant are absent; Verba behaves as a first launch. | Not run | |
-| LIFE-03 | Replace 1.0.2 with the last qualified release build, then restore 1.0.2. | Both notarized apps open normally; compatible preferences and Keychain scope survive replacement. | Not run | |
+| LIFE-03 | Replace 1.0.3 with the last qualified release build, then restore 1.0.3. | Both notarized apps open normally; compatible preferences and Keychain scope survive replacement. | Not run | |
 
 ## Performance and final inspection
 

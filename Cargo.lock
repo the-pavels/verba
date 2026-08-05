@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "uniffi-bindgen-swift"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "uniffi",
 ]
@@ -1526,7 +1526,7 @@ checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "verba-core"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "async-trait",
  "futures",
@@ -1534,7 +1534,7 @@ dependencies = [
 
 [[package]]
 name = "verba-ffi"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "async-trait",
  "futures",
@@ -1546,7 +1546,7 @@ dependencies = [
 
 [[package]]
 name = "verba-macos"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "objc2",
  "objc2-app-kit",
@@ -1558,7 +1558,7 @@ dependencies = [
 
 [[package]]
 name = "verba-openai"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "async-trait",
  "futures",
