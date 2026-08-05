@@ -77,46 +77,23 @@ struct AppleTranslator {
             let context = languageDetectionContext.flatMap {
                 $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0
             }
-            var sources: [Locale.Language] = []
-            for detectionText in [context, text].compactMap({ $0 }) {
-                for source in languageIdentifier.identify(detectionText)
-                where !sources.contains(where: {
+            let contextualSources = context.map(languageIdentifier.identify) ?? []
+            let selectedSources = languageIdentifier.identify(text).filter { source in
+                !contextualSources.contains(where: {
                     $0.minimalIdentifier == source.minimalIdentifier
-                }) {
-                    sources.append(source)
-                }
+                })
             }
-            guard !sources.isEmpty else {
+            guard !contextualSources.isEmpty || !selectedSources.isEmpty else {
                 throw AppleTranslationError.unableToIdentifyLanguage
             }
 
-            for source in sources {
-                switch try await availability.status(from: source, target: target) {
-                case .installed:
-                    do {
-                        return try await sessions.translate(
-                            text,
-                            source: source,
-                            target: target,
-                            preparation: .none
-                        )
-                    } catch where translationRequiresPreparation(error) {
-                        return try await sessions.translate(
-                            text,
-                            source: source,
-                            target: target,
-                            preparation: .required
-                        )
-                    }
-                case .supported:
-                    return try await sessions.translate(
-                        text,
-                        source: source,
-                        target: target,
-                        preparation: .required
-                    )
-                case .unsupported:
-                    continue
+            for sources in [contextualSources, selectedSources] where !sources.isEmpty {
+                if let result = try await translate(
+                    text,
+                    from: sources,
+                    to: target
+                ) {
+                    return result
                 }
             }
 
@@ -126,6 +103,49 @@ struct AppleTranslator {
         } catch {
             throw mapTranslationError(error, target: target)
         }
+    }
+
+    private func translate(
+        _ text: String,
+        from sources: [Locale.Language],
+        to target: Locale.Language
+    ) async throws -> AppleTranslationResult? {
+        var downloadableSource: Locale.Language?
+
+        for source in sources {
+            switch try await availability.status(from: source, target: target) {
+            case .installed:
+                do {
+                    return try await sessions.translate(
+                        text,
+                        source: source,
+                        target: target,
+                        preparation: .none
+                    )
+                } catch where translationRequiresPreparation(error) {
+                    return try await sessions.translate(
+                        text,
+                        source: source,
+                        target: target,
+                        preparation: .required
+                    )
+                }
+            case .supported:
+                downloadableSource = downloadableSource ?? source
+            case .unsupported:
+                continue
+            }
+        }
+
+        guard let downloadableSource else {
+            return nil
+        }
+        return try await sessions.translate(
+            text,
+            source: downloadableSource,
+            target: target,
+            preparation: .required
+        )
     }
 }
 
@@ -140,9 +160,6 @@ struct SystemTranslationLanguageIdentifier: TranslationLanguageIdentifying {
     func identify(_ text: String) -> [Locale.Language] {
         var candidates: [Locale.Language] = []
 
-        if let language = dominantLanguage(for: text) {
-            candidates.append(language)
-        }
         if containsSingleWord(text),
            let preferredLanguage = dominantLanguage(
                for: text,
@@ -153,6 +170,13 @@ struct SystemTranslationLanguageIdentifier: TranslationLanguageIdentifying {
            })
         {
             candidates.append(preferredLanguage)
+        }
+        if let language = dominantLanguage(for: text),
+           !candidates.contains(where: {
+               $0.minimalIdentifier == language.minimalIdentifier
+           })
+        {
+            candidates.append(language)
         }
 
         return candidates

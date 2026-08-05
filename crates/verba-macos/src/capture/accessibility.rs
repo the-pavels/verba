@@ -11,6 +11,7 @@ const AX_VALUE_CF_RANGE_TYPE: u32 = 4;
 const AX_SUCCESS: i32 = 0;
 const AX_ERROR_NO_VALUE: i32 = -25_212;
 const LANGUAGE_CONTEXT_RADIUS: isize = 192;
+const LANGUAGE_CONTEXT_ANCESTOR_LIMIT: usize = 8;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default)]
@@ -69,6 +70,9 @@ trait AccessibilityReader {
     ) -> AttributeValue<Self::Value>;
     fn is_string(&self, value: &Self::Value) -> bool;
     fn equal(&self, first: &Self::Value, second: &Self::Value) -> bool;
+    fn parent(&self, _element: &Self::Value) -> Option<Self::Value> {
+        None
+    }
     fn selected_text_context(&self, _element: &Self::Value) -> Option<String> {
         None
     }
@@ -91,7 +95,17 @@ fn focused_selected_text_context(reader: &impl AccessibilityReader) -> Option<St
         }
     };
 
-    reader.selected_text_context(&focused_element)
+    let mut element = focused_element;
+    for _ in 0..=LANGUAGE_CONTEXT_ANCESTOR_LIMIT {
+        if let Some(context) = reader.selected_text_context(&element) {
+            return Some(context);
+        }
+        let Some(parent) = reader.parent(&element) else {
+            break;
+        };
+        element = parent;
+    }
+    None
 }
 
 fn focused_element_security(reader: &impl AccessibilityReader) -> FocusedElementSecurity {
@@ -203,6 +217,14 @@ impl AccessibilityReader for SystemAccessibilityReader {
 
     fn equal(&self, first: &Self::Value, second: &Self::Value) -> bool {
         unsafe { cf_equal(first.as_ptr(), second.as_ptr()) }
+    }
+
+    fn parent(&self, element: &Self::Value) -> Option<Self::Value> {
+        let parent_attribute = self.string(c"AXParent")?;
+        match self.attribute(element, &parent_attribute) {
+            AttributeValue::Value(parent) => Some(parent),
+            AttributeValue::NoValue | AttributeValue::Failed => None,
+        }
     }
 
     fn selected_text_context(&self, element: &Self::Value) -> Option<String> {
@@ -508,6 +530,7 @@ mod tests {
         FrontmostApplication,
         FocusedAttribute,
         FocusedElement,
+        ParentElement,
         RoleAttribute,
         TextFieldRole,
         OtherRole,
@@ -538,6 +561,7 @@ mod tests {
         secure: bool,
         system_focus_available: bool,
         frontmost_focus_available: bool,
+        context_on_parent: bool,
     }
 
     impl FakeReader {
@@ -548,6 +572,7 @@ mod tests {
                 secure,
                 system_focus_available: true,
                 frontmost_focus_available: true,
+                context_on_parent: false,
             }
         }
 
@@ -559,6 +584,11 @@ mod tests {
         fn without_any_focus(mut self) -> Self {
             self.system_focus_available = false;
             self.frontmost_focus_available = false;
+            self
+        }
+
+        fn with_context_on_parent(mut self) -> Self {
+            self.context_on_parent = true;
             self
         }
     }
@@ -652,8 +682,18 @@ mod tests {
             }
         }
 
+        fn parent(&self, element: &Self::Value) -> Option<Self::Value> {
+            (self.context_on_parent && *element == Value::FocusedElement)
+                .then_some(Value::ParentElement)
+        }
+
         fn selected_text_context(&self, element: &Self::Value) -> Option<String> {
-            (*element == Value::FocusedElement).then(|| "Die Rega muss sie bergen".to_owned())
+            let context_owner = if self.context_on_parent {
+                Value::ParentElement
+            } else {
+                Value::FocusedElement
+            };
+            (*element == context_owner).then(|| "Die Rega muss sie bergen".to_owned())
         }
     }
 
@@ -672,6 +712,16 @@ mod tests {
         assert_eq!(
             focused_selected_text_context(&FakeReader::new(None, false, false).without_any_focus()),
             None
+        );
+    }
+
+    #[test]
+    fn reads_static_document_context_from_a_focused_elements_ancestor() {
+        assert_eq!(
+            focused_selected_text_context(
+                &FakeReader::new(None, false, false).with_context_on_parent()
+            ),
+            Some("Die Rega muss sie bergen".to_owned())
         );
     }
 

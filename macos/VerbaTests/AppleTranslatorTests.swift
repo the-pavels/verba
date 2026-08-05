@@ -76,9 +76,17 @@ final class AppleTranslatorTests: XCTestCase {
 
         let candidates = identifier.identify("bergen")
 
-        XCTAssertTrue(candidates.contains {
-            $0.minimalIdentifier == "de"
-        })
+        XCTAssertEqual(candidates.first?.minimalIdentifier, "de")
+    }
+
+    func testSystemLanguageIdentifierPrioritizesPreferredEnglishForApple() {
+        let identifier = SystemTranslationLanguageIdentifier(
+            preferredLanguageIdentifiers: ["en", "de"]
+        )
+
+        let candidates = identifier.identify("Apple")
+
+        XCTAssertEqual(candidates.first?.minimalIdentifier, "en")
     }
 
     func testSurroundingContextIdentifiesGermanButOnlyTranslatesSelectedWord() async throws {
@@ -106,6 +114,40 @@ final class AppleTranslatorTests: XCTestCase {
         XCTAssertEqual(availability.requests[0].source.minimalIdentifier, "de")
         XCTAssertEqual(sessions.requests[0].text, "bergen")
         XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "de")
+    }
+
+    func testContextualDownloadableCandidateWinsBeforeInstalledIsolatedGuess() async throws {
+        let availability = FakeTranslationAvailability(
+            statuses: [.supported, .installed]
+        )
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "de",
+                    targetLanguageIdentifier: "ru",
+                    translatedText: "спасать"
+                )
+            )
+        )
+        let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(
+                identifierResponses: [["de"], ["nb"]]
+            ),
+            availability: availability,
+            sessions: sessions
+        )
+
+        _ = try await translator.translate(
+            "bergen",
+            languageDetectionContext: "Rega muss sie bergen, bevor Hilfe eintrifft.",
+            targetLanguageIdentifier: "ru"
+        )
+
+        XCTAssertEqual(availability.requests.count, 1)
+        XCTAssertEqual(availability.requests[0].source.minimalIdentifier, "de")
+        XCTAssertEqual(sessions.requests.count, 1)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "de")
+        XCTAssertEqual(sessions.requests[0].preparation, .required)
     }
 
     func testAmbiguousWordUsesPreferredCandidateWhenDominantPairIsUnsupported() async throws {
@@ -141,6 +183,110 @@ final class AppleTranslatorTests: XCTestCase {
         )
         XCTAssertEqual(sessions.requests.count, 1)
         XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "de")
+    }
+
+    func testInstalledCandidateWinsBeforeAnEarlierDownloadableCandidate() async throws {
+        let availability = FakeTranslationAvailability(
+            statuses: [.supported, .installed]
+        )
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "en",
+                    targetLanguageIdentifier: "ru",
+                    translatedText: "Яблоко"
+                )
+            )
+        )
+        let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(
+                identifiers: ["tr", "en"]
+            ),
+            availability: availability,
+            sessions: sessions
+        )
+
+        let result = try await translator.translate(
+            "Apple",
+            targetLanguageIdentifier: "ru"
+        )
+
+        XCTAssertEqual(result.sourceLanguageIdentifier, "en")
+        XCTAssertEqual(
+            availability.requests.map(\.source.minimalIdentifier),
+            ["tr", "en"]
+        )
+        XCTAssertEqual(sessions.requests.count, 1)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "en")
+        XCTAssertEqual(sessions.requests[0].preparation, .none)
+    }
+
+    func testDownloadableCandidateIsPreparedOnlyAfterInstalledCandidatesAreExhausted()
+        async throws
+    {
+        let availability = FakeTranslationAvailability(
+            statuses: [.supported, .unsupported]
+        )
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "tr",
+                    targetLanguageIdentifier: "ru",
+                    translatedText: "Эппл"
+                )
+            )
+        )
+        let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(
+                identifiers: ["tr", "en"]
+            ),
+            availability: availability,
+            sessions: sessions
+        )
+
+        _ = try await translator.translate(
+            "Apple",
+            targetLanguageIdentifier: "ru"
+        )
+
+        XCTAssertEqual(
+            availability.requests.map(\.source.minimalIdentifier),
+            ["tr", "en"]
+        )
+        XCTAssertEqual(sessions.requests.count, 1)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "tr")
+        XCTAssertEqual(sessions.requests[0].preparation, .required)
+    }
+
+    func testInstalledTurkishCandidateKeepsPriorityForTurkishText() async throws {
+        let availability = FakeTranslationAvailability(
+            statuses: [.installed, .installed]
+        )
+        let sessions = FakeTranslationSessions(
+            result: .success(
+                AppleTranslationResult(
+                    sourceLanguageIdentifier: "tr",
+                    targetLanguageIdentifier: "ru",
+                    translatedText: "Привет"
+                )
+            )
+        )
+        let translator = AppleTranslator(
+            languageIdentifier: FakeTranslationLanguageIdentifier(
+                identifiers: ["tr", "en"]
+            ),
+            availability: availability,
+            sessions: sessions
+        )
+
+        _ = try await translator.translate(
+            "Merhaba",
+            targetLanguageIdentifier: "ru"
+        )
+
+        XCTAssertEqual(availability.requests.count, 1)
+        XCTAssertEqual(sessions.requests[0].source?.minimalIdentifier, "tr")
+        XCTAssertEqual(sessions.requests[0].preparation, .none)
     }
 
     func testSupportedPairPreparesAndResumesTranslation() async throws {
@@ -422,22 +568,33 @@ final class AppleTranslatorTests: XCTestCase {
 
 @MainActor
 private final class FakeTranslationLanguageIdentifier: TranslationLanguageIdentifying {
-    private let languages: [Locale.Language]
+    private var responses: [[Locale.Language]]
     private(set) var requests: [String] = []
 
     init(identifier: String?) {
-        languages = identifier.map {
+        responses = [identifier.map {
             [Locale.Language(identifier: $0)]
-        } ?? []
+        } ?? []]
     }
 
     init(identifiers: [String]) {
-        languages = identifiers.map(Locale.Language.init(identifier:))
+        responses = [identifiers.map(Locale.Language.init(identifier:))]
+    }
+
+    init(identifierResponses: [[String]]) {
+        precondition(!identifierResponses.isEmpty)
+        responses = identifierResponses.map { identifiers in
+            identifiers.map(Locale.Language.init(identifier:))
+        }
     }
 
     func identify(_ text: String) -> [Locale.Language] {
         requests.append(text)
-        return languages
+        let response = responses[0]
+        if responses.count > 1 {
+            responses.removeFirst()
+        }
+        return response
     }
 }
 

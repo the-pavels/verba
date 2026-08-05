@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.3 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 24 status:** Source-qualified, Developer ID signed, notarized, stapled, Gatekeeper-accepted, and update-feed signed. Manual exact-artifact qualification and project-owner sign-off remain pending.
+**Candidate 25 status:** Source-qualified. Developer ID signing, notarization, exact-artifact qualification, and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,12 +10,12 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.3-24-arm64-notarized.zip` |
-| SHA-256 | `618fb2b36a24519315810fead113b3465b2d37107033e89f464dbdcbfb285a9f` |
-| Source revision | `b197dab17dd31cf8acf99f40b32e86ea1b13223d` |
-| Source state in manifest | `clean` |
-| Notarization submission ID | `da6969e7-9984-448c-9ed5-2a18bae62e23` |
-| Build date | 2026-08-05 |
+| Artifact | `Verba-1.0.3-25-arm64-notarized.zip` |
+| SHA-256 | Pending |
+| Source revision | Pending local release-candidate commit |
+| Source state in manifest | Pending; must be `clean` |
+| Notarization submission ID | Pending |
+| Build date | Pending |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
 | Xcode | 26.2 (17C52) |
 | Tester | Pending |
@@ -51,17 +51,18 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.2 (21) | `753de898dee1e23f966a2b373441b437288edc701c21af13eba2a893561cfa15` | Accepted, submission `64042632-d676-4b0b-8753-f2d2329e5140` | Superseded before manual qualification: the unsupported language-pair screen still opened Settings through a Change Language button instead of offering the target-language list inline. Build 22 replaces it with the dropdown and retries translation after selection. |
 | 1.0.2 (22) | `9eeb4c4973e822cfa8651c795ae4a7d5714098d612b8a8738443846c83dc5bb0` | Accepted, submission `0f4de1fe-d853-4886-832b-01c147269b42` | Superseded before manual qualification: isolated language detection can classify the German word `bergen` as Norwegian and reject an otherwise valid translation. Build 23 uses bounded local context for detection while translating only the exact selection. |
 | 1.0.3 (23) | `36b2db805c12136cb67ef2de46c056ef9be1776066b1a4114d4901e4bf39e7ff` | Accepted, submission `b89bc5d0-3dbe-4db2-bbaf-c9b6ec0695ca` | Superseded before manual qualification: surrounding whitespace could create empty result-card space while ordinary wrapped translations still required scrolling. Build 24 normalizes translation display boundaries and sizes wrapped results from the compact minimum. |
+| 1.0.3 (24) | `618fb2b36a24519315810fead113b3465b2d37107033e89f464dbdcbfb285a9f` | Accepted, submission `da6969e7-9984-448c-9ed5-2a18bae62e23` | Rejected during GitHub release-page testing: the isolated English word `Apple` was detected as Turkish when static webpage context was not found, and the first downloadable pair preempted installed English. Build 25 searches Accessibility ancestors, prioritizes preferred one-word detection, and checks a candidate tier for installed pairs before offering downloads. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.3 (24), including the translation whitespace and wrapped-result sizing regressions, all four release-host popup pixel baselines, context-aware single-word detection, clipboard restoration, provider transport contracts, and all Rust and macOS host suites. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.3 (25), including static-web Accessibility-ancestor context lookup, preferred single-word detection, installed-candidate-before-download behavior, and all four release-host popup pixel baselines. All Rust and macOS host suites passed. |
 | RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-05; the reviewed transitive `winnow` duplicate remains the only warning. Notices contain 178 Rust packages and Sparkle 2.9.2. |
-| Developer ID signing | Pass | The release pipeline verified the exact build 24 app and every nested Sparkle code object before submission and again after extraction. |
-| Apple notarization | Pass | Apple accepted submission `da6969e7-9984-448c-9ed5-2a18bae62e23`; the submitted Developer ID ZIP SHA-256 is `cc6eda4a1265f9fd69ba6ea25e8470e67d2a77cb18a785ca8891e493de97b10c`. |
-| Stapling and Gatekeeper | Pass | Stapling and ticket validation passed; `spctl` accepted the app as Notarized Developer ID after native and portable extraction. |
-| Final artifact checksum | Pass | The final notarized ZIP SHA-256 is `618fb2b36a24519315810fead113b3465b2d37107033e89f464dbdcbfb285a9f`; the checksum and signed v1.0.3 appcast were reverified after packaging. |
+| Developer ID signing | Pending | Verify the exact build 25 app and every nested Sparkle code object. |
+| Apple notarization | Pending | Record the accepted build 25 submission and submitted-archive checksum. |
+| Stapling and Gatekeeper | Pending | Validate the stapled build 25 artifact after native and portable extraction. |
+| Final artifact checksum | Pending | Record and reverify the final build 25 notarized ZIP checksum. |
 
 ## Artifact and clean installation
 
@@ -69,9 +70,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.3-24-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.3-25-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.3, build is 24, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.3, build is 25, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
@@ -127,6 +128,7 @@ For every row, copy an unrelated rich clipboard fixture first. Run Translate and
 | TR-07 | Change the target language from an open translation result using both pointer and keyboard. | The popup remains open, immediately retranslates the same displayed original text without recapturing, and shows visible loading or persistence feedback. | Not run | Record both target languages. |
 | TR-08 | Translate the German word `bergen` to Russian from the article sentence shown in the regression fixture. | The selection remains exactly `bergen`; the word translates from German instead of failing because the isolated detector identifies Norwegian. | Not run | Record the displayed source language and verify the source selection is unchanged. |
 | TR-09 | Translate a sentence that wraps to about three lines in both cards and whose captured text has surrounding spaces or blank lines. | The cards show no incidental outer whitespace, the ordinary result fits without scrolling, and both Copy and Command-C copy the complete displayed translation without outer whitespace. | Not run | Use the popup-spacing regression sentence and record the target language. |
+| TR-10 | Select only `Apple` on the GitHub release page with English→Russian installed and Turkish→Russian available but not installed. | Verba translates from English without presenting a Turkish language-download prompt; selecting the surrounding phrase produces the same source language. | Not run | Repeat in Safari and the recorded Chromium/Electron app. |
 
 ## Proofreading and Keychain
 

@@ -5,6 +5,7 @@
 ### Reliability
 
 - Detect ambiguous single-word languages from bounded nearby text when the source app exposes it, without changing the selection or sending the context for translation; use preferred languages as a fallback.
+- Find single-word context exposed by an ancestor of the focused Accessibility element, and prefer contextual, preferred, and installed language candidates before offering additional language downloads.
 - Remove incidental surrounding whitespace from displayed and copied translations, and give ordinarily wrapped results enough room without unnecessary scrolling.
 
 ## 1.0.2 - 2026-08-03
