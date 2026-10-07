@@ -1,6 +1,11 @@
 # Changelog
 
-## 1.0.3 - 2026-08-05
+## 1.0.3 - 2026-10-07
+
+### Interface
+
+- Bring the About window to the foreground when opened from the menu bar.
+- Show only the app version in About & Support.
 
 ### Reliability
 

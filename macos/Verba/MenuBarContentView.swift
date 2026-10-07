@@ -50,6 +50,7 @@ struct MenuBarContentView: View {
         .disabled(!automaticUpdates.canCheckForUpdates)
 
         Button("About Verba") {
+            NSApplication.shared.activate()
             NSApplication.shared.orderFrontStandardAboutPanel()
         }
 

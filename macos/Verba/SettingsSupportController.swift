@@ -161,7 +161,6 @@ struct PrivacyAndSupportSettingsView: View {
     private var supportSection: some View {
         Section("About & Support") {
             LabeledContent("Verba", value: support.versionSummary)
-            LabeledContent("Rust core", value: support.rustCoreVersion)
 
             HStack {
                 Button("Copy Support Diagnostics") {

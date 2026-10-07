@@ -2,7 +2,7 @@
 
 This is the manual sign-off record for the exact notarized Verba 1.0.3 release candidate. Automated tests do not replace these system, application, permission, display, Accessibility, and clean-account checks.
 
-**Candidate 25 status:** Source-qualified, Developer ID signed, notarized, stapled, Gatekeeper-accepted, and update-feed signed. Manual exact-artifact qualification and project-owner sign-off remain pending.
+**Candidate 26 status:** Source qualification passed on the release host. Developer ID signing, notarization, exact-artifact qualification, and project-owner sign-off remain pending.
 
 Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may not be `Fail` or `Blocked` when the project owner signs off.
 
@@ -10,14 +10,14 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 
 | Field | Value |
 | --- | --- |
-| Artifact | `Verba-1.0.3-25-arm64-notarized.zip` |
-| SHA-256 | `22e3ebd7a7489d632e725904df6cd0204931b246e4f48ef16539ed6ab0c470cb` |
-| Source revision | `db8c023f7070c50cd5adaf5858315acfe552a2f4` |
-| Source state in manifest | `clean` |
-| Notarization submission ID | `2ec33849-76aa-4fad-9727-b91fbb74d831` |
-| Build date | 2026-08-05 |
+| Artifact | `Verba-1.0.3-26-arm64-notarized.zip` |
+| SHA-256 | Pending |
+| Source revision | Pending local release-candidate commit |
+| Source state in manifest | Pending; must be `clean` |
+| Notarization submission ID | Pending |
+| Build date | Pending |
 | Build host | MacBook Pro (Mac14,6, Apple M2 Max, 96 GB) |
-| Xcode | 26.2 (17C52) |
+| Xcode | 27.0 (27A266a) |
 | Tester | Pending |
 | Test date | Pending |
 | macOS version | Pending |
@@ -52,17 +52,18 @@ Use `Pass`, `Fail`, or `Blocked` for every result. A release-blocking row may no
 | 1.0.2 (22) | `9eeb4c4973e822cfa8651c795ae4a7d5714098d612b8a8738443846c83dc5bb0` | Accepted, submission `0f4de1fe-d853-4886-832b-01c147269b42` | Superseded before manual qualification: isolated language detection can classify the German word `bergen` as Norwegian and reject an otherwise valid translation. Build 23 uses bounded local context for detection while translating only the exact selection. |
 | 1.0.3 (23) | `36b2db805c12136cb67ef2de46c056ef9be1776066b1a4114d4901e4bf39e7ff` | Accepted, submission `b89bc5d0-3dbe-4db2-bbaf-c9b6ec0695ca` | Superseded before manual qualification: surrounding whitespace could create empty result-card space while ordinary wrapped translations still required scrolling. Build 24 normalizes translation display boundaries and sizes wrapped results from the compact minimum. |
 | 1.0.3 (24) | `618fb2b36a24519315810fead113b3465b2d37107033e89f464dbdcbfb285a9f` | Accepted, submission `da6969e7-9984-448c-9ed5-2a18bae62e23` | Rejected during GitHub release-page testing: the isolated English word `Apple` was detected as Turkish when static webpage context was not found, and the first downloadable pair preempted installed English. Build 25 searches Accessibility ancestors, prioritizes preferred one-word detection, and checks a candidate tier for installed pairs before offering downloads. |
+| 1.0.3 (25) | `22e3ebd7a7489d632e725904df6cd0204931b246e4f48ef16539ed6ab0c470cb` | Accepted, submission `2ec33849-76aa-4fad-9727-b91fbb74d831` | Superseded during interface review: About Verba opened its panel without activating the app, and About & Support showed the internal Rust core version. Build 26 brings About to the foreground and removes the internal version row. |
 
 ## Automated candidate verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed for 1.0.3 (25), including static-web Accessibility-ancestor context lookup, preferred single-word detection, installed-candidate-before-download behavior, and all four release-host popup pixel baselines. All Rust and macOS host suites passed. |
-| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-08-05; the reviewed transitive `winnow` duplicate remains the only warning. Notices contain 178 Rust packages and Sparkle 2.9.2. |
-| Developer ID signing | Pass | The release pipeline verified the exact build 25 app and every nested Sparkle code object before submission and again after extraction. |
-| Apple notarization | Pass | Apple accepted submission `2ec33849-76aa-4fad-9727-b91fbb74d831`; the submitted Developer ID ZIP SHA-256 is `40048a05b24c8c8493e23c9796732ca96e3168012d405e219939ec1471c852d2`. |
-| Stapling and Gatekeeper | Pass | Stapling and ticket validation passed; `spctl` accepted the app as Notarized Developer ID after native and portable extraction. |
-| Final artifact checksum | Pass | The final notarized ZIP SHA-256 is `22e3ebd7a7489d632e725904df6cd0204931b246e4f48ef16539ed6ab0c470cb`; the checksum and signed v1.0.3 appcast were reverified after packaging. |
+| Rust formatting, Clippy, Rust tests, and macOS host tests | Pass | `./scripts/check.sh` passed on 2026-10-07 for 1.0.3 (26). All 108 macOS tests passed with none skipped, including all four release-host popup pixel baselines. |
+| RustSec, dependency licenses, sources, and notices | Pass | `./scripts/security-check.sh` passed on 2026-10-07 with 1,290 current RustSec advisories and matching notices for 178 Rust packages plus Sparkle 2.9.2. Only the previously reviewed transitive `winnow` duplication warning remains. |
+| Developer ID signing | Pending | Verify the exact build 26 app and every nested Sparkle code object. |
+| Apple notarization | Pending | Record the accepted build 26 submission and submitted-archive checksum. |
+| Stapling and Gatekeeper | Pending | Validate the stapled build 26 artifact after native and portable extraction. |
+| Final artifact checksum | Pending | Record and reverify the final build 26 notarized ZIP checksum. |
 
 ## Artifact and clean installation
 
@@ -70,9 +71,9 @@ Run these rows using only the candidate ZIP and checksum copied to an Apple-sili
 
 | ID | Procedure | Expected result | Result | Observation |
 | --- | --- | --- | --- | --- |
-| ART-01 | Run `shasum -a 256 -c Verba-1.0.3-25-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
+| ART-01 | Run `shasum -a 256 -c Verba-1.0.3-26-arm64-notarized.zip.sha256`. | The exact candidate reports `OK`. | Not run | |
 | ART-02 | Extract the ZIP, move Verba to `/Applications`, and open it from Finder without a Gatekeeper bypass. | Verba opens normally; Gatekeeper shows no malware or unidentified-developer failure. | Not run | |
-| ART-03 | Inspect About and support diagnostics. | App and Rust core are 1.0.3, build is 25, architecture is arm64, and diagnostics contain no content or credential. | Not run | |
+| ART-03 | Open About from the menu bar, inspect About & Support in Settings, and copy support diagnostics. | About comes to the foreground and reports 1.0.3 (26); About & Support shows only the app version; copied diagnostics report arm64 and contain no content or credential. | Not run | |
 | ART-04 | Inspect the menu bar and Dock. | Verba appears in the menu bar and has no persistent Dock icon. | Not run | |
 | ART-05 | Quit and reopen Verba. | The app exits cleanly and starts normally without duplicate menu items or shortcut registrations. | Not run | |
 
