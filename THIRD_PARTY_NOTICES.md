@@ -2,7 +2,7 @@
 
 Verba is built with the Rust packages listed below. This is a conservative inventory of all external packages in the locked workspace dependency graph, including build and development dependencies.
 
-Generated from `Cargo.lock` SHA-256 `2367cd246279286c2c114b39c35c62e76de9d56cafc1899b645071d40b920023`. Package count: 178. Regenerate with `./scripts/generate-third-party-notices.sh`.
+Generated from `Cargo.lock` SHA-256 `6a3c0a7b787dad964d56076f3490b38b8f36ce6b5b0b8bda3eb2ce42a0df855e`. Package count: 178. Regenerate with `./scripts/generate-third-party-notices.sh`.
 
 Each package remains copyright its respective authors and is provided under the SPDX license expression shown. The linked crates.io source distribution contains the authoritative license and notice files for that version. Verba's inclusion of a package does not change its license terms.
 
@@ -105,7 +105,7 @@ Each package remains copyright its respective authors and is provided under the 
 | `r-efi` | `6.0.0` | `MIT OR Apache-2.0 OR LGPL-2.1-or-later` | [crates.io](https://crates.io/crates/r-efi/6.0.0) |
 | `reqwest` | `0.12.28` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/reqwest/0.12.28) |
 | `rustc-hash` | `2.1.3` | `Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/rustc-hash/2.1.3) |
-| `rustix` | `1.1.4` | `Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/rustix/1.1.4) |
+| `rustix` | `1.1.6` | `Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/rustix/1.1.6) |
 | `rustls-pki-types` | `1.15.0` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/rustls-pki-types/1.15.0) |
 | `rustversion` | `1.0.23` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/rustversion/1.0.23) |
 | `ryu` | `1.0.23` | `Apache-2.0 OR BSL-1.0` | [crates.io](https://crates.io/crates/ryu/1.0.23) |
@@ -138,7 +138,7 @@ Each package remains copyright its respective authors and is provided under the 
 | `thiserror` | `2.0.18` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/thiserror/2.0.18) |
 | `thiserror-impl` | `2.0.18` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/thiserror-impl/2.0.18) |
 | `tinystr` | `0.8.3` | `Unicode-3.0` | [crates.io](https://crates.io/crates/tinystr/0.8.3) |
-| `tokio` | `1.52.3` | `MIT` | [crates.io](https://crates.io/crates/tokio/1.52.3) |
+| `tokio` | `1.54.1` | `MIT` | [crates.io](https://crates.io/crates/tokio/1.54.1) |
 | `tokio-native-tls` | `0.3.1` | `MIT` | [crates.io](https://crates.io/crates/tokio-native-tls/0.3.1) |
 | `toml` | `0.9.12+spec-1.1.0` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/toml/0.9.12+spec-1.1.0) |
 | `toml_datetime` | `0.7.5+spec-1.1.0` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/toml_datetime/0.7.5+spec-1.1.0) |

@@ -3,7 +3,13 @@ targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]
 all-features = true
 
 [advisories]
-ignore = []
+ignore = [
+    # basic-toml is unmaintained, with no known vulnerability. It is reached only
+    # through the askama_derive proc-macro (uniffi -> uniffi_bindgen -> askama),
+    # so it runs at compile time and never ships in Verba. uniffi 0.32.x still
+    # depends on it via askama's `config` feature; drop this once uniffi moves off it.
+    { id = "RUSTSEC-2026-0374", reason = "unmaintained build-time-only dependency of uniffi via askama_derive; no safe upgrade" },
+]
 
 [licenses]
 allow = [
