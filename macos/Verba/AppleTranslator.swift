@@ -200,13 +200,19 @@ struct SystemTranslationLanguageIdentifier: TranslationLanguageIdentifying {
 
     private func preferredLanguageHints() -> [NLLanguage: Double] {
         var hints: [NLLanguage: Double] = [:]
+        var weight = 1.0
         for identifier in preferredLanguageIdentifiers {
             guard let languageCode = Locale.Language(identifier: identifier)
                 .languageCode?.identifier
             else {
                 continue
             }
-            hints[NLLanguage(rawValue: languageCode)] = 1
+            let language = NLLanguage(rawValue: languageCode)
+            guard hints[language] == nil else {
+                continue
+            }
+            hints[language] = weight
+            weight /= 2
         }
         return hints
     }
