@@ -2,7 +2,7 @@
 
 Verba is built with the Rust packages listed below. This is a conservative inventory of all external packages in the locked workspace dependency graph, including build and development dependencies.
 
-Generated from `Cargo.lock` SHA-256 `6a3c0a7b787dad964d56076f3490b38b8f36ce6b5b0b8bda3eb2ce42a0df855e`. Package count: 178. Regenerate with `./scripts/generate-third-party-notices.sh`.
+Generated from `Cargo.lock` SHA-256 `73516e00026c9d0afbb31e3ed8a0a2b31917214954a881700f6cf30612ff7af1`. Package count: 178. Regenerate with `./scripts/generate-third-party-notices.sh`.
 
 Each package remains copyright its respective authors and is provided under the SPDX license expression shown. The linked crates.io source distribution contains the authoritative license and notice files for that version. Verba's inclusion of a package does not change its license terms.
 
@@ -40,7 +40,7 @@ Each package remains copyright its respective authors and is provided under the 
 | `find-msvc-tools` | `0.1.9` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/find-msvc-tools/0.1.9) |
 | `foreign-types` | `0.3.2` | `MIT/Apache-2.0` | [crates.io](https://crates.io/crates/foreign-types/0.3.2) |
 | `foreign-types-shared` | `0.1.1` | `MIT/Apache-2.0` | [crates.io](https://crates.io/crates/foreign-types-shared/0.1.1) |
-| `form_urlencoded` | `1.2.2` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/form_urlencoded/1.2.2) |
+| `form_urlencoded` | `1.2.3` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/form_urlencoded/1.2.3) |
 | `fs-err` | `2.11.0` | `MIT/Apache-2.0` | [crates.io](https://crates.io/crates/fs-err/2.11.0) |
 | `futures` | `0.3.32` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/futures/0.3.32) |
 | `futures-channel` | `0.3.32` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/futures-channel/0.3.32) |
@@ -160,7 +160,7 @@ Each package remains copyright its respective authors and is provided under the 
 | `uniffi_meta` | `0.31.2` | `MPL-2.0` | [crates.io](https://crates.io/crates/uniffi_meta/0.31.2) |
 | `uniffi_pipeline` | `0.31.2` | `MPL-2.0` | [crates.io](https://crates.io/crates/uniffi_pipeline/0.31.2) |
 | `uniffi_udl` | `0.31.2` | `MPL-2.0` | [crates.io](https://crates.io/crates/uniffi_udl/0.31.2) |
-| `url` | `2.5.8` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/url/2.5.8) |
+| `url` | `2.5.9` | `MIT OR Apache-2.0` | [crates.io](https://crates.io/crates/url/2.5.9) |
 | `utf8_iter` | `1.0.4` | `Apache-2.0 OR MIT` | [crates.io](https://crates.io/crates/utf8_iter/1.0.4) |
 | `vcpkg` | `0.2.15` | `MIT/Apache-2.0` | [crates.io](https://crates.io/crates/vcpkg/0.2.15) |
 | `want` | `0.3.1` | `MIT` | [crates.io](https://crates.io/crates/want/0.3.1) |
